@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper films · research papers, explained for builders</title>
+<meta name="description" content="Research papers turned into short, self-playing films for engineers: the problem, the core idea, how it works, the evidence, and how to use it.">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--page:#E3E7EE;--card:#fff;--ink:#12161C;--muted:#5E6773;--label:#3E4652;--rule:#DFE3E9;--acc:#2F5BEA}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'IBM Plex Sans',sans-serif}
+main{max-width:960px;margin:0 auto;padding:64px 20px 80px}
+h1{font-family:'Newsreader',serif;font-weight:500;font-size:clamp(36px,6vw,56px);line-height:1.08;margin:0 0 16px}
+.lede{font-size:19px;line-height:1.55;color:var(--label);max-width:680px;margin:0 0 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+a.film{display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:18px;background:var(--card);color:inherit;text-decoration:none;outline:1px solid rgba(20,35,60,.08);box-shadow:0 1px 2px rgba(20,35,60,.08),0 18px 36px -18px rgba(20,35,60,.3);transition:transform .2s,box-shadow .2s}
+a.film:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(20,35,60,.08),0 26px 48px -20px rgba(20,35,60,.38)}
+.meta{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--acc);letter-spacing:.04em}
+.film h2{font-family:'Newsreader',serif;font-weight:500;font-size:25px;line-height:1.2;margin:0}
+.film p{margin:0;font-size:15.5px;line-height:1.5;color:var(--muted)}
+.play{margin-top:auto;padding-top:8px;font-weight:600;color:var(--acc);font-size:15px}
+.how{margin-top:56px;padding-top:28px;border-top:1px solid #cfd5de;color:var(--label);font-size:15.5px;line-height:1.6;max-width:720px}
+</style>
+</head>
+<body>
+<main>
+<h1>Research papers, explained for builders</h1>
+<p class="lede">Each paper becomes a short film that plays on its own: the problem, the core idea, how it works step by step, the evidence, and how to use it at work. The paper’s methods and numbers stay as they are, and every claim cites its section.</p>
+<div class="grid">
+<a class="film" href="agentgarten/">
+<span class="meta">arXiv 2610.12374 · ~18 min · speed up to 4×</span>
+<h2>AgentGarten: Code Worlds for Evolving Agents</h2>
+<p>Keep the world’s rules in code and let a video model only paint what agents see. Plus exact replay, and agents that learn across rounds by writing playbooks.</p>
+<span class="play">Watch the film →</span>
+</a>
+</div>
+<p class="how">More papers coming. Want one explained next? Tell me which.</p>
+</main>
+</body>
+</html>

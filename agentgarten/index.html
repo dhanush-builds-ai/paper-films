@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentGarten: Code Worlds for Evolving Agents · paper film</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{height:100%}
+#film{height:100vh}
+body{margin:0}
+button{cursor:pointer;font-family:inherit}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes plpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes plflow{to{stroke-dashoffset:-26}}
+@keyframes plblink{0%,100%{opacity:.15}50%{opacity:1}}
+.h{font-family:'Newsreader',serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--rule);background:var(--card);font-size:13.5px;color:var(--ink)}
+.seg{height:100%;border:none;padding:0;background:transparent;border-right:2px solid var(--card)}
+.seg:hover{background:rgba(0,0,0,.08)}
+.chap{height:32px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="film"></div>
+<template id="film-tpl">
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --ink: {{t.ink}}; --muted: {{t.muted}}; --label: {{t.label}}; --rule: {{t.rule}}; --acc: {{accent}}; --accsoft: {{accSoft}}; width: 100%; height: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: {{t.page}}; color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 14px 24px 16px; overflow: hidden">
+
+<div data-topbar="1" style="flex-shrink: 0; display: flex; align-items: flex-end; gap: 20px; padding: 4px 4px 0; min-width: 0">
+<div data-papertitle="1" style="min-width: 0; flex: 1 1 auto">
+<div class="h" style="font-size: 26px; line-height: 1.2; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.title}}</div>
+<div style="margin-top: 5px; font-size: 14px; line-height: 1.3; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.line}}</div>
+</div>
+<div style="display: flex; gap: 8px; flex-shrink: 0; padding-bottom: 2px">
+<sc-for list="{{meta.links}}" as="lk" hint-placeholder-count="2"><a href="{{lk.u}}" target="_blank" rel="noopener" style="height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--card); color: var(--acc); font-size: 13.5px; text-decoration: none">{{lk.t}} ↗</a></sc-for>
+</div>
+</div>
+<div data-chips="1" style="flex-shrink: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 14px 0 10px; padding: 0 4px">
+<div style="display: flex; gap: 6px; width: max-content">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><button class="chap" onClick="{{c.pick}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.fw}}"><span class="mono" style="font-size: 11px; opacity: .7; margin-right: 6px">{{c.n}}</span>{{c.name}}</button></sc-for>
+</div>
+</div>
+
+<div id="{{pid}}-holder" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 0 22px">
+<div style="position: relative; width: {{stW}}px; height: {{stH}}px; flex-shrink: 0">
+<div data-stage="1" style="--tf: {{tf}}; position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale({{scale}}); transform-origin: 0 0; background: var(--card); border-radius: 22px; outline: 1px solid {{t.edge}}; box-shadow: 0 1px 2px {{t.shSoft}}, 0 6px 16px -6px {{t.shSoft}}, 0 24px 48px -12px {{t.sh}}, 0 60px 90px -40px {{t.shDeep}}; overflow: hidden">
+
+<sc-for list="{{scenes}}" as="sc" hint-placeholder-count="6">
+<div data-scene="1" style="position: absolute; inset: 0; opacity: {{sc.op}}; transition: opacity calc(.7s * var(--tf)) ease; pointer-events: {{sc.pe}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 196px; background: {{t.band}}; border-bottom: 1px solid {{t.rule}}; opacity: {{sc.band}}"></div>
+<div class="mono" style="position: absolute; left: 48px; top: 26px; font-size: 13px; letter-spacing: .08em; color: var(--acc); text-transform: uppercase">{{sc.tag}}</div>
+<div data-headline="1" class="h" style="position: absolute; left: 48px; top: 46px; width: 1000px; font-size: 34px; line-height: 1.12; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</div>
+<div style="position: absolute; right: 48px; top: 32px; display: flex; gap: 6px; align-items: center">
+<sc-for list="{{sc.dots}}" as="dt" hint-placeholder-count="6"><button onClick="{{dt.pick}}" aria-label="Beat {{dt.no}}" style="width: {{dt.w}}px; height: 8px; border-radius: 4px; border: none; padding: 0; background: {{dt.bg}}; transition: width calc(.4s * var(--tf)), background calc(.4s * var(--tf))"></button></sc-for>
+</div>
+
+<sc-for list="{{sc.actors}}" as="a" hint-placeholder-count="12">
+<div data-actor="{{a.id}}" data-type="{{a.type}}" style="position: absolute; left: 0; top: 0; width: {{a.w}}px; transform: translate({{a.x}}px, {{a.y}}px) scale({{a.s}}); transform-origin: 0 0; opacity: {{a.op}}; transition: transform calc(1.2s * var(--tf)) cubic-bezier(.45,0,.2,1) calc({{a.dl}}s * var(--tf)), opacity calc(.8s * var(--tf)) ease calc({{a.dl}}s * var(--tf))">
+<sc-if value="{{a.isSvg}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; width: {{a.w}}px; height: {{a.h}}px; animation: {{a.anim}}">
+<svg width="{{a.w}}" height="{{a.h}}" viewBox="0 0 {{a.w}} {{a.h}}" style="overflow: visible; display: block">
+<sc-for list="{{a.prims}}" as="q" hint-placeholder-count="8">
+<sc-if value="{{q.isRect}}" hint-placeholder-val="{{ false }}"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), stroke calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), opacity calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf))"></rect></sc-if>
+<sc-if value="{{q.isPath}}" hint-placeholder-val="{{ false }}"><path d="{{q.d}}" transform="{{q.tf}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}; transition: opacity calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), stroke calc(.8s * var(--tf)) ease, fill calc(.8s * var(--tf)) ease, d calc(.9s * var(--tf)) ease"></path></sc-if>
+<sc-if value="{{q.isCirc}}" hint-placeholder-val="{{ false }}"><circle cx="{{q.cx}}" cy="{{q.cy}}" r="{{q.r}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill calc(.8s * var(--tf)) ease, opacity calc(.8s * var(--tf)) ease"></circle></sc-if>
+<sc-if value="{{q.isPoly}}" hint-placeholder-val="{{ false }}"><polyline points="{{q.pts}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}"></polyline></sc-if>
+</sc-for>
+</svg>
+<sc-for list="{{a.labels}}" as="lb" hint-placeholder-count="4"><div data-lbl="1" style="position: absolute; left: {{lb.x}}px; top: {{lb.y}}px; transform: translateX({{lb.tx}}%); white-space: nowrap; line-height: 1; font-size: {{lb.fs}}px; font-weight: {{lb.fw}}; font-family: {{lb.font}}; color: {{lb.fill}}; opacity: {{lb.op}}; transition: opacity calc(.8s * var(--tf)) ease calc({{lb.tdl}}s * var(--tf)), color calc(.8s * var(--tf)) ease; pointer-events: none">{{lb.txt}}</div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isText}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; font-weight: {{a.fw}}; font-family: {{a.font}}; font-style: {{a.fst}}; line-height: {{a.lh}}; color: {{a.color}}; text-align: {{a.align}}; background: {{a.bg}}; padding: {{a.pad}}; border-radius: {{a.rad}}; border: {{a.bd}}; box-sizing: border-box"><sc-for list="{{a.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{a.isStat}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; box-sizing: border-box; padding: 20px 22px; border-radius: 18px; background: {{a.bg}}; border: 1px solid {{a.bd}}">
+<div class="h" style="font-size: {{a.fs}}px; color: {{a.c}}; line-height: 1; font-weight: 500">{{a.v}}</div>
+<div style="font-size: 17px; color: var(--label); margin-top: 10px; line-height: 1.35">{{a.l}}</div>
+</div>
+</sc-if>
+<sc-if value="{{a.isTable}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; line-height: 1.35">
+<div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); font-weight: 600; color: var(--label); font-size: {{a.hfs}}px"><sc-for list="{{a.head}}" as="hc" hint-placeholder-count="4"><div style="text-align: {{hc.al}}">{{hc.t}}</div></sc-for></div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="5"><div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: {{a.rpad}}px 14px; border-bottom: 1px solid var(--rule); background: {{r.bg}}; opacity: {{r.op}}; transition: opacity calc(.6s * var(--tf)) ease, background calc(.6s * var(--tf)) ease"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="text-align: {{c.al}}; font-weight: {{c.fw}}; color: {{c.c}}; font-family: {{c.font}}">{{c.t}}</div></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isBars}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<div style="font-size: {{a.tfs}}px; font-weight: 600; margin-bottom: 4px">{{a.title}}</div>
+<div style="font-size: 14px; color: var(--muted); margin-bottom: 10px">{{a.sub}}</div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: {{a.lw}}px minmax(0, 1fr) {{a.vw}}px; align-items: center; gap: 12px; margin: {{a.gap}}px 0; opacity: {{r.op}}; transition: opacity calc(.5s * var(--tf)) ease"><div style="font-size: {{a.fs}}px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.n}}</div><div style="position: relative; height: {{a.bh}}px; border-radius: 6px; background: var(--bg); overflow: hidden"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{r.w}}%; border-radius: 6px; background: {{r.c}}; transition: width calc(1.1s * var(--tf)) cubic-bezier(.3,0,.2,1) calc({{r.dl}}s * var(--tf))"></div></div><div class="mono" style="font-size: {{a.fs}}px; font-weight: {{r.fw}}; color: {{r.vc}}">{{r.l}}</div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isList}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<sc-if value="{{a.hasTitle}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.tfs}}px; font-weight: 600; color: {{a.tc}}; margin-bottom: 14px">{{a.title}}</div></sc-if>
+<sc-for list="{{a.items}}" as="it" hint-placeholder-count="4"><div style="display: flex; gap: 14px; align-items: flex-start; margin: 0 0 {{a.gap}}px; opacity: {{it.op}}; transform: translateX({{it.dx}}px); transition: opacity calc(.6s * var(--tf)) ease calc({{it.dl}}s * var(--tf)), transform calc(.6s * var(--tf)) ease calc({{it.dl}}s * var(--tf))"><div style="flex-shrink: 0; width: {{a.mk}}px; height: {{a.mk}}px; margin-top: {{a.mt}}px; border-radius: 50%; background: {{it.mbg}}; color: {{it.mc}}; border: {{it.mbd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{a.mfs}}px; font-weight: 600">{{it.m}}</div><div style="min-width: 0"><div style="font-size: {{a.fs}}px; font-weight: {{a.tfw}}; line-height: 1.32">{{it.t}}</div><sc-if value="{{it.hasS}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.sfs}}px; color: var(--muted); line-height: 1.4; margin-top: 4px">{{it.s}}</div></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-for list="{{sc.caps}}" as="cp" hint-placeholder-count="5">
+<div data-cap="1" style="position: absolute; left: 48px; top: {{sc.capTop}}px; width: 1184px; font-size: 23px; line-height: 1.38; opacity: {{cp.op}}; transform: translateY({{cp.dy}}px); transition: opacity calc(.5s * var(--tf)) ease, transform calc(.5s * var(--tf)) ease"><sc-for list="{{cp.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for><span class="mono" style="display: inline-block; vertical-align: 3px; margin-left: 12px; font-size: 13px; padding: 2px 9px; border-radius: 6px; border: {{cp.cbd}}; color: {{cp.cfg}}; opacity: {{cp.cop}}">{{cp.chip}}</span></div>
+</sc-for>
+
+</div>
+</sc-for>
+
+</div>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin-top: 14px; height: 50px; display: flex; align-items: center; gap: 12px">
+<button onClick="{{pl.toggle}}" aria-label="{{pl.playLabel}}" style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--acc); color: #FFFFFF; font-size: 15px">{{pl.icon}}</button>
+<button class="btn" onClick="{{pl.prev}}" aria-label="Previous" style="width: 36px; padding: 0; flex-shrink: 0">⏮</button>
+<button class="btn" onClick="{{pl.next}}" aria-label="Next" style="width: 36px; padding: 0; flex-shrink: 0">⏭</button>
+<div style="flex: 1; min-width: 0; padding: 0 6px">
+<div style="display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; margin-bottom: 7px"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pl.label}}</span><span class="mono" style="color: var(--muted); white-space: nowrap">{{pl.time}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 5px; background: {{t.track}}; overflow: hidden">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pl.w}}%; background: var(--acc); transition: width {{pl.tr}}s linear"></div>
+<div style="position: absolute; inset: 0; display: flex">
+<sc-for list="{{pl.segs}}" as="sg" hint-placeholder-count="8"><button class="seg" onClick="{{sg.pick}}" aria-label="Jump to {{sg.name}}" title="{{sg.name}}" style="flex-grow: {{sg.w}}"></button></sc-for>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0">
+<div style="position: relative">
+<button onClick="{{pl.toggleSpeed}}" aria-label="Playback speed, now {{pl.speedLabel}}" style="height: 36px; min-width: 64px; padding: 0 12px; border-radius: 999px; border: 1px solid {{pl.speedBd}}; background: var(--card); color: var(--ink); font-size: 13px; font-family: 'IBM Plex Mono', monospace">{{pl.speedLabel}} ▾</button>
+<sc-if value="{{pl.speedOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; right: 0; bottom: 44px; z-index: 30; min-width: 96px; padding: 6px; border-radius: 12px; border: 1px solid var(--rule); background: var(--card); box-shadow: 0 12px 28px -8px {{t.sh}}; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{pl.speeds}}" as="sp" hint-placeholder-count="7"><button onClick="{{sp.pick}}" style="height: 30px; padding: 0 12px; border: none; border-radius: 8px; text-align: left; background: {{sp.bg}}; color: {{sp.fg}}; font-weight: {{sp.fw}}; font-size: 13px; font-family: 'IBM Plex Mono', monospace">{{sp.l}}</button></sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</template>
+<script>
+/* paper-film standalone runtime (MIT).
+ * Renders the film template without any host runtime:
+ *   {{path}} holes in text and attributes, <sc-for list as>, <sc-if value>, onClick="{{fn}}".
+ * Re-renders patch the existing DOM in place, so CSS transitions play between beats.
+ */
+(function () {
+  var SVG = 'http://www.w3.org/2000/svg';
+  var HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  var ONLY = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+
+  function lookup(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return +path;
+    var parts = path.split('.'), v = scope[parts[0]];
+    for (var i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+    return v;
+  }
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) { var v = lookup(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // template node -> array of vnodes
+  function build(node, scope, inSvg) {
+    if (node.nodeType === 3) {
+      var t = node.nodeValue;
+      if (t.indexOf('{{') < 0) return /\S/.test(t) || t === ' ' ? [{ text: t }] : (t.length ? [{ text: t }] : []);
+      return [{ text: interp(t, scope) }];
+    }
+    if (node.nodeType !== 1) return [];
+    var tag = node.localName;
+    if (tag === 'sc-for') {
+      var m = ONLY.exec(node.getAttribute('list') || ''), list = m ? lookup(scope, m[1]) : null, as = node.getAttribute('as') || 'item';
+      var out = [];
+      (list || []).forEach(function (item, idx) {
+        var s = Object.create(scope); s[as] = item; s.$index = idx;
+        kidsOf(node).forEach(function (c) { out.push.apply(out, build(c, s, inSvg)); });
+      });
+      return out;
+    }
+    if (tag === 'sc-if') {
+      var mv = ONLY.exec(node.getAttribute('value') || ''), ok = mv ? lookup(scope, mv[1]) : false;
+      if (!ok) return [];
+      var res = [];
+      kidsOf(node).forEach(function (c) { res.push.apply(res, build(c, scope, inSvg)); });
+      return res;
+    }
+    var svg = inSvg || tag === 'svg', v = { tag: tag, svg: svg, attrs: {}, on: {}, kids: [] };
+    for (var i = 0; i < node.attributes.length; i++) {
+      var a = node.attributes[i], name = a.name, val = a.value;
+      if (name.indexOf('hint-') === 0) continue;
+      if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
+        var mm = ONLY.exec(val); if (mm) v.on[name.slice(2).toLowerCase()] = lookup(scope, mm[1]);
+        continue;
+      }
+      var only = ONLY.exec(val);
+      v.attrs[name] = only ? lookup(scope, only[1]) : (val.indexOf('{{') >= 0 ? interp(val, scope) : val);
+    }
+    kidsOf(node).forEach(function (c) { v.kids.push.apply(v.kids, build(c, scope, svg)); });
+    return [v];
+  }
+  function kidsOf(node) { return Array.prototype.slice.call((node.content || node).childNodes); }
+
+  function create(v) {
+    if (v.text != null) { var tn = document.createTextNode(v.text); tn.__v = v; return tn; }
+    var el = v.svg ? document.createElementNS(SVG, v.tag) : document.createElement(v.tag);
+    el.__v = { tag: v.tag, attrs: {}, on: {}, kids: [] };
+    update(el, v);
+    return el;
+  }
+  function setAttr(el, k, val) {
+    if (val == null || val === false) { el.removeAttribute(k); return; }
+    if (k === 'class') k = 'class';
+    el.setAttribute(k, val === true ? '' : String(val));
+  }
+  function update(el, v) {
+    var old = el.__v || { attrs: {}, on: {}, kids: [] };
+    for (var k in v.attrs) if (old.attrs[k] !== v.attrs[k]) setAttr(el, k, v.attrs[k]);
+    for (var k2 in old.attrs) if (!(k2 in v.attrs)) el.removeAttribute(k2);
+    for (var e in v.on) el['on' + e] = typeof v.on[e] === 'function' ? v.on[e] : null;
+    for (var e2 in old.on) if (!(e2 in v.on)) el['on' + e2] = null;
+    patchKids(el, v.kids);
+    el.__v = { tag: v.tag, attrs: v.attrs, on: v.on, kids: v.kids };
+  }
+  function patchKids(el, kids) {
+    var cur = el.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      var nv = kids[i], ex = cur[i];
+      if (!ex) { el.appendChild(create(nv)); continue; }
+      var ov = ex.__v;
+      if (nv.text != null) {
+        if (ex.nodeType === 3) { if (ex.nodeValue !== nv.text) ex.nodeValue = nv.text; ex.__v = nv; }
+        else el.replaceChild(create(nv), ex);
+      } else if (ex.nodeType === 1 && ov && ov.tag === nv.tag) update(ex, nv);
+      else el.replaceChild(create(nv), ex);
+    }
+    while (el.childNodes.length > kids.length) el.removeChild(el.lastChild);
+  }
+
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (o) {
+    Object.assign(this.state, typeof o === 'function' ? o(this.state) : o);
+    if (this.__schedule) this.__schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = function () { if (this.__schedule) this.__schedule(); };
+
+  window.mountFilm = function (Component, tplId, mountId, props) {
+    var tpl = document.getElementById(tplId), root = document.getElementById(mountId);
+    var comp = new Component(props || {}), queued = false;
+    var render = function () {
+      queued = false;
+      var vals = comp.renderVals(), vnodes = [];
+      kidsOf(tpl).forEach(function (n) { vnodes.push.apply(vnodes, build(n, vals, false)); });
+      patchKids(root, vnodes.filter(function (v) { return v.text == null || /\S/.test(v.text); }));
+    };
+    comp.__schedule = function () { if (!queued) { queued = true; requestAnimationFrame(render); } };
+    render();
+    if (comp.componentDidMount) comp.componentDidMount();
+    return comp;
+  };
+})();
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, scene: 0, playing: true, speed: 1, speedOpen: false, frac: 0, scale: this._fit() };
+    this._speed = 1;
+    var self = this;
+    if (typeof window !== 'undefined') {
+      var key = '__paperfilm_' + this.pid();
+      if (window[key] && window[key] !== this) { window[key]._dead = true; clearTimeout(window[key]._tm); }
+      window[key] = this;
+      setTimeout(function () { if (!self._dead && self.state.playing) self._schedule(self.state.scene, 0, true); }, 1400);
+      window.addEventListener('resize', function () { if (!self._dead) self.setState({ scale: self._fit() }); });
+      setTimeout(function () { if (!self._dead) self.setState({ scale: self._fit() }); }, 300);
+      document.addEventListener('visibilitychange', function () { if (document.hidden && self.state.playing && !self._dead) self._toggle(); });
+    }
+  }
+  _fit() {
+    if (typeof window === 'undefined') return 1;
+    var holder = document.getElementById(this.pid() + '-holder');
+    var W = holder ? holder.clientWidth : window.innerWidth - 48;
+    var H = holder ? holder.clientHeight : window.innerHeight - 215;
+    if (!W || !H) { W = window.innerWidth - 48; H = window.innerHeight - 215; }
+    return Math.max(0.3, Math.min((W - 24) / 1280, (H - 28) / 720)); // leave room for the shadow
+  }
+
+  /* ---------------- film timeline ---------------- */
+  pid() { if (!this._pid) this._pid = String(this.report().meta.title || 'r').replace(/[^A-Za-z0-9]/g, '').slice(0, 16); return this._pid; }
+  chScenes(ch, ci) {
+    if (!this._chs) this._chs = {};
+    if (this._chs[ci]) return this._chs[ci];
+    var out = [];
+    if (ch.card !== false) {
+      out.push({ card: true, title: '', tag: '', beats: [{ cap: '', dur: ch.cardDur || 4.2 }], actors: [
+        { id: 'n', type: 'text', x: 120, y: 200, w: 400, text: ch.n, fs: 120, font: 'serif', tone: 'acc', lh: 1 },
+        { id: 't', type: 'text', x: 120, y: 340, w: 1040, text: ch.name, fs: 64, font: 'serif', lh: 1.05 },
+        { id: 'l', type: 'text', x: 120, y: 436, w: 980, text: ch.lede || '', fs: 26, tone: 'muted', lh: 1.4 }
+      ] });
+    }
+    ch.scenes.forEach(function (s) { out.push(s); });
+    this._chs[ci] = out;
+    return out;
+  }
+  film() {
+    if (this._film) return this._film;
+    var self = this, R = this.report(), list = [], chStart = [];
+    var W = function (x) { return x ? String(x).replace(/\*/g, '').split(/\s+/).filter(Boolean).length : 0; };
+    R.chapters.forEach(function (ch, ci) {
+      chStart[ci] = list.length;
+      self.chScenes(ch, ci).forEach(function (s, si) {
+        s.beats.forEach(function (b, bi) {
+          var d = b.dur || Math.max(4.5, Math.min(17, 2.4 + W(b.cap) / 2.5 + (b.read || 0)));
+          list.push({ ch: ci, sc: si, beat: bi, nb: s.beats.length, dur: d, label: (ch.n ? ch.n + ' ' : '') + ch.name + (s.title ? ' · ' + s.title : '') });
+        });
+      });
+    });
+    var t = 0; list.forEach(function (x) { x.start = t; t += x.dur; });
+    this._film = { list: list, chStart: chStart, total: t };
+    return this._film;
+  }
+  _schedule(i, frac, playing) {
+    var self = this, L = this.film().list;
+    clearTimeout(this._tm);
+    if (this._dead || !playing || typeof window === 'undefined') return;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var d = L[i].dur / this._speed;
+    this._t0 = Date.now() - d * frac * 1000;
+    this._tm = setTimeout(function () {
+      if (self._dead) return;
+      if (i + 1 < L.length) self._go(i + 1, true);
+      else self.setState({ playing: false, frac: 1 });
+    }, Math.max(50, d * (1 - frac) * 1000));
+  }
+  _go(i, keepPlaying) {
+    var L = this.film().list;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var playing = keepPlaying === undefined ? this.state.playing : keepPlaying;
+    this.setState({ scene: i, frac: 0, playing: playing });
+    this._schedule(i, 0, playing);
+  }
+  _frac() {
+    if (!this.state.playing || !this._t0) return this.state.frac || 0;
+    var d = this.film().list[this.state.scene].dur / this._speed;
+    return Math.max(0, Math.min(0.999, (Date.now() - this._t0) / 1000 / d));
+  }
+  _toggle() {
+    var L = this.film().list;
+    if (this.state.playing) { var fr = this._frac(); clearTimeout(this._tm); this.setState({ playing: false, frac: fr }); return; }
+    var i = this.state.scene, f2 = this.state.frac || 0;
+    if (i >= L.length - 1 && f2 >= 1) { i = 0; f2 = 0; }
+    this.setState({ playing: true, scene: i, frac: f2 });
+    this._schedule(i, f2, true);
+  }
+  _setSpeed(v) {
+    var fr = this._frac();
+    this._speed = v;
+    this.setState({ speed: v, frac: fr, speedOpen: false });
+    if (this.state.playing) this._schedule(this.state.scene, fr, true);
+  }
+
+  report() {
+    if (!this._R) this._R = {"meta": {"line": "arXiv 2610.12374  ·  Technical report, not peer-reviewed  ·  v1, 8 Oct 2026", "title": "AgentGarten: Code Worlds for Evolving Agents", "links": [{"t": "Paper", "u": "https://arxiv.org/abs/2610.12374"}, {"t": "Code", "u": "https://github.com/MirroS-Lab/AgentGarten"}]}, "chapters": [{"n": "", "name": "Overview", "short": "Overview", "card": false, "scenes": [{"title": "", "actors": [{"id": "tag", "type": "text", "x": 120, "y": 170, "w": 900, "text": "A PAPERLENS FILM", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "ti", "type": "text", "x": 120, "y": 205, "w": 1040, "text": "AgentGarten: Code Worlds for Evolving Agents", "font": "serif", "fs": 58, "lh": 1.08}, {"id": "au", "type": "text", "x": 120, "y": 360, "w": 1000, "text": "Chi, Miao, Shi, Wu, Wang, Chen, Dai, Ren, Gao, Long, Duan, Lyu, Wu, Liu · MirroS, Tsinghua University, Peking University", "fs": 18, "tone": "muted", "lh": 1.5}, {"id": "me", "type": "text", "x": 120, "y": 430, "w": 1000, "text": "arXiv:2610.12374 · technical report, not peer-reviewed · v1, 8 Oct 2026", "fs": 16, "tone": "muted", "font": "mono"}, {"id": "rob", "type": "robot", "x": 1040, "y": 470, "s": 1.3}, {"id": "cr", "type": "crate", "x": 1140, "y": 513, "s": 1.0}, {"id": "gr", "type": "ground", "x": 990, "y": 569, "w": 240, "look": "paint"}], "beats": [{"cap": "", "dur": 4.5}]}, {"title": "The paper in one paragraph", "actors": [{"id": "p", "type": "text", "x": 48, "y": 140, "w": 1150, "text": "AgentGarten makes practice worlds for AI agents. A *game engine* keeps each world’s state and rules as code. One shared *video model* paints what the agents see, in real time. The agents act only on these frames. After each round, they *write down lessons* for the next round.", "font": "serif", "fs": 31, "lh": 1.42}, {"id": "s1", "type": "stat", "x": 48, "y": 382, "w": 278, "v": "36.5 fps", "l": "live video from one H100 GPU", "op": 0}, {"id": "s2", "type": "stat", "x": 350, "y": 382, "w": 278, "v": "0 drift", "l": "exact replay in training (the old method: 3.99%)", "op": 0, "dl": 0.12}, {"id": "s3", "type": "stat", "x": 652, "y": 382, "w": 278, "v": "Round 4", "l": "hiders build shelters in hide-and-seek", "op": 0, "dl": 0.24}, {"id": "s4", "type": "stat", "x": 954, "y": 382, "w": 278, "v": "71 → 41 s", "l": "bridge task, round 1 to round 4", "op": 0, "dl": 0.36}], "beats": [{"cap": "Everything in this film expands this one paragraph.", "kind": "ours", "read": 6}, {"cap": "Four numbers to remember. The Evidence chapter shows how each one was measured.", "kind": "ours", "set": {"s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}, "s4": {"op": 1}}, "read": 4}]}]}, {"n": "01", "name": "The problem", "short": "Problem", "lede": "Agents need practice worlds. Today you must choose: real rules or real looks.", "scenes": [{"title": "Agents learn by practice", "actors": [{"id": "g", "type": "ground", "x": 70, "y": 500, "w": 600, "look": "paint"}, {"id": "rob", "type": "robot", "x": 130, "y": 353, "s": 1.6, "lookdir": "r"}, {"id": "cr", "type": "crate", "x": 310, "y": 416, "s": 1.5}, {"id": "wl", "type": "wall", "x": 590, "y": 344, "s": 1.3}, {"id": "need", "type": "list", "x": 760, "y": 190, "w": 470, "upto": 0, "ghost": true, "fs": 24, "sfs": 18, "tfw": 600, "gap": 34, "mk": 36, "mfs": 17, "items": [{"t": "Rules that stay true", "s": "Push the crate, and it moves the same way every time."}, {"t": "Views that look real", "s": "What the agent sees looks like the real world it will work in."}]}], "beats": [{"cap": "An AI agent learns a skill by trying it many times in a practice world.", "src": "§1"}, {"cap": "So the world must keep its rules. If the crate moves today, it must move the same way tomorrow.", "src": "§1", "set": {"rob": {"x": 200}, "cr": {"x": 380}, "need": {"upto": 1}}}, {"cap": "The world must also look real. Agents learn only what their practice world can show them.", "src": "§1", "set": {"need": {"upto": 2}}}]}, {"title": "Option 1: a simulator", "actors": [{"id": "eng", "type": "card", "x": 60, "y": 180, "s": 1.3, "w": 250, "h": 150, "icon": "gear", "label": "Simulator", "sub": "the world is code", "fill": "code", "lines": ["crate.x = 2.0", "crate.mass = 30", "on_push(crate)"], "on": true}, {"id": "tv", "type": "tv", "x": 450, "y": 170, "s": 1.15, "w": 260, "h": 160, "show": "wire", "label": "what it looks like"}, {"id": "a1", "type": "icon", "x": 880, "y": 180, "icon": "mesh", "label": "3D models", "op": 0, "s": 1.3}, {"id": "a2", "type": "icon", "x": 990, "y": 180, "icon": "brush", "label": "textures", "op": 0, "s": 1.3, "dl": 0.15}, {"id": "a3", "type": "icon", "x": 1100, "y": 180, "icon": "clock", "label": "weeks", "op": 0, "s": 1.3, "dl": 0.3}, {"id": "at", "type": "text", "x": 880, "y": 300, "w": 340, "text": "Each new look needs new hand-made art.", "fs": 20, "op": 0, "lh": 1.35}, {"id": "ok", "type": "badge", "x": 90, "y": 470, "text": "rules ✓  read, edit, test", "tone": "ok", "s": 1.35, "op": 0}, {"id": "bad", "type": "badge", "x": 880, "y": 470, "text": "looks ✗  slow and costly", "tone": "bad", "s": 1.35, "op": 0}], "beats": [{"cap": "A simulator, or game engine, runs the world as code. Every object is a variable.", "src": "§1"}, {"cap": "So the rules are exact. You can read the state, change it, and test it.", "src": "§1", "set": {"ok": {"op": 1}, "eng": {"on": false}}}, {"cap": "But each new look needs new 3D models and textures. Hand-made art is slow and costly.", "src": "§1", "set": {"a1": {"op": 1}, "a2": {"op": 1}, "a3": {"op": 1}, "at": {"op": 1}, "bad": {"op": 1}}}]}, {"title": "Option 2: a video world model", "actors": [{"id": "tv", "type": "tv", "x": 70, "y": 160, "s": 1.45, "w": 300, "h": 180, "show": "paint", "cx": 0.3, "wall": true, "label": "what the agent sees"}, {"id": "nn", "type": "card", "x": 640, "y": 170, "s": 1.25, "w": 250, "h": 64, "icon": "net", "label": "Video world model", "sub": "learned from real video"}, {"id": "ml", "type": "text", "x": 640, "y": 268, "w": 540, "text": "Its only memory: the frames it painted before", "fs": 17, "tone": "muted"}, {"id": "mem", "type": "strip", "x": 640, "y": 300, "s": 1.3, "pat": "pppp", "fw": 46, "fh": 32, "gap": 6}, {"id": "ok", "type": "badge", "x": 640, "y": 400, "text": "looks ✓  real", "tone": "ok", "s": 1.35, "op": 0}, {"id": "bad", "type": "badge", "x": 640, "y": 462, "text": "rules ✗  hidden in pixels", "tone": "bad", "s": 1.35, "op": 0}, {"id": "cv", "type": "curtain", "x": 82, "y": 172, "w": 435, "h": 262, "text": "camera looks away · 30 s", "op": 0}], "beats": [{"cap": "A video world model learns from real video. It paints each new frame from the frames before it and the action.", "src": "§1"}, {"cap": "Its frames look real.", "src": "§1", "set": {"ok": {"op": 1}}}, {"cap": "But the world’s state lives only in old frames. Look away for 30 seconds, and the crate is in none of the new frames.", "kind": "ours", "set": {"cv": {"op": 1}, "mem": {"pat": "ppppqqq"}}}, {"cap": "Look back. The model must recall the crate from old frames. Nothing makes sure it comes back in the same place.", "src": "§1, §7", "set": {"cv": {"op": 0}, "tv": {"show": "ghost", "q": true}, "mem": {"pat": "ppppqqqN"}}}, {"cap": "You cannot read, edit or test rules that live in pixels.", "src": "§1", "set": {"bad": {"op": 1}}}]}, {"title": "The gap: no option gives both", "actors": [{"id": "sc", "type": "scale", "x": 70, "y": 175, "w": 440, "tilt": 0, "lt": "Rules", "rt": "Looks"}, {"id": "tb", "type": "table", "x": 580, "y": 200, "w": 650, "fs": 21, "hfs": 16, "rpad": 16, "upto": 0, "ghost": true, "cols": "1.5fr 1fr 1fr", "align": ["left", "center", "center"], "head": ["", "Rules you can test", "Views that look real"], "rows": [{"c": ["Simulator", "✓", "✗"], "tones": [null, "ok", "bad"]}, {"c": ["Video world model", "✗", "✓"], "tones": [null, "bad", "ok"]}, {"c": ["What agents need", "✓", "✓"], "tones": [null, "ok", "ok"], "hl": true}]}], "beats": [{"cap": "A simulator gives you rules, but its looks are costly.", "src": "§1", "set": {"sc": {"tilt": -0.9, "ls": "simulator"}, "tb": {"upto": 1}}}, {"cap": "A video model gives you looks, but its rules are hidden.", "src": "§1", "set": {"sc": {"tilt": 0.9, "ls": "", "rs": "video model"}, "tb": {"upto": 2}}}, {"cap": "Agents need both at once. No existing option gives both. That is the problem.", "src": "§1", "set": {"sc": {"tilt": 0, "rs": "", "lc": "bad", "rc": "bad"}, "tb": {"upto": 3}}}]}]}, {"n": "02", "name": "The core idea", "short": "Idea", "lede": "Keep the world in code. Let a video model only paint it.", "scenes": [{"title": "Split the world into truth and view", "actors": [{"id": "l1", "type": "text", "x": 60, "y": 158, "w": 380, "text": "THE TRUTH", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "l2", "type": "text", "x": 860, "y": 158, "w": 380, "text": "THE VIEW", "font": "mono", "fs": 15, "tone": "acc", "op": 0.25}, {"id": "eng", "type": "card", "x": 60, "y": 190, "s": 1.3, "w": 250, "h": 150, "icon": "gear", "label": "Game engine", "sub": "objects, rules, positions", "fill": "code", "lines": ["crate.x = 2.0", "wall.x  = 3.0", "gravity = 9.8"], "on": true}, {"id": "dep", "type": "tv", "x": 480, "y": 196, "s": 1.0, "w": 230, "h": 140, "show": "depth", "wall": true, "label": "shapes only", "op": 0.15}, {"id": "tv", "type": "tv", "x": 860, "y": 180, "s": 1.2, "w": 290, "h": 170, "show": "paint", "wall": true, "label": "what the agent sees", "op": 0.15}, {"id": "b1", "type": "beam", "x": 0, "y": 0, "pts": "390,290 474,290", "op": 0}, {"id": "b2", "type": "beam", "x": 0, "y": 0, "pts": "732,290 854,290", "op": 0}, {"id": "bx", "type": "beam", "x": 0, "y": 0, "pts": "1040,476 1040,528 255,528 255,394", "tone": "bad", "label": "never", "lx": 650, "ly": 528, "lfs": 15, "op": 0}, {"id": "rule", "type": "text", "x": 250, "y": 418, "w": 580, "text": "*Truth* in code. *Pixels* from a model. *One way only.*", "fs": 25, "align": "center", "box": "acc", "op": 0}], "beats": [{"cap": "The engine holds the truth. Every object, rule and position is code that you can read and test.", "src": "§2.1"}, {"cap": "Each step, the engine sends only shapes to the painter: a depth map. No colors. No textures.", "src": "§2.2", "set": {"eng": {"on": false}, "dep": {"op": 1}, "b1": {"op": 1}}}, {"cap": "A video model paints the frame from these shapes. One reference photo sets the look.", "src": "§2.2", "set": {"tv": {"op": 1}, "l2": {"op": 1}, "b2": {"op": 1}}}, {"cap": "Nothing goes back. A bad frame cannot change the truth. It can only show it badly.", "src": "§2.1", "set": {"bx": {"op": 1}}}, {"cap": "That is the whole idea. The reliable part owns the state. The creative part only draws it.", "kind": "ours", "set": {"rule": {"op": 1}}}]}, {"title": "You already know this pattern", "actors": [{"id": "srv", "type": "card", "x": 60, "y": 190, "s": 1.2, "w": 230, "h": 64, "icon": "gear", "label": "Game server", "sub": "holds the true state"}, {"id": "c1", "type": "tv", "x": 50, "y": 330, "s": 0.85, "w": 170, "h": 100, "show": "paint", "cx": 0.25, "label": "player 1"}, {"id": "c2", "type": "tv", "x": 270, "y": 330, "s": 0.85, "w": 170, "h": 100, "show": "paint", "cx": 0.55, "label": "player 2"}, {"id": "b1", "type": "beam", "x": 0, "y": 0, "pts": "130,270 130,326"}, {"id": "b2", "type": "beam", "x": 0, "y": 0, "pts": "240,270 340,326"}, {"id": "tb", "type": "table", "x": 540, "y": 175, "w": 690, "fs": 19, "hfs": 15, "rpad": 12, "upto": 0, "ghost": true, "cols": "1fr 1.6fr", "head": ["In this paper", "In an online game"], "rows": [{"c": ["Game engine", "The server: it owns the true state"]}, {"c": ["Depth map", "What the server sends: shapes only"]}, {"c": ["Video model", "The screen that paints the scene"]}, {"c": ["Agent", "The player, who sees only the screen"]}, {"c": ["Playbook", "The wiki the next player reads first"]}]}], "beats": [{"cap": "Think of an online game. The server holds the true game state. Each player’s screen only draws it.", "kind": "ours", "set": {"tb": {"upto": 1}}}, {"cap": "The engine is the server. The depth map is what the server sends. The video model is the screen.", "kind": "ours", "set": {"tb": {"upto": 3}}}, {"cap": "The agent is the player. It sees only its screen. The playbook is the wiki the next player reads.", "kind": "ours", "set": {"tb": {"upto": 5}}}]}, {"title": "Take this home", "actors": [{"id": "db", "type": "db", "x": 70, "y": 210, "s": 1.25, "label": "source of truth", "on": true}, {"id": "nn", "type": "card", "x": 250, "y": 228, "s": 1.15, "w": 200, "h": 64, "icon": "net", "label": "Generative model", "sub": "renders a view"}, {"id": "tv", "type": "tv", "x": 545, "y": 190, "s": 0.95, "w": 180, "h": 110, "show": "paint", "label": "what users see"}, {"id": "b1", "type": "beam", "x": 0, "y": 0, "pts": "192,264 244,264"}, {"id": "b2", "type": "beam", "x": 0, "y": 0, "pts": "482,264 540,264"}, {"id": "bx", "type": "beam", "x": 0, "y": 0, "pts": "636,326 636,410 222,410 222,300 196,300", "tone": "bad", "label": "never writes back", "lx": 430, "ly": 410, "lfs": 14, "op": 0}, {"id": "ls", "type": "list", "x": 790, "y": 170, "w": 440, "upto": 0, "stagger": true, "fs": 20, "sfs": 16, "tfw": 600, "gap": 22, "mark": "dot", "mk": 18, "mt": 5, "title": "Where it fits (our examples)", "tfs": 16, "items": [{"t": "Chat over account data", "s": "Read numbers from the database. The model only writes the sentence."}, {"t": "Generated UI", "s": "App state stays in your store. The model only lays out the screen."}, {"t": "AI game characters", "s": "Rules stay in the engine. The model only makes voice and visuals."}]}, {"id": "test", "type": "text", "x": 70, "y": 452, "w": 660, "text": "*The test:* if the model outputs garbage, does your data stay correct?", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "Use the same split in your own product. Keep the source of truth in code or a database.", "kind": "ours"}, {"cap": "Let the generative model render a view of it. Never let the model write back.", "kind": "ours", "set": {"bx": {"op": 1}}}, {"cap": "This fits many products that put a model in front of real data.", "kind": "ours", "set": {"ls": {"upto": 3}}, "read": 5}, {"cap": "Ask one question. If the model outputs garbage, does your data stay correct? If yes, you have the split right.", "kind": "ours", "set": {"test": {"op": 1}}}]}]}, {"n": "03", "name": "How it works", "short": "How it works", "lede": "The loop, building a world, the painter, its training, exact replay, and rounds of practice.", "scenes": [{"title": "One step of the loop", "actors": [{"id": "eng", "type": "card", "x": 60, "y": 150, "s": 1.25, "w": 210, "h": 126, "icon": "gear", "label": "Game engine", "sub": "the state is code", "fill": "code", "lines": ["crate.x = 1.0", "robot.x = 0.2", "wall.x  = 3.0"], "on": true}, {"id": "dep", "type": "card", "x": 470, "y": 150, "s": 1.25, "w": 180, "h": 126, "icon": "depth", "label": "Depth map", "sub": "shapes only", "fill": "depth", "op": 0.15}, {"id": "ren", "type": "card", "x": 870, "y": 150, "s": 1.25, "w": 210, "h": 126, "icon": "net", "label": "Video model", "sub": "paints the frame", "fill": "list", "lines": ["reads: depth map", "+ recent frames", "+ reference photo"], "op": 0.15}, {"id": "gw", "type": "ground", "x": 60, "y": 540, "w": 380, "look": "wire"}, {"id": "cw", "type": "crate", "x": 170, "y": 470, "s": 1.25, "look": "wire"}, {"id": "ww", "type": "wall", "x": 370, "y": 390, "s": 1.25, "look": "wire"}, {"id": "lw", "type": "text", "x": 60, "y": 552, "w": 380, "text": "the world, as code", "fs": 15, "tone": "muted"}, {"id": "gp", "type": "ground", "x": 660, "y": 540, "w": 560, "look": "paint", "op": 0.15}, {"id": "cp", "type": "crate", "x": 780, "y": 470, "s": 1.25, "look": "paint", "op": 0.15}, {"id": "wp", "type": "wall", "x": 1000, "y": 390, "s": 1.25, "look": "paint", "op": 0.15}, {"id": "lp", "type": "text", "x": 660, "y": 552, "w": 380, "text": "what the agent sees", "fs": 15, "tone": "muted", "op": 0.15}, {"id": "rob", "type": "robot", "x": 1110, "y": 393, "s": 1.6, "lookdir": "l", "op": 0}, {"id": "bE", "type": "beam", "x": 0, "y": 0, "pts": "326,228 466,228", "op": 0}, {"id": "bD", "type": "beam", "x": 0, "y": 0, "pts": "699,228 866,228", "op": 0}, {"id": "bR", "type": "beam", "x": 0, "y": 0, "pts": "990,312 850,462", "label": "frame", "lx": 930, "ly": 384, "lfs": 14, "op": 0}, {"id": "bA", "type": "beam", "x": 0, "y": 0, "pts": "1166,386 1166,350 190,350 190,312", "label": "push(crate, +1.0)", "lx": 600, "ly": 350, "lfs": 15, "op": 0}, {"id": "bX", "type": "beam", "x": 0, "y": 0, "pts": "652,520 450,520", "tone": "bad", "op": 0}, {"id": "xb", "type": "badge", "x": 470, "y": 404, "text": "frames never write the state", "tone": "bad", "s": 1.2, "op": 0}], "beats": [{"cap": "The world is a program. The engine stores every object as a variable.", "src": "§2.1"}, {"cap": "Each step, the engine draws only shapes from the camera: a depth map. No textures and no 3D art.", "src": "§2.2", "set": {"eng": {"on": false}, "dep": {"op": 1, "on": true}, "bE": {"op": 1}}}, {"cap": "The video model paints the frame from these shapes, its recent frames and the reference photo.", "src": "§2.2, §3", "set": {"dep": {"on": false}, "ren": {"op": 1, "on": true}, "bD": {"op": 1}, "bR": {"op": 1}, "gp": {"op": 1}, "cp": {"op": 1}, "wp": {"op": 1}, "lp": {"op": 1}}}, {"cap": "The agent sees only the painted frame. It acts by sending a short Python program to the engine.", "src": "§5.3", "set": {"ren": {"on": false}, "rob": {"op": 1, "think": true}, "bA": {"op": 1}}}, {"cap": "The engine moves the crate in the state. The next depth map shows it. The painter draws it in its new place.", "src": "§2.1", "set": {"rob": {"think": false}, "eng": {"on": true, "lines": ["crate.x = 2.0", "robot.x = 0.2", "wall.x  = 3.0"], "hl": 0}, "cw": {"x": 260}, "cp": {"x": 880}, "bR": {"pts": "990,312 925,462", "lx": 966, "ly": 384}}}, {"cap": "Nothing goes back. Frames never change the state, so the rules stay exact even if the video drifts.", "src": "§2.1", "set": {"eng": {"on": false}, "bX": {"op": 1}, "xb": {"op": 1}}}]}, {"k": "scene", "title": "Building a world from one photo", "h": 400, "actors": [{"id": "ph", "type": "card", "x": 24, "y": 24, "w": 180, "h": 130, "icon": "photo", "label": "One photo", "sub": "look + layout", "fill": "paint"}, {"id": "t1", "type": "card", "x": 226, "y": 24, "w": 190, "h": 56, "icon": "mask", "label": "SAM 3", "sub": "object masks", "op": 0}, {"id": "t2", "type": "card", "x": 226, "y": 90, "w": 190, "h": 56, "icon": "depth", "label": "Depth Anything 3", "sub": "depth, camera", "op": 0, "dl": 0.15}, {"id": "t3", "type": "card", "x": 430, "y": 24, "w": 190, "h": 56, "icon": "box3d", "label": "WildDet3D", "sub": "3D boxes", "op": 0, "dl": 0.3}, {"id": "t4", "type": "card", "x": 430, "y": 90, "w": 190, "h": 56, "icon": "mesh", "label": "SAM 3D", "sub": "object meshes", "op": 0, "dl": 0.45}, {"id": "code", "type": "card", "x": 636, "y": 24, "w": 180, "h": 170, "icon": "code", "label": "Scene program", "sub": "written by the agent", "fill": "code", "lines": ["table = box(1.2, 0.8)", "chair = mesh(\"chair\")", "chair.y = 0.45", "check_contact()"], "op": 0}, {"id": "rob", "type": "robot", "x": 60, "y": 268, "label": "coding agent"}, {"id": "g", "type": "ground", "x": 300, "y": 360, "w": 516, "look": "wire", "op": 0}, {"id": "tab", "type": "block", "x": 400, "y": 300, "w": 160, "h": 60, "label": "table", "look": "wire", "op": 0}, {"id": "ch", "type": "block", "x": 610, "y": 236, "w": 60, "h": 60, "label": "chair", "look": "wire", "op": 0}, {"id": "cam1", "type": "icon", "x": 310, "y": 206, "icon": "camera", "label": "probe", "op": 0}, {"id": "cam2", "type": "icon", "x": 748, "y": 236, "icon": "camera", "label": "probe", "op": 0, "dl": 0.2}, {"id": "bC", "type": "beam", "x": 0, "y": 0, "pts": "700,196 650,232", "op": 0}, {"id": "fb", "type": "badge", "x": 470, "y": 200, "text": "chair floats ✕", "tone": "bad", "op": 0}, {"id": "okb", "type": "badge", "x": 480, "y": 200, "text": "contact ✓", "tone": "ok", "op": 0}], "beats": [{"cap": "To build a world, start from one photo. The photo gives the look and a rough layout.", "src": "§2.3", "set": {"ph": {"on": true}}}, {"cap": "A coding agent runs vision tools on the photo: object masks, depth and camera, 3D boxes and object shapes.", "src": "§2.3", "set": {"ph": {"on": false}, "rob": {"think": true}, "t1": {"op": 1}, "t2": {"op": 1}, "t3": {"op": 1}, "t4": {"op": 1}}}, {"cap": "From these results, it writes the scene program. Rough shapes are enough.", "src": "§2.3", "set": {"code": {"op": 1, "on": true}, "g": {"op": 1}, "tab": {"op": 1}, "ch": {"op": 1}, "bC": {"op": 1}}}, {"cap": "It renders test views and asks the engine: do objects touch? Do they collide? Here, the chair floats.", "src": "§2.3", "set": {"code": {"on": false, "hl": 3}, "cam1": {"op": 1}, "cam2": {"op": 1}, "fb": {"op": 1}, "rob": {"think": false}, "bC": {"op": 0}}}, {"cap": "It fixes the code and runs the checks again. The checks read the state, not the pixels.", "src": "§2.3", "set": {"code": {"lines": ["table = box(1.2, 0.8)", "chair = mesh(\"chair\")", "chair.y = 0.0", "check_contact()"], "hl": 2, "on": true}, "ch": {"y": 300}, "fb": {"op": 0}, "okb": {"op": 1}}}, {"cap": "You can also start from text. Then an image editor makes the reference photo. In the paper, each world was still built one at a time.", "src": "§2.3, §7", "set": {"code": {"on": false}}}], "zoom": 1.18, "ox": 144, "oy": 140}, {"k": "scene", "title": "The painter: 16 frames at a time", "h": 390, "actors": [{"id": "l1", "type": "label", "x": 24, "y": 46, "text": "geometry in · depth from the engine", "fs": 12}, {"id": "dep", "type": "strip", "x": 584, "y": 40, "pat": "dddd", "fw": 36, "fh": 30, "gap": 4}, {"id": "l2", "type": "label", "x": 24, "y": 126, "text": "memory · 5 pinned + 44 recent frames (fewer drawn)", "fs": 12, "op": 0}, {"id": "mem", "type": "strip", "x": 24, "y": 150, "pat": "PPPPPpppppppp.", "fw": 36, "fh": 30, "gap": 4, "texts": ["ref"], "op": 0}, {"id": "new", "type": "strip", "x": 584, "y": 150, "pat": "....", "fw": 36, "fh": 30, "gap": 4}, {"id": "l3", "type": "label", "x": 24, "y": 262, "text": "video out · 16 new frames", "fs": 12, "op": 0}, {"id": "out", "type": "strip", "x": 584, "y": 256, "pat": "....", "fw": 36, "fh": 30, "gap": 4}, {"id": "b1", "type": "beam", "x": 0, "y": 0, "pts": "662,74 662,144", "op": 0}, {"id": "b2", "type": "beam", "x": 0, "y": 0, "pts": "662,184 662,250", "op": 0}, {"id": "drop", "type": "label", "x": 204, "y": 200, "text": "oldest frames drop out", "fs": 11, "tone": "bad", "op": 0}, {"id": "fps", "type": "badge", "x": 584, "y": 300, "text": "36.5 fps · one H100", "tone": "acc", "op": 0}], "beats": [{"cap": "The painter gets the depth map first. It is small: 28 tokens per latent frame, about 7% of the input (our arithmetic).", "src": "§3.2, App. A"}, {"cap": "It also looks back at 49 frames: 5 fixed frames, starting with the reference photo, and the 44 newest.", "src": "§3.5, App. A", "set": {"l2": {"op": 1}, "mem": {"op": 1}}}, {"cap": "Shapes and image tokens go through one Transformer together. In 4 steps it paints the next 16 frames.", "src": "§3.2, App. A", "set": {"b1": {"op": 1}, "new": {"pat": "NNNN"}, "b2": {"op": 1}, "out": {"pat": "pppp"}, "l3": {"op": 1}}}, {"cap": "The new frames join the memory and the oldest leave. Memory size stays fixed, so each block costs the same.", "src": "§3.5", "set": {"mem": {"pat": "PPPPPxxxxpppp."}, "new": {"pat": "pppp"}, "drop": {"op": 1}, "b1": {"op": 0}, "b2": {"op": 0}}}, {"cap": "Result: 36.5 frames per second on one H100. Frames come in blocks of 16, so an action shows after at least one block, about 0.44 s.", "src": "§3.5, §4.3", "set": {"fps": {"op": 1}}}], "zoom": 1.3, "ox": 94, "oy": 135}, {"title": "Training the painter in 3 stages", "actors": [{"id": "st1", "type": "block", "x": 110, "y": 440, "w": 320, "h": 80, "color": "#E6EEFB"}, {"id": "st2", "type": "block", "x": 450, "y": 360, "w": 320, "h": 160, "color": "#E6EEFB", "op": 0.35}, {"id": "st3", "type": "block", "x": 790, "y": 280, "w": 320, "h": 240, "color": "#E6EEFB", "op": 0.35}, {"id": "t1", "type": "text", "x": 126, "y": 452, "w": 290, "text": "*1 · Follow the shapes*", "fs": 19}, {"id": "d1", "type": "text", "x": 126, "y": 482, "w": 290, "text": "paints frames that match a depth map", "fs": 15, "tone": "muted"}, {"id": "t2", "type": "text", "x": 466, "y": 372, "w": 290, "text": "*2 · Use only the past*", "fs": 19, "op": 0.35}, {"id": "d2", "type": "text", "x": 466, "y": 402, "w": 290, "text": "paints block by block, so actions can arrive at any time", "fs": 15, "tone": "muted", "op": 0.35}, {"id": "t3", "type": "text", "x": 806, "y": 292, "w": 290, "text": "*3 · Fast and sharp*", "fs": 19, "op": 0.35}, {"id": "d3", "type": "text", "x": 806, "y": 322, "w": 290, "text": "4 steps per block; a teacher and a realism critic", "fs": 15, "tone": "muted", "op": 0.35}, {"id": "rob", "type": "robot", "x": 230, "y": 330, "s": 1.2}, {"id": "vid", "type": "icon", "x": 140, "y": 210, "icon": "film", "label": "real videos", "s": 1.2}, {"id": "dt", "type": "icon", "x": 300, "y": 210, "icon": "depth", "label": "depth tool", "s": 1.2, "op": 0}, {"id": "bb", "type": "beam", "x": 0, "y": 0, "pts": "204,240 294,240", "op": 0}, {"id": "gpu", "type": "icon", "x": 1110, "y": 160, "icon": "gpu", "label": "32 × H100", "s": 1.2, "op": 0}], "beats": [{"cap": "Stage 1 starts from a pretrained video model (Cosmos 3-Nano). It learns to paint frames that follow a depth or normal map.", "src": "§3.2"}, {"cap": "The training data is real video. A depth tool extracts the shapes, so no hand labels are needed. Blur and noise make engine shapes and real shapes look alike.", "src": "§2.2, §3.2", "set": {"dt": {"op": 1}, "bb": {"op": 1}}}, {"cap": "Stage 2 makes it causal. Each block of frames uses only the past, so new actions can enter at any block.", "src": "§3.3", "set": {"rob": {"x": 570, "y": 250}, "st2": {"op": 1}, "t2": {"op": 1}, "d2": {"op": 1}}}, {"cap": "Stage 3 makes it fast: 4 steps per block. A teacher model and a realism critic, trained on real video, keep frames sharp.", "src": "§3.4", "set": {"rob": {"x": 910, "y": 170}, "st3": {"op": 1}, "t3": {"op": 1}, "d3": {"op": 1}}}, {"cap": "All three stages train on 32 H100 GPUs.", "src": "App. A, Table 5", "set": {"gpu": {"op": 1}}}]}, {"title": "Exact replay · why the history must be trained", "actors": [{"id": "ml", "type": "text", "x": 150, "y": 156, "w": 900, "text": "memory (KV cache): the keys and values each finished block leaves for later blocks", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "kv", "type": "tokens", "x": 150, "y": 190, "words": ["KV 1", "KV 2", "KV 3", "KV 4"], "tw": 150, "th": 44, "gap": 40, "fs": 16, "upto": 0}, {"id": "w0", "type": "beam", "x": 0, "y": 0, "pts": "225,366 225,238", "tone": "muted", "op": 0}, {"id": "w1", "type": "beam", "x": 0, "y": 0, "pts": "415,366 415,238", "tone": "muted", "op": 0}, {"id": "w2", "type": "beam", "x": 0, "y": 0, "pts": "605,366 605,238", "tone": "muted", "op": 0}, {"id": "w3", "type": "beam", "x": 0, "y": 0, "pts": "795,366 795,238", "tone": "muted", "op": 0}, {"id": "r0", "type": "beam", "x": 0, "y": 0, "pts": "265,238 375,366", "tone": "muted", "op": 0}, {"id": "r1", "type": "beam", "x": 0, "y": 0, "pts": "455,238 565,366", "tone": "muted", "op": 0}, {"id": "r2", "type": "beam", "x": 0, "y": 0, "pts": "645,238 755,366", "tone": "muted", "op": 0}, {"id": "bl", "type": "tokens", "x": 150, "y": 370, "words": ["block 1", "block 2", "block 3", "block 4"], "tw": 150, "th": 50, "gap": 40, "fs": 17, "upto": 1}, {"id": "loss", "type": "badge", "x": 722, "y": 470, "text": "loss on block 4", "tone": "bad", "s": 1.15, "op": 0}, {"id": "g", "type": "beam", "x": 0, "y": 0, "pts": "795,466 795,424", "op": 0}, {"id": "cut", "type": "beam", "x": 0, "y": 0, "pts": "765,366 625,240", "tone": "bad", "label": "gradient stops ✕", "lfs": 13, "lx": 700, "ly": 300, "op": 0}, {"id": "cost", "type": "text", "x": 150, "y": 530, "w": 900, "text": "One long differentiable pass would keep every block’s cache-writing graph in memory.", "fs": 18, "box": "plain", "op": 0}], "beats": [{"cap": "Stage 3 trains the painter on its own long runs. It writes the video block by block.", "src": "§3.4", "set": {"kv": {"upto": 1}, "w0": {"op": 1}}}, {"cap": "Each finished block leaves keys and values in a memory, the KV cache. Every later block reads from it.", "src": "§3.4.2", "set": {"kv": {"upto": 4}, "bl": {"upto": 4}, "ml": {"op": 1}, "w0": {"op": 1}, "w1": {"op": 1}, "w2": {"op": 1}, "w3": {"op": 1}, "r0": {"op": 1}, "r1": {"op": 1}, "r2": {"op": 1}}}, {"cap": "Say block 4 comes out wrong. Its loss trains how block 4 is predicted from the cache.", "src": "§3.4.2", "set": {"bl": {"on": [3]}, "loss": {"op": 1}, "g": {"op": 1}}}, {"cap": "But in standard Self Forcing the cache is detached. The loss never reaches the step that wrote the keys and values, so the model never learns to write better history.", "src": "§3.4.2", "set": {"cut": {"op": 1}}}, {"cap": "Keeping that step differentiable in one long serial pass would carry a large memory cost.", "src": "§3.4.2", "set": {"cost": {"op": 1}}}]}, {"title": "Exact replay · record, then replay", "actors": [{"id": "la", "type": "text", "x": 48, "y": 172, "w": 240, "text": "pass 1 · no gradients", "fs": 16, "fw": 600}, {"id": "ra", "type": "cells", "x": 300, "y": 160, "pat": "bbbb", "cw": 150, "ch": 44, "gap": 30, "texts": ["block 1", "block 2", "block 3", "block 4"]}, {"id": "rec", "type": "text", "x": 300, "y": 214, "w": 690, "text": "records per block: its input at the last denoising step, and its clean output", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "lb", "type": "text", "x": 48, "y": 302, "w": 240, "text": "pass 2 · replay with gradients", "fs": 16, "fw": 600, "op": 0}, {"id": "rb", "type": "cells", "x": 300, "y": 290, "pat": "gggg", "cw": 150, "ch": 44, "gap": 30, "texts": ["block 1", "block 2", "block 3", "block 4"], "op": 0}, {"id": "hist", "type": "text", "x": 300, "y": 410, "w": 690, "text": "recomputes each block’s history keys and values, inside the graph", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "g", "type": "beam", "x": 0, "y": 0, "pts": "915,336 915,392 375,392 375,336", "label": "gradient reaches the cache", "lfs": 13, "lx": 645, "ly": 392, "op": 0}, {"id": "ls", "type": "text", "x": 300, "y": 452, "w": 690, "text": "Losses on the replayed output: *DMD* (frozen stage-1 teacher vs a fake-score model) and *adversarial* (a discriminator on real vs generated clips)", "fs": 17, "box": "acc", "op": 0}], "beats": [{"cap": "The fix splits the work in two. Pass 1 plays the run without gradients and records, per block, its input at the last denoising step and its clean output.", "src": "§3.4.2", "set": {"rec": {"op": 1}}}, {"cap": "Pass 2 replays the run with gradients. It recomputes each block’s history keys and values, with the same visibility pattern as stage 2 training.", "src": "§3.4.2, §3.3", "set": {"lb": {"op": 1}, "rb": {"op": 1}, "hist": {"op": 1}}}, {"cap": "Now the loss on block 4 flows back into how blocks 1 to 3 wrote their keys and values.", "src": "§3.4.2", "set": {"g": {"op": 1}}}, {"cap": "Two losses use the replayed output: DMD pulls it toward the frozen stage-1 teacher, and a discriminator, trained on real and generated clips, pushes it toward real video.", "src": "§3.4.1, §3.4.3", "set": {"ls": {"op": 1}}}]}, {"title": "Exact replay · why the replay must match exactly", "actors": [{"id": "f1", "type": "text", "x": 48, "y": 160, "w": 540, "text": "(0.1 + 0.2) + 0.3 = 0.6000000000000001", "fs": 20, "font": "mono", "box": "plain"}, {"id": "f2", "type": "text", "x": 48, "y": 222, "w": 540, "text": "0.1 + (0.2 + 0.3) = 0.6", "fs": 20, "font": "mono", "box": "plain"}, {"id": "f3", "type": "text", "x": 48, "y": 284, "w": 540, "text": "Same numbers, different order: different last digits (64-bit floats).", "fs": 16, "tone": "muted"}, {"id": "l1", "type": "text", "x": 660, "y": 160, "w": 560, "text": "earlier replay · Self Gradient Forcing", "fs": 15, "fw": 600, "op": 0}, {"id": "c1", "type": "cells", "x": 660, "y": 188, "pat": "w", "cw": 398, "ch": 44, "texts": ["one full-sequence attention call"], "op": 0}, {"id": "d1", "type": "text", "x": 1080, "y": 200, "w": 150, "text": "drifts", "fs": 17, "tone": "bad", "fw": 600, "op": 0}, {"id": "l2", "type": "text", "x": 660, "y": 262, "w": 560, "text": "exact replay · block by block, like pass 1", "fs": 15, "fw": 600, "op": 0}, {"id": "c2", "type": "cells", "x": 660, "y": 290, "pat": "gggg", "cw": 92, "ch": 44, "gap": 10, "texts": ["block 1", "block 2", "block 3", "block 4"], "op": 0}, {"id": "d2", "type": "text", "x": 1080, "y": 302, "w": 150, "text": "bit for bit", "fs": 17, "tone": "ok", "fw": 600, "op": 0}], "beats": [{"cap": "Why “exact” matters: on a computer, the order of additions changes the last digits of a result.", "kind": "ours"}, {"cap": "The earlier method, Self Gradient Forcing, replays everything in one full-sequence attention call. Kernel, shapes and summation order differ from pass 1, so its numbers drift.", "src": "§3.4.2", "set": {"l1": {"op": 1}, "c1": {"op": 1}, "d1": {"op": 1}}}, {"cap": "Exact replay runs block by block, with the same attention kernel, key–value order and call shapes as pass 1. Its numbers match pass 1 bit for bit.", "src": "§3.4.2", "set": {"l2": {"op": 1}, "c2": {"op": 1}, "d2": {"op": 1}}}]}, {"k": "scene", "title": "Rounds of practice", "h": 380, "actors": [{"id": "task", "type": "card", "x": 24, "y": 24, "w": 180, "h": 116, "icon": "task", "label": "Task file", "sub": "no solution", "fill": "list", "lines": ["goal", "actions", "limits"]}, {"id": "scr", "type": "card", "x": 240, "y": 24, "w": 200, "h": 130, "icon": "film", "label": "Frames only", "sub": "no map, no score", "fill": "paint", "op": 0}, {"id": "ra", "type": "robot", "x": 300, "y": 236, "label": "agent · round r", "op": 0}, {"id": "bub", "type": "bubble", "x": 214, "y": 186, "text": "move(+0.5); look()", "op": 0}, {"id": "clk", "type": "icon", "x": 470, "y": 226, "icon": "clock", "tone": "acc", "label": "world paused", "op": 0}, {"id": "pb", "type": "card", "x": 600, "y": 24, "w": 216, "h": 150, "icon": "book", "label": "Playbook", "sub": "one lesson per file", "fill": "list", "lines": [], "op": 0.3}, {"id": "pg0", "type": "icon", "x": 330, "y": 250, "icon": "page", "op": 0, "dl": 0.0}, {"id": "pg1", "type": "icon", "x": 330, "y": 250, "icon": "page", "op": 0, "dl": 0.25}, {"id": "pg2", "type": "icon", "x": 330, "y": 250, "icon": "page", "op": 0, "dl": 0.5}, {"id": "bP", "type": "beam", "x": 0, "y": 0, "pts": "708,178 708,226", "op": 0}, {"id": "rb", "type": "robot", "x": 673, "y": 236, "label": "fresh agent · round r+1", "op": 0}, {"id": "stamp", "type": "badge", "x": 430, "y": 300, "text": "claims, not truth", "tone": "acc", "op": 0}], "beats": [{"cap": "Each round starts with a task file: the goal, the allowed actions and the limits. It gives no solution.", "src": "§5.3", "set": {"task": {"on": true}}}, {"cap": "The agent sees only frames: no map, no coordinates, no score until the end. It acts with short Python programs. The world waits while it thinks.", "src": "§5.3, App. D", "set": {"task": {"on": false}, "scr": {"op": 1}, "ra": {"op": 1, "think": true}, "bub": {"op": 1}, "clk": {"op": 1}}}, {"cap": "After the game, each agent writes lessons: what it tried, saw and doubts, and what to test next. One lesson per file.", "src": "§5.2–5.3", "set": {"ra": {"think": false}, "bub": {"op": 0}, "pb": {"op": 1, "on": true, "lines": ["tried: …", "saw: …", "doubts: …", "test next: …"]}, "pg0": {"op": 1, "x": 762, "y": 36, "s": 0.8}, "pg1": {"op": 1, "x": 762, "y": 78, "s": 0.8}, "pg2": {"op": 1, "x": 762, "y": 120, "s": 0.8}}}, {"cap": "Next round, fresh agents start with the task file and all earlier lessons. They have no other memory.", "src": "§5.3", "set": {"pb": {"on": false}, "ra": {"op": 0.25}, "scr": {"op": 0.4}, "clk": {"op": 0}, "bP": {"op": 1}, "rb": {"op": 1}, "pg0": {"op": 0}, "pg1": {"op": 0}, "pg2": {"op": 0}}}, {"cap": "Lessons are claims, not facts. The task file tells agents to test a lesson before they trust it.", "src": "App. D", "set": {"stamp": {"op": 1}, "rb": {"think": true}}}], "zoom": 1.25, "ox": 115, "oy": 140}]}, {"n": "04", "name": "Evidence", "short": "Evidence", "lede": "Four tests. Each one checks one claim.", "scenes": [{"title": "How they tested it", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 160, "w": 1184, "fs": 18, "hfs": 15, "rpad": 13, "upto": 0, "ghost": true, "cols": "1fr 1.5fr 1.9fr 1.3fr", "head": ["Test", "Question", "How they measured", "Result"], "rows": [{"c": ["Exact replay", "Does the training replay match the original run?", "Difference from the original run, on one H100", "0 drift (old: 3.99%)"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Speed", "Is the painter fast enough for live play?", "Milliseconds per 16-frame block, on one H100", "36.5 fps"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Hide-and-seek", "Can agents that see only painted frames learn tool use?", "Rerun of OpenAI 2019; the round when each skill appears", "shelters by round 4, ramps by round 10"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Four new worlds", "Do written lessons help over rounds?", "Each world’s own score; one game per round; 4 rounds", "round 4 beats round 1 in all four"], "tones": [null, null, null, "acc"], "bold": [3]}]}], "beats": [{"cap": "The paper runs four tests. Each test checks one claim. First, the training trick.", "src": "§4.2", "set": {"tb": {"upto": 1}}, "read": 3}, {"cap": "Second, the speed of the painter.", "src": "§4.3", "set": {"tb": {"upto": 2}}, "read": 3}, {"cap": "Third, a famous experiment: hide-and-seek.", "src": "§5.2", "set": {"tb": {"upto": 3}}, "read": 3}, {"cap": "Fourth, four new worlds that test the written lessons.", "src": "§5.4", "set": {"tb": {"upto": 4}}, "read": 3}]}, {"title": "Exact replay: zero drift, same cost", "actors": [{"id": "a", "type": "stat", "x": 48, "y": 170, "w": 300, "v": "3.99%", "l": "drift with Self Gradient Forcing replay", "tone": "bad"}, {"id": "b", "type": "stat", "x": 48, "y": 330, "w": 300, "v": "0", "l": "drift with exact replay (bit for bit)", "tone": "ok", "on": true, "op": 0}, {"id": "tb", "type": "table", "x": 420, "y": 180, "w": 810, "fs": 20, "hfs": 15, "rpad": 15, "upto": 0, "ghost": true, "cols": "1.3fr 1fr 1fr", "align": ["left", "right", "right"], "mono": [1, 2], "head": ["Measure", "Self Gradient Forcing replay", "Exact replay"], "rows": [{"c": ["Drift from the original run", "3.99%", "0"], "tones": [null, "bad", "ok"], "hl": true}, {"c": ["Forward time", "2.95 s", "2.79 s"]}, {"c": ["Peak memory", "50.83 GiB", "50.92 GiB"]}]}, {"id": "su", "type": "text", "x": 420, "y": 420, "w": 810, "text": "Setup: one H100 · 36 layers · 61 latent frames · median of 3 warm runs", "fs": 16, "tone": "muted", "font": "mono"}], "beats": [{"cap": "They replay the same run two ways and compare each with the original run.", "src": "Table 1, §4.2"}, {"cap": "Exact replay removes the drift completely.", "src": "Table 1", "set": {"b": {"op": 1}, "tb": {"upto": 1}}}, {"cap": "It is also slightly faster and uses almost the same memory. The fix is free.", "src": "Table 1", "set": {"tb": {"upto": 3}}, "read": 2}]}, {"title": "Speed: faster than real time on one GPU", "actors": [{"id": "b1", "type": "bars", "x": 48, "y": 165, "w": 580, "title": "Time to paint one block of 16 frames", "sub": "milliseconds, one H100", "lw": 200, "vw": 96, "fs": 17, "bh": 24, "gap": 12, "max": 440, "upto": 0, "rows": [{"n": "Transformer, 4 steps", "v": 414.4, "l": "414.4"}, {"n": "Shape encoding", "v": 10.6, "l": "10.6"}, {"n": "Decoder + transfer", "v": 8.8, "l": "8.8"}, {"n": "Total", "v": 438.8, "l": "438.8", "hl": true}]}, {"id": "b2", "type": "bars", "x": 690, "y": 165, "w": 540, "title": "Paint 16 frames vs play them", "sub": "seconds (playback at 16 fps; our arithmetic)", "lw": 150, "vw": 70, "fs": 17, "bh": 34, "gap": 16, "max": 1.0, "upto": 0, "rows": [{"n": "Paint", "v": 0.44, "l": "0.44 s", "hl": true}, {"n": "Play", "v": 1.0, "l": "1.00 s"}]}, {"id": "s", "type": "stat", "x": 690, "y": 380, "w": 300, "v": "36.5 fps", "l": "painted, at 480 × 832", "on": true, "op": 0}], "beats": [{"cap": "They time each part of one block on one H100, with full memory, over two long runs.", "src": "Table 2, §4.3", "set": {"b1": {"upto": 4}}, "read": 2}, {"cap": "Painting 16 frames takes 0.44 s. Playing them takes 1 s. So the painter runs faster than real time: 36.5 frames per second.", "src": "§4.3", "set": {"b2": {"upto": 2}, "s": {"op": 1}}}]}, {"title": "Hide-and-seek: agents learn to use tools", "actors": [{"id": "g", "type": "ground", "x": 40, "y": 540, "w": 640, "look": "paint"}, {"id": "hid", "type": "robot", "x": 300, "y": 411, "s": 1.4, "body": "#DDF0E4", "label": "hider"}, {"id": "w1", "type": "wall", "x": 90, "y": 372, "s": 1.4, "op": 0.6}, {"id": "w2", "type": "wall", "x": 600, "y": 372, "s": 1.4, "op": 0.6}, {"id": "sk", "type": "robot", "x": 560, "y": 411, "s": 1.4, "body": "#F8DEDE", "lookdir": "l", "label": "seeker"}, {"id": "rp", "type": "ramp", "x": 600, "y": 456, "w": 120, "h": 84, "flip": true, "op": 0.6}, {"id": "tb", "type": "table", "x": 720, "y": 175, "w": 510, "fs": 19, "hfs": 15, "rpad": 14, "upto": 0, "ghost": true, "cols": "1.4fr 1fr 0.9fr", "head": ["Skill", "OpenAI 2019", "This paper"], "rows": [{"c": ["Hiders build shelters", "≈ 25M episodes", "round 4"], "tones": [null, null, "acc"], "bold": [2]}, {"c": ["Seekers use ramps", "≈ 100M episodes", "round 10"], "tones": [null, null, "acc"], "bold": [2]}]}, {"id": "warn", "type": "text", "x": 720, "y": 380, "w": 510, "text": "Different units. Do not divide one column by the other.", "fs": 19, "box": "bad", "op": 0}], "beats": [{"cap": "They rerun OpenAI’s 2019 hide-and-seek. One hider, one seeker, 5 games per round. The agents see only painted frames.", "src": "§5.2"}, {"cap": "By round 4, the hider moves panels to build a shelter.", "src": "§5.2, Table 3", "set": {"w1": {"x": 255, "op": 1}, "w2": {"x": 404, "op": 1}, "tb": {"upto": 1}}}, {"cap": "By round 10, the seeker carries a ramp to the wall to climb over it.", "src": "§5.2, Fig. 10", "set": {"rp": {"x": 436, "op": 1}, "sk": {"x": 450, "y": 327}, "tb": {"upto": 2}}}, {"cap": "The 2019 agents learned from scratch, with true positions. These agents are pretrained and keep written lessons. So this is not a speed-up claim.", "src": "§5.2", "set": {"warn": {"op": 1}}}]}, {"title": "Four new worlds: better by round 4", "actors": [{"id": "m1", "type": "bars", "x": 48, "y": 160, "w": 560, "title": "Companion dog", "sub": "engagement · higher is better", "lw": 80, "vw": 70, "fs": 15, "tfs": 17, "bh": 16, "gap": 5, "max": 20, "upto": 0, "rows": [{"n": "Round 1", "v": 13, "l": "13", "hl": false}, {"n": "Round 2", "v": 14, "l": "14", "hl": false}, {"n": "Round 3", "v": 19, "l": "19", "hl": false}, {"n": "Round 4", "v": 19, "l": "19", "hl": true}]}, {"id": "m2", "type": "bars", "x": 672, "y": 160, "w": 560, "title": "One-lane bridge", "sub": "seconds · lower is better", "lw": 80, "vw": 70, "fs": 15, "tfs": 17, "bh": 16, "gap": 5, "max": 75, "upto": 0, "rows": [{"n": "Round 1", "v": 71, "l": "71", "hl": false}, {"n": "Round 2", "v": 68, "l": "68", "hl": false}, {"n": "Round 3", "v": 45, "l": "45", "hl": false}, {"n": "Round 4", "v": 41, "l": "41", "hl": true}]}, {"id": "m3", "type": "bars", "x": 48, "y": 375, "w": 560, "title": "Herding", "sub": "score out of 100", "lw": 80, "vw": 70, "fs": 15, "tfs": 17, "bh": 16, "gap": 5, "max": 100, "upto": 0, "rows": [{"n": "Round 1", "v": 60, "l": "60", "hl": false}, {"n": "Round 2", "v": 90.1, "l": "90.1", "hl": false}, {"n": "Round 3", "v": 87.6, "l": "87.6", "hl": false}, {"n": "Round 4", "v": 88.3, "l": "88.3", "hl": true}]}, {"id": "m4", "type": "bars", "x": 672, "y": 375, "w": 560, "title": "Quarry loader", "sub": "score out of 100", "lw": 80, "vw": 70, "fs": 15, "tfs": 17, "bh": 16, "gap": 5, "max": 100, "upto": 0, "rows": [{"n": "Round 1", "v": 30, "l": "30", "hl": false}, {"n": "Round 2", "v": 0, "l": "0", "hl": false, "tone": "bad"}, {"n": "Round 3", "v": 30, "l": "30", "hl": false}, {"n": "Round 4", "v": 90.9, "l": "90.9", "hl": true}]}], "beats": [{"cap": "Four new worlds, each with its own goal and score. Agents play 4 rounds and pass lessons forward. One game per round.", "src": "§5.4"}, {"cap": "Round 4 beats round 1 in every world. The quarry loader finishes all 3 jobs in 329 of 360 seconds.", "src": "Table 4, §5.4", "set": {"m1": {"upto": 4}, "m2": {"upto": 4}, "m3": {"upto": 4}, "m4": {"upto": 4}}, "read": 3}, {"cap": "But the results are noisy: the quarry score falls to 0 in round 2. One game per round cannot show how reliable the gain is.", "kind": "ours"}]}]}, {"n": "05", "name": "Using it", "short": "Using it", "lede": "Is it for you? Three ways to use it, the settings, and what breaks.", "scenes": [{"title": "Is it for you?", "actors": [{"id": "use", "type": "list", "x": 48, "y": 165, "w": 560, "upto": 0, "stagger": true, "fs": 20, "gap": 20, "mark": "check", "mk": 30, "title": "Use it when", "ttone": "ok", "tfs": 18, "items": [{"t": "Your agents act from camera images and need many varied worlds."}, {"t": "You need rules you can inspect, reset and replay, but realistic views."}, {"t": "Your scenes can be written as code with rough shapes."}]}, {"id": "skip", "type": "list", "x": 672, "y": 165, "w": 560, "upto": 0, "stagger": true, "fs": 20, "gap": 20, "mark": "cross", "mk": 30, "title": "Skip it when", "ttone": "bad", "tfs": 18, "items": [{"t": "The task depends on color, material or identity. Shapes cannot carry these."}, {"t": "Success depends on fine contact or thin parts seen in frames."}, {"t": "You have no H100-class GPU. One live stream used one H100."}, {"t": "You need proven gains. The agent results are single runs."}]}], "beats": [{"cap": "Use it when your agents learn from camera images and need many testable worlds.", "src": "§1, §2", "set": {"use": {"upto": 3}}, "read": 3}, {"cap": "Skip it when the task needs color or fine detail, or when you have no H100-class GPU.", "src": "§7, §4.3", "set": {"skip": {"upto": 4}}, "read": 4}]}, {"title": "Three ways to use it", "actors": [{"id": "p1t", "type": "text", "x": 48, "y": 162, "w": 380, "text": "Test your agent", "fs": 22, "fw": 600, "op": 0.2}, {"id": "p1w", "type": "text", "x": 48, "y": 196, "w": 380, "text": "You build agents and want realistic, repeatable practice.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "p1", "type": "list", "x": 48, "y": 250, "w": 380, "upto": 0, "ghost": true, "stagger": true, "fs": 18, "gap": 16, "mk": 28, "mfs": 14, "items": [{"t": "Start from the released code and one of its worlds."}, {"t": "Connect your agent: frames in, short Python programs out."}, {"t": "Run rounds with lessons. Keep one run without lessons as a control."}]}, {"id": "p2t", "type": "text", "x": 450, "y": 162, "w": 380, "text": "Write a new world", "fs": 22, "fw": 600, "op": 0.2}, {"id": "p2w", "type": "text", "x": 450, "y": 196, "w": 380, "text": "You need a scene the library does not have.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "p2", "type": "list", "x": 450, "y": 250, "w": 380, "upto": 0, "ghost": true, "stagger": true, "fs": 18, "gap": 16, "mk": 28, "mfs": 14, "items": [{"t": "Write the scene as code with rough shapes. Add a reference photo and a caption."}, {"t": "Check contact, collisions and occlusion in the engine."}, {"t": "Write a task file: goal, actions, limits. No solution."}, {"t": "Accept the world only if it is solvable and a careless plan fails."}]}, {"id": "p3t", "type": "text", "x": 852, "y": 162, "w": 380, "text": "Borrow the idea", "fs": 22, "fw": 600, "op": 0.2}, {"id": "p3w", "type": "text", "x": 852, "y": 196, "w": 380, "text": "Your product puts a generative model in front of real data.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "p3", "type": "list", "x": 852, "y": 250, "w": 380, "upto": 0, "ghost": true, "stagger": true, "fs": 18, "gap": 16, "mk": 28, "mfs": 14, "items": [{"t": "Keep the true state in code or a database."}, {"t": "Let the model only render a view of it."}, {"t": "Pass lessons between runs as small files you can check."}]}], "beats": [{"cap": "Path 1: test your own agent in their worlds. Keep one run without lessons, so you can see what the lessons add.", "src": "§5.3", "set": {"p1t": {"op": 1}, "p1w": {"op": 1}, "p1": {"upto": 3}}, "read": 2}, {"cap": "Path 2: write a new world. Accept it only if it can be solved and a careless plan fails.", "src": "§2.3, §7", "set": {"p2t": {"op": 1}, "p2w": {"op": 1}, "p2": {"upto": 4}}, "read": 3}, {"cap": "Path 3: borrow only the idea. Keep the truth in code and let the model draw it.", "kind": "ours", "set": {"p3t": {"op": 1}, "p3w": {"op": 1}, "p3": {"upto": 3}}, "read": 2}]}, {"title": "Settings that matter", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 160, "w": 1184, "fs": 18, "hfs": 15, "rpad": 12, "upto": 0, "ghost": true, "cols": "1.2fr 1.5fr 2fr 0.6fr", "head": ["Setting", "Paper default", "Why it matters", "Source"], "rows": [{"c": ["Shape input", "depth or normals, mixed in training", "decides what the painter can show", "§2.2"]}, {"c": ["Memory", "5 fixed + 44 recent frames", "longer keeps looks stable but uses memory", "§3.5"]}, {"c": ["Steps per block", "4", "sets the speed", "App. A"]}, {"c": ["Size and rate", "480 × 832 at 16 fps", "the only size tested", "App. A"]}, {"c": ["Hidden from agents", "coordinates, map, live score", "keeps learning honest to pixels", "App. D"]}, {"c": ["Lesson format", "one lesson per Markdown file", "you can check and remove lessons one by one", "§5.2"]}]}], "beats": [{"cap": "The paper does not tune these settings. Treat them as working defaults, not best values.", "kind": "ours", "set": {"tb": {"upto": 3}}, "read": 3}, {"cap": "Start with these values. Change one setting at a time.", "kind": "ours", "set": {"tb": {"upto": 6}}, "read": 4}]}, {"title": "What breaks, and what to do", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 160, "w": 1184, "fs": 17, "hfs": 15, "rpad": 11, "upto": 0, "ghost": true, "cols": "1.3fr 1.9fr 2fr", "head": ["Problem", "Why", "What to do"], "rows": [{"c": ["Shapes cannot carry everything", "Color, material and identity are not in a depth map (§7)", "Put them in the reference photo and caption"]}, {"c": ["Fine detail gets lost", "Small shapes can vanish when the map is shrunk (§7)", "Judge contact in the engine, not from frames"]}, {"c": ["Long gaps change looks", "Appearance can drift after a long occlusion (§7)", "Keep key looks in the reference photo"]}, {"c": ["A frame can disagree with the state", "Painted frames need not match exactly (§6)", "Let agents confirm with small experiments"]}, {"c": ["Lessons can be wrong", "A playbook holds one attempt’s claims (App. D)", "Reset the world and retest before you pass a lesson on"]}, {"c": ["Playbooks keep growing", "Many worlds mean many lessons (§7)", "Store each lesson with its evidence, so you can remove it"]}]}], "beats": [{"cap": "The first three problems come from the shapes. A depth map does not carry color, small parts or long-term looks.", "src": "§7", "set": {"tb": {"upto": 3}}, "read": 3}, {"cap": "The last three come from trust. Check frames and lessons with small tests.", "src": "§6, App. D", "set": {"tb": {"upto": 6}}, "read": 3}]}, {"title": "", "actors": [{"id": "q", "type": "text", "x": 140, "y": 230, "w": 1000, "text": "“Keep the truth in code. Let the model only paint it.”", "font": "serif", "fs": 54, "italic": true, "lh": 1.15, "align": "center"}, {"id": "s", "type": "text", "x": 240, "y": 420, "w": 800, "text": "A wrong frame is a display bug. A wrong state is data corruption.", "fs": 24, "tone": "muted", "align": "center"}], "beats": [{"cap": "The one rule to take from this paper.", "kind": "ours", "dur": 6}]}]}, {"n": "06", "name": "How the authors got there", "short": "Their thinking", "lede": "Six thinking moves behind the design. You can reuse them on your own problems.", "scenes": [{"title": "Six moves from a gap to a design", "actors": [{"id": "trail", "type": "beam", "x": 0, "y": 0, "pts": "146,210 1134,210", "tone": "muted"}, {"id": "n0", "type": "node", "x": 120, "y": 184, "text": "1"}, {"id": "n1", "type": "node", "x": 318, "y": 184, "text": "2"}, {"id": "n2", "type": "node", "x": 515, "y": 184, "text": "3"}, {"id": "n3", "type": "node", "x": 713, "y": 184, "text": "4"}, {"id": "n4", "type": "node", "x": 910, "y": 184, "text": "5"}, {"id": "n5", "type": "node", "x": 1108, "y": 184, "text": "6"}, {"id": "lab", "type": "text", "x": 120, "y": 340, "w": 600, "text": "IN THIS PAPER", "font": "mono", "fs": 14, "tone": "muted", "op": 0}, {"id": "t0", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "See what each option is good at", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p0", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Simulators are good at rules. Video models are good at looks. These strengths come from different parts.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y0", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Write one line per option: what it does well, and which part gives that. If the parts differ, you may keep both.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t1", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Split at the seam, one way only", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p1", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "The engine owns the state. The painter only draws. Nothing flows back.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y1", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Put the reliable part in charge. Let the unreliable part read from it, never write to it.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t2", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Pick a handoff both sides already make", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p2", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Depth maps. Engines export them, and tools extract them from real video. So training pairs need no labels.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y2", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Choose an interface you can get from real data and from your own system. Then training data comes free.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t3", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "One need, one fix", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p3", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Follow the engine: stage 1. Use only the past: stage 2. Be fast and sharp: stage 3 and the serving work.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y3", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* List your must-haves. Give each one its own mechanism, so you can check each one alone.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t4", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Fix only the broken part of what you borrow", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p4", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "They kept Self Forcing. They fixed only its replay drift and added a realism critic.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y4", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Start from the best existing method. Find exactly where it fails. Change only that.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t5", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Rerun a famous experiment", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p5", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "OpenAI’s 2019 hide-and-seek, now with agents that see only painted frames.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y5", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Test on a benchmark people know. Say clearly what the comparison does not measure.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "sum", "type": "list", "x": 120, "y": 272, "w": 1040, "upto": 6, "op": 0, "fs": 22, "gap": 10, "mk": 30, "items": [{"t": "See what each option is good at"}, {"t": "Split at the seam, one way only"}, {"t": "Pick a handoff both sides already make"}, {"t": "One need, one fix"}, {"t": "Fix only the broken part of what you borrow"}, {"t": "Rerun a famous experiment"}]}], "beats": [{"cap": "The paper does not tell the story of the project. It does give its reasoning in order. Here it is as six moves you can reuse.", "kind": "ours"}, {"cap": "Move 1. See what each option is good at.", "src": "§1", "set": {"n0": {"on": true}, "t0": {"op": 1}, "p0": {"op": 1}, "y0": {"op": 1}, "lab": {"op": 1}}, "read": 9}, {"cap": "Move 2. Split at the seam, one way only.", "src": "§2.1", "set": {"n1": {"on": true}, "t1": {"op": 1}, "p1": {"op": 1}, "y1": {"op": 1}, "lab": {"op": 1}, "n0": {"on": false, "done": true}, "t0": {"op": 0}, "p0": {"op": 0}, "y0": {"op": 0}}, "read": 9}, {"cap": "Move 3. Pick a handoff both sides already make.", "src": "§2.2", "set": {"n2": {"on": true}, "t2": {"op": 1}, "p2": {"op": 1}, "y2": {"op": 1}, "lab": {"op": 1}, "n1": {"on": false, "done": true}, "t1": {"op": 0}, "p1": {"op": 0}, "y1": {"op": 0}}, "read": 9}, {"cap": "Move 4. One need, one fix.", "src": "§1, §3", "set": {"n3": {"on": true}, "t3": {"op": 1}, "p3": {"op": 1}, "y3": {"op": 1}, "lab": {"op": 1}, "n2": {"on": false, "done": true}, "t2": {"op": 0}, "p2": {"op": 0}, "y2": {"op": 0}}, "read": 9}, {"cap": "Move 5. Fix only the broken part of what you borrow.", "src": "§3.4", "set": {"n4": {"on": true}, "t4": {"op": 1}, "p4": {"op": 1}, "y4": {"op": 1}, "lab": {"op": 1}, "n3": {"on": false, "done": true}, "t3": {"op": 0}, "p3": {"op": 0}, "y3": {"op": 0}}, "read": 9}, {"cap": "Move 6. Rerun a famous experiment.", "src": "§5.2", "set": {"n5": {"on": true}, "t5": {"op": 1}, "p5": {"op": 1}, "y5": {"op": 1}, "lab": {"op": 1}, "n4": {"on": false, "done": true}, "t4": {"op": 0}, "p4": {"op": 0}, "y4": {"op": 0}}, "read": 9}, {"cap": "Six moves from a gap to a design. This is our reading of the paper’s order, not its history.", "kind": "ours", "read": 4, "set": {"n5": {"on": false, "done": true}, "t5": {"op": 0}, "p5": {"op": 0}, "y5": {"op": 0}, "lab": {"op": 0}, "sum": {"op": 1}}}]}]}, {"n": "07", "name": "Glossary", "short": "Glossary", "lede": "The terms used in this film, in one place.", "scenes": [{"title": "Glossary", "actors": [{"id": "a", "type": "table", "x": 48, "y": 150, "w": 580, "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr", "head": ["Term", "Meaning"], "rows": [{"c": ["Video world model", "A model that paints the next frames of a world from past frames and actions."]}, {"c": ["Simulator / engine", "Software that runs a world’s objects and physics as code."]}, {"c": ["Scene program", "Code that defines a world’s objects, rules and cameras."]}, {"c": ["Reference photo", "One image that sets the world’s look. It stays in memory for the whole run."]}, {"c": ["Depth map", "An image where each pixel holds distance from the camera. Normals hold surface direction."]}, {"c": ["Renderer (painter)", "The video model that turns shapes into realistic frames."]}]}, {"id": "b", "type": "table", "x": 652, "y": 150, "w": 580, "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr", "head": ["Term", "Meaning"], "rows": [{"c": ["Block-causal", "Making video in short blocks, each from earlier blocks only."]}, {"c": ["KV cache", "Stored attention data for earlier frames, so they are not computed again."]}, {"c": ["Distillation", "Training a fast student model to copy a slower teacher."]}, {"c": ["Self Forcing", "Training a video model on its own output history, as it runs in use."]}, {"c": ["Playbook", "Written lessons from earlier rounds, one Markdown file per lesson."]}, {"c": ["Task file", "The brief for each round: goal, actions and limits, with no solution."]}]}], "beats": [{"cap": "Paper: arxiv.org/abs/2610.12374 · Code: github.com/MirroS-Lab/AgentGarten", "kind": "none", "dur": 14}]}]}]};
+    return this._R;
+  }
+
+
+  sceneKit(type, p, T) {
+    var P = [];
+    var base = function (o) {
+      var d = { isRect: false, isPath: false, isCirc: false, isText: false, isPoly: false, x: 0, y: 0, w: 0, h: 0, rx: 0, d: '', cx: 0, cy: 0, r: 0, pts: '', fill: 'none', stroke: 'none', sw: 0, dash: 'none', op: 1, anim: 'none', fs: 12, fw: 400, anchor: 'start', txt: '', font: T.body, tf: '', tdl: 0 };
+      for (var k in o) { if (o[k] !== undefined) d[k] = o[k]; }
+      P.push(d); return d;
+    };
+    var rect = function (x, y, w, h, o) { o = o || {}; o.isRect = true; o.x = x; o.y = y; o.w = Math.max(0, w); o.h = Math.max(0, h); return base(o); };
+    var path = function (d, o) { o = o || {}; o.isPath = true; o.d = d; return base(o); };
+    var circ = function (cx, cy, r, o) { o = o || {}; o.isCirc = true; o.cx = cx; o.cy = cy; o.r = r; return base(o); };
+    var text = function (x, y, t2, o) { o = o || {}; o.isText = true; o.x = x; o.y = y; o.txt = t2 == null ? '' : String(t2); if (o.fill === undefined) o.fill = T.ink; return base(o); };
+    var poly = function (pts, o) { o = o || {}; o.isPoly = true; o.pts = pts; return base(o); };
+    var I = {
+      gear: 'M12 8a4 4 0 1 0 .01 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1',
+      net: 'M5 4a2 2 0 1 0 .01 0 M5 16a2 2 0 1 0 .01 0 M19 10a2 2 0 1 0 .01 0 M12 4a2 2 0 1 0 .01 0 M12 16a2 2 0 1 0 .01 0 M7 6h3 M7 18h3 M14 7l3 4 M14 17l3-4 M7 7l3 9',
+      photo: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 8a1.5 1.5 0 1 0 .01 0',
+      depth: 'M4 5h16 M4 9h16 M4 13h16 M4 17h16',
+      code: 'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16',
+      task: 'M6 3h12v18H6z M9 8h6 M9 12h6 M9 16h4',
+      mask: 'M12 3a4 4 0 1 0 .01 0 M5 21c0-4 3-7 7-7s7 3 7 7z',
+      box3d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5',
+      mesh: 'M3 20L12 4l9 16z M7.5 12h9 M7.5 12L12 20l4.5-8',
+      camera: 'M3 8h4l2-3h6l2 3h4v11H3z M12 10a3.5 3.5 0 1 0 .01 0',
+      clock: 'M12 3a9 9 0 1 0 .01 0 M12 7v5l3 2',
+      book: 'M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z',
+      page: 'M6 3h9l4 4v14H6z M15 3v4h4 M9 12h7 M9 16h5',
+      eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 .01 0',
+      eyeoff: 'M3 3l18 18 M10.6 6.1A10 10 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.4 4 M6.6 6.6C3.9 8.4 2 12 2 12s4 6 10 6a9 9 0 0 0 4.4-1.1',
+      gpu: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+      film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+      brush: 'M14 4l6 6-8 8-6-6z M6 12l-3 8 8-3',
+      check: 'M5 12l5 5 9-10', cross: 'M6 6l12 12 M18 6L6 18', pause: 'M9 5v14 M15 5v14', dot: 'M12 11a1 1 0 1 0 .01 0'
+    };
+    var icon = function (name, x, y, k, col, op) { path(I[name] || I.dot, { tf: 'translate(' + x + ' ' + y + ') scale(' + k + ')', stroke: col || T.ink, sw: 1.7 / k, op: op == null ? 1 : op }); };
+    var toneCol = function (tn) { return tn === 'ok' ? T.ok : (tn === 'bad' ? T.bad : (tn === 'acc' ? T.acc : (tn === 'muted' ? T.muted : T.ink))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? T.accSoft : T.card)); };
+    var look = p.look || 'paint', wo = look === 'wire' ? 1 : 0, po = 1 - wo, w, h;
+    if (type === 'robot') {
+      var ex = p.lookdir === 'l' ? -3 : (p.lookdir === 'r' ? 3 : 0), th = !!p.think;
+      rect(20, 82, 10, 10, { rx: 2, fill: T.ink }); rect(40, 82, 10, 10, { rx: 2, fill: T.ink });
+      path('M10 52 L0 67', { stroke: T.ink, sw: 2.6 }); path('M60 52 L70 65', { stroke: T.ink, sw: 2.6 });
+      rect(10, 40, 50, 44, { rx: 12, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(35, 61, 6, { fill: th ? T.acc : T.rule, anim: th ? 'plpulse 1s ease-in-out infinite' : 'none' });
+      rect(15, 8, 40, 32, { rx: 10, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(28 + ex, 24, 3.6, { fill: T.ink }); circ(42 + ex, 24, 3.6, { fill: T.ink });
+      path('M35 8 V0', { stroke: T.ink, sw: 2 }); circ(35, -1, 3.2, { fill: p.col || T.acc });
+      circ(62, -6, 3, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out infinite' : 'none' });
+      circ(70, -15, 4, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .2s infinite' : 'none' });
+      circ(80, -26, 5, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .4s infinite' : 'none' });
+      if (p.label) text(35, 108, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+      w = 70; h = 92;
+    } else if (type === 'ground') {
+      w = p.w || 300; h = 24;
+      path('M0 1 H' + w, { stroke: T.acc, sw: 1.6, dash: '6 5', op: wo });
+      for (var gi = 12; gi < w; gi += 28) path('M' + gi + ' 2 l-9 11', { stroke: T.acc, sw: 1, op: wo * 0.6 });
+      rect(0, 0, w, h, { fill: T.grass, op: po }); rect(0, 0, w, 5, { fill: T.grassTop, op: po });
+    } else if (type === 'crate') {
+      w = h = p.w || 56;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      path('M0 0 L' + w + ' ' + h + ' M' + w + ' 0 L0 ' + h, { stroke: T.acc, sw: 1, dash: '4 4', op: wo });
+      rect(0, 0, w, h, { rx: 3, fill: T.crate, stroke: T.crateEdge, sw: 2, op: po });
+      path('M0 ' + (h / 3) + ' H' + w + ' M0 ' + (2 * h / 3) + ' H' + w + ' M4 4 L' + (w - 4) + ' ' + (h - 4), { stroke: T.crateEdge, sw: 1.3, op: po });
+    } else if (type === 'wall') {
+      w = p.w || 22; h = p.h || 120;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 2, fill: T.wall, stroke: T.wallEdge, sw: 1.5, op: po });
+      var bl = ''; for (var wy = 15; wy < h; wy += 15) bl += 'M0 ' + wy + ' H' + w + ' ';
+      if (bl) path(bl, { stroke: T.wallEdge, sw: 1, op: po * 0.7 });
+    } else if (type === 'block') {
+      w = p.w || 80; h = p.h || 40;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 4, fill: p.color || '#E9D7B9', stroke: '#A88B5E', sw: 1.5, op: po });
+      if (p.label) text(w / 2, h / 2 + 4, p.label, { anchor: 'middle', fs: 11, fill: wo ? T.acc : '#6E5634' });
+    } else if (type === 'card') {
+      w = p.w || 150; h = p.h || 96;
+      var small = h < 70;
+      if (p.on) rect(-5, -5, w + 10, h + 10, { rx: 16, stroke: T.acc, sw: 2, anim: 'plpulse 1.4s ease-in-out infinite' });
+      rect(0, 0, w, h, { rx: 12, fill: T.card, stroke: p.on ? T.acc : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 12, small ? (h - 20) / 2 : 10, 0.85, p.on ? T.acc : T.ink);
+      text(38, small ? h / 2 - (p.sub ? 1 : -5) : 26, p.label, { fs: 13.5, fw: 600 });
+      if (p.sub) text(38, small ? h / 2 + 14 : h - 12, p.sub, { fs: 11, fill: T.muted });
+      if (!small && p.fill) {
+        var bx = 10, by = 38, bw = w - 20, bh = h - (p.sub ? 62 : 48);
+        if (p.fill === 'depth') { for (var di = 0; di < 6; di++) rect(bx, by + di * bh / 6, bw, bh / 6 + 0.6, { fill: T.depth[di] }); }
+        else if (p.fill === 'paint') { rect(bx, by, bw, bh, { rx: 4, fill: T.sky }); circ(bx + bw - 18, by + 14, 8, { fill: T.sun }); rect(bx, by + bh * 0.72, bw, bh * 0.28, { fill: T.grass }); }
+        else if (p.fill === 'code' || p.fill === 'list') {
+          (p.lines || []).forEach(function (ln, li) {
+            if (li === p.hl) rect(bx - 3, by + li * 18 - 2, bw + 6, 18, { rx: 3, fill: T.accSoft });
+            text(bx, by + 11 + li * 18, ln, { fs: 11.5, font: p.fill === 'code' ? T.mono : T.body, fill: li === p.hl ? T.acc : T.ink });
+          });
+        }
+      }
+    } else if (type === 'icon') {
+      w = 48; h = 48;
+      rect(0, 0, 48, 48, { rx: 12, fill: T.card, stroke: p.tone ? toneCol(p.tone) : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 9, 9, 1.25, p.tone ? toneCol(p.tone) : T.ink);
+      if (p.label) text(24, 66, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+    } else if (type === 'badge') {
+      var bt = String(p.text || ''); w = Math.round(bt.length * 7.3 + 30); h = 32;
+      rect(0, 0, w, h, { rx: 16, fill: toneBg(p.tone), stroke: toneCol(p.tone), sw: 1.5 });
+      text(w / 2, 21, bt, { anchor: 'middle', fs: 13, fw: 600, fill: toneCol(p.tone) });
+    } else if (type === 'bubble') {
+      var bt2 = String(p.text || ''); w = Math.round(bt2.length * 7.4 + 26); h = 34;
+      path('M' + (w - 34) + ' 33 l10 12 l4 -12', { fill: T.card, stroke: T.ink, sw: 1.5 });
+      rect(0, 0, w, h, { rx: 10, fill: T.card, stroke: T.ink, sw: 1.5 });
+      text(13, 22, bt2, { fs: 12.5, font: T.mono });
+    } else if (type === 'label') {
+      var fs = p.fs || 13, lt = String(p.text || ''); w = Math.round(lt.length * fs * 0.56); h = fs + 6;
+      text(p.anchor === 'middle' ? w / 2 : 0, fs, lt, { fs: fs, fw: p.fw || 500, fill: toneCol(p.tone || 'muted'), anchor: p.anchor || 'start' });
+    } else if (type === 'panel') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 14, fill: T.card, stroke: T.ruleDark, sw: 1.2 });
+      text(16, 26, p.label, { fs: 13.5, fw: 600, fill: T.label });
+    } else if (type === 'curtain') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 10, fill: T.bg, op: 0.94 });
+      icon('eyeoff', w / 2 - 14, h / 2 - 34, 1.2, T.muted);
+      text(w / 2, h / 2 + 14, p.text || '', { anchor: 'middle', fs: 13, fill: T.muted });
+    } else if (type === 'cells') {
+      var pat = String(p.pat || ''), cw = p.cw || 26, ch = p.ch || 30, gap = p.gap == null ? 6 : p.gap, tx = p.texts || [];
+      w = Math.max(1, pat.length * (cw + gap) - gap); h = ch;
+      for (var ci = 0; ci < pat.length; ci++) {
+        var c = pat.charAt(ci), cx0 = ci * (cw + gap), st = { rx: 5, fill: T.rule, stroke: 'none', sw: 0, op: 1, anim: 'none', tdl: +(ci * 0.07).toFixed(2), dash: 'none' };
+        if (c === '.') st.op = 0;
+        else if (c === 'P') { st.fill = T.acc; }
+        else if (c === 'r') { st.fill = '#DCE3EE'; st.stroke = '#B5C0D2'; st.sw = 1; }
+        else if (c === 'N') { st.fill = T.acc; st.op = 0.85; st.anim = 'plpulse 1.2s ease-in-out infinite'; }
+        else if (c === 'x') { st.fill = T.rule; st.op = 0.2; }
+        else if (c === 'd') { st.fill = T.depth[1 + ci % 4]; }
+        else if (c === 'p') { st.fill = T.paintCell; }
+        else if (c === 'b') { st.fill = T.card; st.stroke = T.ink; st.sw = 1.5; }
+        else if (c === 'g') { st.fill = '#E3F4EB'; st.stroke = T.ok; st.sw = 1.5; }
+        else if (c === 'w') { st.fill = '#FBE6E6'; st.stroke = T.bad; st.sw = 1.6; st.dash = '7 5'; st.anim = 'plflow .7s linear infinite'; }
+        rect(cx0, 0, cw, ch, st);
+        if (tx[ci]) text(cx0 + cw / 2, ch / 2 + 4, tx[ci], { anchor: 'middle', fs: 12, fill: c === 'P' || c === 'N' ? '#FFFFFF' : T.ink, op: c === '.' ? 0 : 1, tdl: st.tdl });
+      }
+    } else if (type === 'strip') {
+      var sp = String(p.pat || ''), fw = p.fw || 40, fh = p.fh || 30, sg = p.gap == null ? 5 : p.gap;
+      w = Math.max(1, sp.length * (fw + sg) - sg); h = fh;
+      for (var si2 = 0; si2 < sp.length; si2++) {
+        var ch2 = sp.charAt(si2), x0 = si2 * (fw + sg), dl2 = +(si2 * 0.06).toFixed(2), cxr = x0 + fw * (0.12 + (si2 % 8) * 0.06), cs = fw * 0.2;
+        if (ch2 === '.') continue;
+        if (ch2 === 'x') { rect(x0, 0, fw, fh, { rx: 3, fill: T.rule, op: 0.3, tdl: dl2 }); continue; }
+        if (ch2 === 'd') {
+          for (var bd = 0; bd < 4; bd++) rect(x0, bd * fh / 4, fw, fh / 4 + 0.5, { fill: T.depth[2 + bd], tdl: dl2 });
+          rect(cxr, fh * 0.45, cs, fh * 0.38, { fill: T.depth[0], tdl: dl2 });
+          continue;
+        }
+        var faint = ch2 === 'N' ? 0.55 : 1;
+        rect(x0, 0, fw, fh, { fill: T.sky, op: faint, tdl: dl2 });
+        rect(x0, fh * 0.74, fw, fh * 0.26, { fill: T.grass, op: faint, tdl: dl2 });
+        if (ch2 !== 'q') rect(cxr, fh * 0.74 - fh * 0.34, cs, fh * 0.34, { fill: T.crate, stroke: T.crateEdge, sw: 1, op: faint, tdl: dl2 });
+        if (ch2 === 'P') rect(x0, 0, fw, fh, { rx: 3, stroke: T.acc, sw: 2.2 });
+        else if (ch2 === 'N') rect(x0 - 1, -1, fw + 2, fh + 2, { rx: 3, stroke: T.acc, sw: 2, anim: 'plpulse 1.1s ease-in-out infinite' });
+        else rect(x0, 0, fw, fh, { rx: 3, stroke: T.ruleDark, sw: 1 });
+      }
+      if (p.texts) p.texts.forEach(function (tx2, k2) { if (tx2) text(k2 * (fw + sg) + fw / 2, fh + 13, tx2, { anchor: 'middle', fs: 10.5, fill: T.muted }); });
+    } else if (type === 'beam') {
+      w = p.W || 840; h = p.H || 400;
+      var col = toneCol(p.tone || 'acc'), pts = String(p.pts || '0,0 1,1');
+      poly(pts, { stroke: col, sw: 7, op: 0.12 });
+      poly(pts, { stroke: col, sw: 2, dash: '7 6', anim: 'plflow 1s linear infinite' });
+      var pp = pts.trim().split(/\s+/).map(function (q) { return q.split(',').map(Number); });
+      var a2 = pp[pp.length - 1], a1 = pp[pp.length - 2] || [0, 0];
+      var ang = Math.atan2(a2[1] - a1[1], a2[0] - a1[0]) * 180 / Math.PI;
+      path('M0 0 L-11 -6 L-11 6 Z', { tf: 'translate(' + a2[0] + ' ' + a2[1] + ') rotate(' + ang.toFixed(1) + ')', fill: col });
+      if (p.label) {
+        var lfs = p.lfs || 11.5, lw = Math.round(String(p.label).length * lfs * 0.6 + 18), lx = p.lx == null ? (pp[0][0] + a2[0]) / 2 : p.lx, ly = p.ly == null ? (pp[0][1] + a2[1]) / 2 : p.ly;
+        rect(lx - lw / 2, ly - lfs, lw, lfs * 2, { rx: lfs, fill: T.card, stroke: col, sw: 1 });
+        text(lx, ly + lfs * 0.36, p.label, { anchor: 'middle', fs: lfs, fw: 600, fill: col });
+      }
+    } else if (type === 'tv') {
+      var sw2 = p.w || 220, sh2 = p.h || 140, kind = p.show || 'paint', ccx = 8 + sw2 * (p.cx == null ? 0.35 : p.cx), csz = sh2 * 0.26, gy = 8 + sh2 * 0.74;
+      w = sw2 + 16; h = sh2 + 40;
+      rect(0, 0, w, sh2 + 16, { rx: 12, fill: '#1E232B' });
+      if (kind === 'paint' || kind === 'ghost') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.sky });
+        circ(8 + sw2 * 0.85, 8 + sh2 * 0.2, sh2 * 0.08, { fill: T.sun });
+        rect(8, gy, sw2, sh2 * 0.26, { fill: T.grass }); rect(8, gy, sw2, 4, { fill: T.grassTop });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.wall, stroke: T.wallEdge, sw: 1 });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { rx: 2, fill: T.crate, stroke: T.crateEdge, sw: 1.5, op: kind === 'ghost' ? 0.28 : 1 });
+      } else if (kind === 'depth') {
+        for (var dq = 0; dq < 5; dq++) rect(8, 8 + dq * sh2 / 5, sw2, sh2 / 5 + 0.5, { fill: T.depth[1 + dq] });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.depth[1] });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { fill: T.depth[0] });
+      } else if (kind === 'wire') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.card });
+        path('M8 ' + gy + ' H' + (8 + sw2), { stroke: T.acc, sw: 1.5, dash: '6 5' });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { stroke: T.acc, sw: 1.5, dash: '5 4' });
+      } else { rect(8, 8, sw2, sh2, { rx: 4, fill: '#2A303A' }); }
+      if (p.q) text(8 + sw2 / 2, 8 + sh2 / 2 + 16, '?', { anchor: 'middle', fs: 44, fw: 700, fill: T.bad });
+      rect(w / 2 - 6, sh2 + 16, 12, 14, { fill: '#1E232B' }); rect(w / 2 - 34, sh2 + 28, 68, 6, { rx: 3, fill: '#1E232B' });
+      if (p.label) text(w / 2, sh2 + 58, p.label, { anchor: 'middle', fs: p.lfs || 14, fill: T.label, fw: 500 });
+    } else if (type === 'ramp') {
+      w = p.w || 110; h = p.h || 60;
+      path(p.flip ? 'M0 0 L0 ' + h + ' L' + w + ' ' + h + ' Z' : 'M0 ' + h + ' L' + w + ' ' + h + ' L' + w + ' 0 Z', look === 'wire' ? { stroke: T.acc, sw: 1.6, dash: '5 4' } : { fill: '#E9D7B9', stroke: '#A88B5E', sw: 1.6 });
+    } else if (type === 'scale') {
+      var SW = p.w || 380, th2 = (p.tilt || 0) * 14 * Math.PI / 180, LL = SW / 2 - 40, pc = SW / 2;
+      var ends = [[pc - LL * Math.cos(th2), 46 - LL * Math.sin(th2)], [pc + LL * Math.cos(th2), 46 + LL * Math.sin(th2)]];
+      w = SW; h = 250;
+      rect(pc - 5, 46, 10, 170, { fill: T.ink }); rect(pc - 70, 214, 140, 12, { rx: 4, fill: T.ink });
+      path('M' + ends[0][0].toFixed(1) + ' ' + ends[0][1].toFixed(1) + ' L' + ends[1][0].toFixed(1) + ' ' + ends[1][1].toFixed(1), { stroke: T.ink, sw: 6 });
+      circ(pc, 46, 9, { fill: T.acc });
+      [[p.lt, p.ls, p.lc], [p.rt, p.rs, p.rc]].forEach(function (L2, q) {
+        var ex2 = ends[q][0], ey2 = ends[q][1];
+        path('M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 - 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 + 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1), { stroke: T.muted, sw: 1.5 });
+        path('M' + (ex2 - 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Q' + ex2.toFixed(1) + ' ' + (ey2 + 108).toFixed(1) + ' ' + (ex2 + 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Z', { fill: L2[2] ? toneBg(L2[2]) : T.card, stroke: L2[2] ? toneCol(L2[2]) : T.ink, sw: 2 });
+        if (L2[0]) text(ex2, ey2 + 62, L2[0], { anchor: 'middle', fs: 16, fw: 600, fill: L2[2] ? toneCol(L2[2]) : T.ink });
+        if (L2[1]) text(ex2, ey2 + 130, L2[1], { anchor: 'middle', fs: 13, fill: T.muted });
+      });
+    } else if (type === 'db') {
+      w = p.w || 92; h = p.h || 110; var ry = 14;
+      path('M0 ' + ry + ' V' + (h - ry) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h - ry) + ' V' + ry, { fill: p.on ? T.accSoft : T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 ' + w + ' ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 0 ' + ry, { fill: T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + (h * 0.42) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h * 0.42), { stroke: p.on ? T.acc : T.ink, sw: 1.5 });
+      if (p.label) text(w / 2, h + 24, p.label, { anchor: 'middle', fs: p.lfs || 14, fw: 500, fill: T.label });
+    } else if (type === 'node') {
+      var r2 = p.r || 26; w = h = r2 * 2;
+      if (p.on) circ(r2, r2, r2 + 7, { stroke: T.acc, sw: 2, anim: 'plpulse 1.3s ease-in-out infinite' });
+      circ(r2, r2, r2, { fill: p.on ? T.acc : T.card, stroke: p.on || p.done ? T.acc : T.ruleDark, sw: 2 });
+      text(r2, r2 + 6, p.text || '', { anchor: 'middle', fs: p.fs || 18, fw: 600, fill: p.on ? '#FFFFFF' : (p.done ? T.acc : T.muted) });
+    } else if (type === 'tokens') {
+      var words = p.words || [], tw = p.tw || 86, th = p.th || 40, tg = p.gap == null ? 8 : p.gap, onl = p.on || [], upto = p.upto == null ? 999 : p.upto;
+      w = Math.max(1, words.length * (tw + tg) - tg); h = th + (p.subs ? 20 : 0);
+      words.forEach(function (wd, i) {
+        var on = onl.indexOf(i) >= 0, sh = i < upto, x0 = i * (tw + tg), dl = +(i * 0.05).toFixed(2);
+        rect(x0, 0, tw, th, { rx: 8, fill: on ? T.acc : T.card, stroke: on ? T.acc : T.ink, sw: 1.6, op: sh ? 1 : 0.12, tdl: dl });
+        text(x0 + tw / 2, th / 2 + (p.fs || 16) * 0.36, wd, { anchor: 'middle', fs: p.fs || 16, fw: 500, fill: on ? '#FFFFFF' : T.ink, op: sh ? 1 : 0.12, tdl: dl });
+        if (p.subs && p.subs[i]) text(x0 + tw / 2, th + 15, p.subs[i], { anchor: 'middle', fs: 11, fill: T.muted, op: sh ? 1 : 0.12, font: T.mono });
+      });
+    } else if (type === 'arcs') {
+      var n2 = p.n || 6, tw2 = p.tw || 86, tg2 = p.gap == null ? 8 : p.gap, fr = p.from || 0, ws = p.weights || [], AH = p.h || 120;
+      var cc = function (i) { return i * (tw2 + tg2) + tw2 / 2; };
+      w = Math.max(1, n2 * (tw2 + tg2) - tg2); h = 1;
+      for (var j2 = 0; j2 < n2; j2++) {
+        var wv = ws[j2] == null ? 0.2 : ws[j2];
+        if (j2 === fr) { circ(cc(j2), -6, 3 + wv * 6, { fill: T.acc, op: 0.3 + 0.7 * wv }); continue; }
+        var pk = -(AH * (0.35 + 0.65 * Math.abs(fr - j2) / n2));
+        path('M' + cc(fr) + ' -2 Q' + ((cc(fr) + cc(j2)) / 2).toFixed(1) + ' ' + pk.toFixed(1) + ' ' + cc(j2) + ' -2', { stroke: T.acc, sw: +(1 + 7 * wv).toFixed(1), op: +(0.18 + 0.82 * wv).toFixed(2) });
+        if (p.showw) text(cc(j2), -14, wv.toFixed(2), { anchor: 'middle', fs: 13, fw: 600, fill: T.acc, font: T.mono });
+      }
+    } else if (type === 'heat') {
+      var R2 = p.rows || [], C2 = p.cols || [], V2 = p.w || [], cs2 = p.cs || 34, lw2 = R2.length && p.labels !== false ? (p.lw || 74) : 0, tp = C2.length && p.labels !== false ? (p.top || 26) : 0;
+      var nr = V2.length, nc = nr ? V2[0].length : 0;
+      w = lw2 + nc * cs2; h = tp + nr * cs2;
+      if (lw2) R2.forEach(function (rl, i) { text(lw2 - 8, tp + i * cs2 + cs2 / 2 + 4, rl, { anchor: 'end', fs: p.lfs || 12, fill: p.hlr === i ? T.acc : T.label, fw: p.hlr === i ? 600 : 400 }); });
+      if (tp) C2.forEach(function (cl, j) { text(lw2 + j * cs2 + cs2 / 2, tp - 9, cl, { anchor: 'middle', fs: p.lfs || 12, fill: T.label }); });
+      for (var i3 = 0; i3 < nr; i3++) for (var j3 = 0; j3 < nc; j3++) {
+        var vv = V2[i3][j3], blocked = p.mask && j3 > i3, dl3 = +((i3 * nc + j3) * 0.006).toFixed(3);
+        rect(lw2 + j3 * cs2 + 1, tp + i3 * cs2 + 1, cs2 - 2, cs2 - 2, { rx: 3, fill: blocked ? T.rule : (p.tone === 'ink' ? T.ink : T.acc), op: blocked ? 0.55 : +(0.06 + 0.94 * vv).toFixed(2), tdl: dl3 });
+        if (p.showv && !blocked) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, (p.fmt === 'int' ? Math.round(vv * 10) : vv.toFixed(2)).toString().replace(/^0\./, '.'), { anchor: 'middle', fs: p.vfs || 11, fill: vv > 0.5 ? '#FFFFFF' : T.ink, font: T.mono });
+        if (blocked && p.showx) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, '×', { anchor: 'middle', fs: 13, fill: T.muted });
+      }
+      if (p.hlr != null && p.hlr >= 0) rect(lw2 - 2, tp + p.hlr * cs2 - 1, nc * cs2 + 4, cs2 + 2, { rx: 5, stroke: T.ink, sw: 2 });
+    } else if (type === 'plot') {
+      w = p.w || 500; h = p.h || 200;
+      path('M0 ' + (p.axisY == null ? h : p.axisY) + ' H' + w + ' M0 0 V' + h, { stroke: T.ruleDark, sw: 1.2 });
+      (p.series || []).forEach(function (sr) { poly(sr.pts, { stroke: sr.tone === 'acc' ? T.acc : (sr.tone === 'muted' ? T.muted : T.ink), sw: sr.sw || 2.4, dash: sr.dash ? '6 5' : 'none', op: sr.op == null ? 1 : sr.op }); });
+    } else { w = 10; h = 10; }
+    return { w: w, h: h, prims: P };
+  }
+
+
+  /* ---------------- rendering ---------------- */
+  renderVals() {
+    var self = this, S = this.state;
+    var themes = [
+      { name: 'Cloud', page: '#E3E7EE', bg: '#F2F4F7', band: '#F6F8FB', card: '#FFFFFF', ink: '#12161C', muted: '#5E6773', label: '#3E4652', rule: '#DFE3E9', edge: 'rgba(20, 35, 60, 0.10)', track: 'rgba(20, 35, 60, 0.14)', sh: 'rgba(20, 35, 60, 0.20)', shSoft: 'rgba(20, 35, 60, 0.08)', shDeep: 'rgba(20, 35, 60, 0.32)' },
+      { name: 'Sky', page: '#D9E4F3', bg: '#E9F0FA', band: '#F3F7FD', card: '#FFFFFF', ink: '#0F1A2B', muted: '#56657A', label: '#33445C', rule: '#D6E0EE', edge: 'rgba(30, 70, 140, 0.12)', track: 'rgba(30, 70, 140, 0.16)', sh: 'rgba(30, 70, 140, 0.20)', shSoft: 'rgba(30, 70, 140, 0.08)', shDeep: 'rgba(30, 70, 140, 0.30)' },
+      { name: 'Mint', page: '#D8EAE1', bg: '#E8F4EF', band: '#F2F9F6', card: '#FFFFFF', ink: '#0F1F19', muted: '#52685F', label: '#32483F', rule: '#D2E4DB', edge: 'rgba(20, 90, 60, 0.12)', track: 'rgba(20, 90, 60, 0.16)', sh: 'rgba(20, 90, 60, 0.18)', shSoft: 'rgba(20, 90, 60, 0.08)', shDeep: 'rgba(20, 90, 60, 0.28)' },
+      { name: 'Lilac', page: '#E1DDF4', bg: '#EFEDFA', band: '#F6F5FD', card: '#FFFFFF', ink: '#17142A', muted: '#615C7A', label: '#433E5E', rule: '#DFDAF1', edge: 'rgba(70, 50, 150, 0.12)', track: 'rgba(70, 50, 150, 0.16)', sh: 'rgba(70, 50, 150, 0.18)', shSoft: 'rgba(70, 50, 150, 0.08)', shDeep: 'rgba(70, 50, 150, 0.28)' },
+      { name: 'Stone', page: '#DCDDE1', bg: '#EBECEE', band: '#F4F5F6', card: '#FFFFFF', ink: '#141518', muted: '#5D6068', label: '#3B3E45', rule: '#DADCE0', edge: 'rgba(20, 22, 30, 0.10)', track: 'rgba(20, 22, 30, 0.14)', sh: 'rgba(20, 22, 30, 0.20)', shSoft: 'rgba(20, 22, 30, 0.08)', shDeep: 'rgba(20, 22, 30, 0.32)' }
+    ];
+    var chosen = S.theme ?? (this.props.paper ?? 'Cloud');
+    var t = themes.find(function (x) { return x.name === chosen; }) || themes[0];
+    var accent = this.props.accent ?? '#2F5BEA';
+    var hex = accent.replace('#', '');
+    var cr = parseInt(hex.substring(0, 2), 16), cg = parseInt(hex.substring(2, 4), 16), cb = parseInt(hex.substring(4, 6), 16);
+    var rgba = function (a) { return 'rgba(' + cr + ', ' + cg + ', ' + cb + ', ' + a + ')'; };
+    var OK = '#1F9D63', BAD = '#D64545';
+    var tone = function (tn, dflt) { return tn === 'acc' ? accent : (tn === 'ok' ? OK : (tn === 'bad' ? BAD : (tn === 'muted' ? t.muted : (tn === 'label' ? t.label : (dflt || t.ink))))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? rgba(0.1) : t.bg)); };
+    var SANS = "'IBM Plex Sans', sans-serif", SERIF = "'Newsreader', serif", MONO = "'IBM Plex Mono', monospace";
+    var segs = function (txt, base) {
+      var out = [], parts = String(txt == null ? '' : txt).split('*');
+      parts.forEach(function (p, k) { if (p) out.push({ t: p, c: k % 2 ? accent : (base || 'inherit'), fw: k % 2 ? 600 : 'inherit' }); });
+      if (!out.length) out.push({ t: '', c: 'inherit', fw: 'inherit' });
+      return out;
+    };
+    var TK = { acc: accent, accSoft: rgba(0.12), ink: t.ink, muted: t.muted, label: t.label, rule: t.rule, ruleDark: t.muted + '66', card: t.card, bg: t.bg,
+      ok: OK, bad: BAD, sky: '#D3E6F8', grass: '#BFE3C6', grassTop: '#8CC796', crate: '#DDAE73', crateEdge: '#9A6B36', wall: '#C3C9D3', wallEdge: '#8C94A3', sun: '#F5C451',
+      depth: ['#273041', '#3B475C', '#56647B', '#7684A0', '#9AA7C0', '#C3CCDD'], paintCell: '#A9CDEB', body: SANS, mono: MONO };
+
+    var R = this.report(), F = this.film(), LIST = F.list;
+    var si = Math.max(0, Math.min(LIST.length - 1, S.scene)), cur = LIST[si], playing = !!S.playing;
+    var ch = R.chapters[cur.ch], chs = this.chScenes(ch, cur.ch);
+
+    var DY = 70; // captions sit at the top; the picture zone is y 210-650 (scripts author it as 140-580)
+    var actorView = function (a, st, z, ox, oy) {
+      var html = ['text', 'stat', 'table', 'bars', 'list'].indexOf(st.type) >= 0;
+      var vid = a.id, vtype = st.type;
+      var v = { isSvg: false, isText: false, isStat: false, isTable: false, isBars: false, isList: false, x: 0, y: 0, s: 1, op: st.op == null ? 1 : st.op, dl: st.dl || 0, w: 10, h: 10, anim: 'none', prims: [], labels: [] };
+      if (!html) {
+        var kk = self.sceneKit(st.type, Object.assign({ W: 1280, H: 720 }, st), TK);
+        var isBeam = st.type === 'beam';
+        v.isSvg = true; v.w = kk.w; v.h = kk.h;
+        v.prims = kk.prims.filter(function (q) { return !q.isText; });
+        v.labels = kk.prims.filter(function (q) { return q.isText && q.txt !== ''; }).map(function (q) {
+          return { x: q.x, y: +(q.y - q.fs * 0.76).toFixed(1), tx: q.anchor === 'middle' ? -50 : (q.anchor === 'end' ? -100 : 0), txt: q.txt, fs: q.fs, fw: q.fw, font: q.font, fill: q.fill, op: q.op, tdl: q.tdl };
+        });
+        v.x = +(ox + (isBeam ? 0 : (st.x || 0)) * z).toFixed(1); v.y = +(DY + oy + (isBeam ? 0 : (st.y || 0)) * z).toFixed(1); v.s = +((st.s || 1) * z).toFixed(3);
+        v.anim = st.type === 'robot' && st.bob !== false ? 'bob 3.2s ease-in-out infinite' : 'none';
+        v.id = vid; v.type = vtype;
+        return v;
+      }
+      v.x = st.x || 0; v.y = DY + (st.y || 0); v.s = st.s || 1; v.w = st.w || 400;
+      var upto = st.upto == null ? 999 : st.upto;
+      if (st.type === 'text') {
+        v.isText = true; v.fs = st.fs || 22; v.fw = st.fw || (st.font === 'serif' ? 500 : 400); v.font = st.font === 'serif' ? SERIF : (st.font === 'mono' ? MONO : SANS);
+        v.fst = st.italic ? 'italic' : 'normal'; v.lh = st.lh || 1.35; v.color = tone(st.tone); v.align = st.align || 'left';
+        v.bg = st.box ? toneBg(st.box) : 'transparent'; v.pad = st.box ? (st.pad || '14px 18px') : '0'; v.rad = st.box ? '14px' : '0';
+        v.bd = st.box ? '1px solid ' + (st.box === 'plain' ? t.rule : tone(st.box)) : 'none';
+        v.segs = segs(st.text);
+      } else if (st.type === 'stat') {
+        v.isStat = true; v.v = st.v; v.l = st.l; v.fs = st.fs || 52; v.c = tone(st.tone || 'acc'); v.bg = st.on ? rgba(0.08) : t.card; v.bd = st.on ? accent : t.rule;
+      } else if (st.type === 'table') {
+        v.isTable = true; v.fs = st.fs || 18; v.hfs = st.hfs || 15; v.rpad = st.rpad || 11;
+        v.cols = st.cols || st.head.map(function () { return '1fr'; }).join(' ');
+        var al = st.align || [];
+        v.head = st.head.map(function (h2, k) { return { t: h2, al: al[k] || 'left' }; });
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto, hl = r.hl || st.hl === k;
+          return { bg: hl && shown ? rgba(0.08) : 'transparent', op: shown ? 1 : (st.ghost ? 0.12 : 0),
+            cells: r.c.map(function (c, j) {
+              var tn = (r.tones || [])[j];
+              return { t: c, al: al[j] || 'left', fw: j === 0 || (r.bold || []).indexOf(j) >= 0 ? 600 : 400, c: tn ? tone(tn) : (j === 0 ? t.ink : t.label), font: (st.mono || []).indexOf(j) >= 0 ? MONO : 'inherit' };
+            }) };
+        });
+      } else if (st.type === 'bars') {
+        v.isBars = true; v.title = st.title || ''; v.sub = st.sub || ''; v.tfs = st.tfs || 18; v.fs = st.fs || 16; v.lw = st.lw || 150; v.vw = st.vw || 90; v.bh = st.bh || 22; v.gap = st.gap == null ? 8 : st.gap;
+        var mx = st.max || Math.max.apply(null, st.rows.map(function (r) { return r.v; }));
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto;
+          return { n: r.n, l: r.l || String(r.v), w: shown ? Math.max(r.v > 0 ? 1.5 : 0, Math.min(100, r.v / mx * 100)).toFixed(1) : '0', c: r.hl ? accent : (r.tone ? tone(r.tone) : '#9AA3AF'), op: shown ? 1 : 0.25, dl: (k * 0.12).toFixed(2), fw: r.hl ? 600 : 400, vc: r.hl ? accent : t.label };
+        });
+      } else if (st.type === 'list') {
+        v.isList = true; v.fs = st.fs || 20; v.sfs = st.sfs || 16; v.tfw = st.tfw || 500; v.gap = st.gap == null ? 16 : st.gap; v.mk = st.mk || 30; v.mt = st.mt == null ? -1 : st.mt; v.mfs = st.mfs || 15;
+        v.hasTitle = !!st.title; v.title = st.title || ''; v.tfs = st.tfs || 18; v.tc = tone(st.ttone || 'label');
+        v.items = st.items.map(function (it, k) {
+          var shown = k < upto, mk = it.m || st.mark || 'num', m, mbg, mc, mbd = 'none';
+          if (mk === 'check') { m = '✓'; mbg = '#E3F4EB'; mc = OK; }
+          else if (mk === 'cross') { m = '✕'; mbg = '#FBE6E6'; mc = BAD; }
+          else if (mk === 'dot') { m = ''; mbg = 'transparent'; mc = accent; mbd = '6px solid ' + accent; }
+          else { m = String(it.no || k + 1); var on2 = it.hl || st.hl === k; mbg = on2 ? accent : rgba(0.1); mc = on2 ? '#FFFFFF' : accent; }
+          return { m: m, mbg: mbg, mc: mc, mbd: mbd, t: it.t, s: it.s || '', hasS: !!it.s, op: shown ? 1 : (st.ghost ? 0.15 : 0), dx: shown ? 0 : -12, dl: (st.stagger ? k * 0.12 : 0).toFixed(2) };
+        });
+      }
+      v.id = vid; v.type = vtype;
+      return v;
+    };
+
+    var curSc = cur.sc;
+    var scenes = chs.map(function (s, k) {
+      var nb = s.beats.length, kb = k < curSc ? nb - 1 : (k > curSc ? 0 : cur.beat);
+      var stt = {};
+      s.actors.forEach(function (a) { stt[a.id] = Object.assign({}, a); });
+      for (var qb = 0; qb <= kb; qb++) { var set = s.beats[qb].set || {}; for (var aid in set) { if (stt[aid]) Object.assign(stt[aid], set[aid]); } }
+      var z = s.zoom || 1, ox = s.ox || 0, oy = s.oy || 0;
+      var on = k === curSc;
+      var hasCaps = s.beats.some(function (b) { return b.cap; });
+      return {
+        op: on ? 1 : 0, pe: on ? 'auto' : 'none', band: hasCaps ? 1 : 0, capTop: s.title ? 104 : 40,
+        tag: s.card ? '' : (ch.n ? ch.n + ' · ' : '') + ch.name, title: s.title || '',
+        dots: nb > 1 ? s.beats.map(function (b, k2) { return { no: k2 + 1, w: k2 === kb ? 22 : 8, bg: k2 <= kb ? accent : t.rule, pick: function () { self._go(F.chStart[cur.ch] + self._offset(cur.ch, k) + k2); } }; }) : [],
+        actors: on || Math.abs(k - curSc) <= 1 ? s.actors.map(function (a) { return actorView(a, stt[a.id], z, ox, oy); }) : [],
+        caps: s.beats.map(function (b, k2) {
+          var src = b.src, ours = b.kind === 'ours';
+          return { segs: segs(b.cap), op: k2 === kb ? 1 : 0, dy: k2 === kb ? 0 : (k2 < kb ? -8 : 8), chip: src || (ours ? 'Our note' : ''),
+            cop: src || ours ? 1 : 0, cbd: ours ? '1px dashed ' + accent : '1px solid ' + t.rule, cfg: ours ? accent : t.label };
+        })
+      };
+    });
+
+    var fmtT = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); };
+    var frac = playing ? 0 : (S.frac || 0);
+    var pos = cur.start + cur.dur * frac, total = F.total;
+    var speeds = [0.75, 1, 1.25, 1.5, 2, 3, 4];
+    var pl = {
+      icon: playing ? '❚❚' : '▶', playLabel: playing ? 'Pause' : 'Play',
+      toggle: function () { self._toggle(); }, prev: function () { self._go(si - 1); }, next: function () { self._go(si + 1); },
+      label: cur.label + (cur.nb > 1 ? ' · ' + (cur.beat + 1) + '/' + cur.nb : ''),
+      time: fmtT(pos / S.speed) + ' / ' + fmtT(total / S.speed),
+      w: playing ? ((cur.start + cur.dur) / total * 100).toFixed(2) : (pos / total * 100).toFixed(2),
+      tr: playing ? (cur.dur / S.speed).toFixed(2) : '0',
+      segs: R.chapters.map(function (c, ci) {
+        var a = LIST[F.chStart[ci]].start, b = ci + 1 < R.chapters.length ? LIST[F.chStart[ci + 1]].start : total;
+        return { name: (c.n ? c.n + ' ' : '') + c.name, w: (b - a).toFixed(1), pick: function () { self._go(F.chStart[ci]); } };
+      }),
+      speedLabel: S.speed + '×', speedOpen: !!S.speedOpen, speedBd: S.speed === 1 ? t.rule : accent,
+      toggleSpeed: function () { self.setState({ speedOpen: !self.state.speedOpen }); },
+      speeds: speeds.map(function (v) { var on = S.speed === v; return { l: v + '×', fw: on ? 600 : 400, bg: on ? rgba(0.1) : 'transparent', fg: on ? accent : t.ink, pick: function () { self._setSpeed(v); } }; })
+    };
+    var chips = R.chapters.map(function (c, ci) {
+      var on = ci === cur.ch;
+      return { n: c.n || '·', name: c.short || c.name, bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, fw: on ? 600 : 400, pick: function () { self._go(F.chStart[ci]); } };
+    });
+    var sc = S.scale || 1;
+    return { t: t, accent: accent, accSoft: rgba(0.1), tf: (1 / Math.max(1, S.speed)).toFixed(3), pid: this.pid(), meta: R.meta, chips: chips, scenes: scenes, pl: pl,
+      scale: sc.toFixed(4), stW: Math.round(1280 * sc), stH: Math.round(720 * sc) };
+  }
+  _offset(ci, k) {
+    var s = this.chScenes(this.report().chapters[ci], ci), n = 0;
+    for (var i = 0; i < k; i++) n += s[i].beats.length;
+    return n;
+  }
+}
+
+mountFilm(Component, "film-tpl", "film", {});
+</script>
+</body>
+</html>
