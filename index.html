@@ -71,76 +71,76 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;height:6
 .badge b{color:var(--acc);font-weight:500}
 
 /* sections */
-section{padding:96px 0 0}
-.head{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:32px;flex-wrap:wrap}
-h2{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4vw,46px);line-height:1.08;letter-spacing:-.015em;margin:10px 0 0}
-.head p{margin:0;color:var(--muted);max-width:420px;font-size:16.5px}
+section{padding:88px 0 0}
+.head{margin-bottom:28px}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.6vw,42px);line-height:1.1;letter-spacing:-.015em;margin:8px 0 0}
+.head p{margin:10px 0 0;color:var(--muted);max-width:560px;font-size:16.5px}
 
 /* films */
-.films{display:grid;grid-template-columns:1.35fr 1fr;gap:24px}
-.film{background:var(--card);border-radius:20px;outline:1px solid var(--edge);box-shadow:var(--lift);overflow:hidden;text-decoration:none;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
-a.film:hover{transform:translateY(-3px);box-shadow:var(--float)}
-.film .thumb{aspect-ratio:16/9;object-fit:cover;width:100%;border-bottom:1px solid var(--rule)}
-.film .body{padding:26px 28px 28px;display:flex;flex-direction:column;gap:12px;flex:1}
-.film h3{font-family:var(--serif);font-weight:500;font-size:29px;line-height:1.15;margin:0;letter-spacing:-.01em}
+.film{display:grid;grid-template-columns:1.15fr 1fr;background:var(--card);border-radius:20px;outline:1px solid var(--edge);box-shadow:var(--lift);overflow:hidden;text-decoration:none;transition:transform .2s,box-shadow .2s}
+.film:hover{transform:translateY(-3px);box-shadow:var(--float)}
+.film .thumb{width:100%;height:100%;aspect-ratio:16/9;object-fit:cover;border-right:1px solid var(--rule)}
+.film .body{padding:32px 34px;display:flex;flex-direction:column;gap:12px;justify-content:center}
+.film h3{font-family:var(--serif);font-weight:500;font-size:28px;line-height:1.15;margin:0;letter-spacing:-.01em}
 .film p{margin:0;color:var(--label);font-size:16px}
-.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:8px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;padding-top:8px}
 .tags span{font:500 12.5px var(--mono);color:var(--label);background:var(--bg);border:1px solid var(--rule);border-radius:999px;padding:5px 11px}
 .tags span.go{background:var(--accSoft);border-color:transparent;color:var(--acc)}
-.next{background:transparent;outline:1.5px dashed rgba(20,35,60,.2);box-shadow:none;justify-content:center}
-.next .body{justify-content:center;padding:40px 32px}.next .tags{margin-top:8px}
-.next h3{color:var(--label)}
-.next p{color:var(--muted)}
+.next{margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 22px;border-radius:14px;outline:1.5px dashed rgba(20,35,60,.18);color:var(--muted);font-size:15px}
+.next b{font-family:var(--serif);font-weight:500;font-size:19px;color:var(--label)}
+.next .soon{margin-left:auto;font:500 12.5px var(--mono);color:var(--muted)}
 
-/* chapters */
-.chapters{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.ch{background:var(--card);border-radius:16px;padding:22px 22px 24px;outline:1px solid var(--edge);box-shadow:0 1px 2px var(--shSoft)}
-.ch .n{font:500 13px var(--mono);color:var(--acc)}
-.ch h4{font-family:var(--serif);font-weight:500;font-size:22px;margin:8px 0 6px;letter-spacing:-.005em}
-.ch p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5}
+/* inside a film */
+.inside{display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:start}
+.chapters{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.chapters li{display:grid;grid-template-columns:36px 160px 1fr;gap:12px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--rule)}
+.chapters .n{font:500 13px var(--mono);color:var(--acc)}
+.chapters b{font-weight:600;font-size:15.5px}
+.chapters span{color:var(--muted);font-size:14.5px;line-height:1.45}
+.peek{position:sticky;top:96px;margin:0}
+.peek .win{border-radius:14px;overflow:hidden;background:var(--card);outline:1px solid var(--edge);box-shadow:var(--lift)}
+.peek img{aspect-ratio:16/9;object-fit:cover;width:100%}
+.peek figcaption{padding:14px 2px 0;color:var(--muted);font-size:15px}
 
-/* frames */
-.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.frame figure{margin:0}
-.frame .win{border-radius:14px;overflow:hidden;background:var(--card);outline:1px solid var(--edge);box-shadow:var(--lift)}
-.frame img{aspect-ratio:16/9;object-fit:cover;width:100%}
-.frame figcaption{padding:18px 4px 0}
-.frame h4{font-size:17px;font-weight:600;margin:0 0 6px}
-.frame p{margin:0;color:var(--muted);font-size:15px}
-
-/* rules */
-.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--card);border-radius:20px;outline:1px solid var(--edge);box-shadow:var(--lift);overflow:hidden}
-.rule{padding:34px 32px 36px;border-right:1px solid var(--rule)}
-.rule:last-child{border-right:0}
-.rule .ic{width:40px;height:40px;border-radius:11px;background:var(--accSoft);display:grid;place-items:center;margin-bottom:18px}
-.rule h4{font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.2;margin:0 0 10px}
+/* principles */
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;border-top:1px solid var(--rule);padding-top:28px}
+.rule .ic{width:36px;height:36px;border-radius:10px;background:var(--accSoft);display:grid;place-items:center;margin-bottom:14px}
+.rule h4{font-family:var(--serif);font-weight:500;font-size:22px;line-height:1.2;margin:0 0 8px}
 .rule p{margin:0;color:var(--label);font-size:15.5px}
 
 /* footer */
-.cta{margin-top:96px;text-align:center;padding:64px 24px;background:var(--card);border-radius:24px;outline:1px solid var(--edge);box-shadow:var(--float)}
-.cta h2{margin:0 0 12px}
-.cta p{color:var(--label);margin:0 auto 28px;max-width:520px;font-size:17px}
-footer{padding:48px 0 56px;color:var(--muted);font-size:14px}
+.cta{margin-top:88px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:32px 36px;background:var(--card);border-radius:20px;outline:1px solid var(--edge);box-shadow:var(--lift)}
+.cta h2{margin:6px 0 4px;font-size:clamp(26px,2.8vw,32px)}
+.cta p{color:var(--muted);margin:0;font-size:16px}
+footer{padding:40px 0 48px;color:var(--muted);font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--label)}
 
 @media (max-width:900px){
-  .films{grid-template-columns:1fr}
-  .chapters{grid-template-columns:repeat(2,1fr)}
-  .frames{grid-template-columns:1fr}
-  .rules{grid-template-columns:1fr}
-  .rule{border-right:0;border-bottom:1px solid var(--rule)}
-  .rule:last-child{border-bottom:0}
+  .film{grid-template-columns:1fr}
+  .film .thumb{border-right:0;border-bottom:1px solid var(--rule)}
+  .inside{grid-template-columns:1fr;gap:32px}
+  .peek{position:static}
+  .rules{grid-template-columns:1fr;gap:28px}
 }
 @media (max-width:560px){
   .wrap{padding:0 16px}
   .links a:not(.gh){display:none}
   .hero{padding-top:48px}
-  .chapters{grid-template-columns:1fr}
+  .chapters li{grid-template-columns:32px 1fr;row-gap:2px}
+  .chapters li>span:last-child{grid-column:2}
+  .film .body{padding:24px}
+  .cta{padding:28px 24px}
   .bar .time{display:none}
   .badge{font-size:11px}
   section{padding-top:72px}
+  .cta{margin-top:72px}
 }
+/* layout is px-based and capped at 1160px; scale it up on wide screens so it doesn't look zoomed out */
+@media (min-width:1360px){body{zoom:1.12}}
+@media (min-width:1600px){body{zoom:1.25}}
+@media (min-width:1900px){body{zoom:1.4}}
+@media (min-width:2400px){body{zoom:1.7}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -181,59 +181,52 @@ footer a{color:var(--label)}
 
   <section id="films">
     <div class="head">
-      <div><span class="mono">Library</span><h2>Films</h2></div>
+      <span class="mono">Library</span><h2>Films</h2>
       <p>Each film is one page. Open it in any browser, pause anywhere, jump between chapters, or play it at up to 4× speed.</p>
     </div>
-    <div class="films">
-      <a class="film" href="agentgarten/">
-        <img class="thumb" src="assets/agentgarten-card.jpg" width="960" height="540" alt="" loading="lazy">
-        <div class="body">
-          <span class="mono">arXiv 2610.12374 · Technical report</span>
-          <h3>AgentGarten: Code Worlds for Evolving Agents</h3>
-          <p>Keep the world’s rules in code and let a video model only paint what agents see. Covers exact replay for training, and agents that improve each round by writing playbooks.</p>
-          <div class="tags"><span>18 min</span><span>8 chapters</span><span>110 beats</span><span class="go">Watch →</span></div>
-        </div>
-      </a>
-      <div class="film next">
-        <div class="body">
-          <span class="mono">Next</span>
-          <h3>Attention Is All You Need</h3>
-          <p>The Transformer, with one sentence followed through every step: embeddings, Q, K and V, multi-head attention, the feed-forward layer and the decoder.</p>
-          <div class="tags"><span>arXiv 1706.03762</span><span>Coming soon</span></div>
-        </div>
+    <a class="film" href="agentgarten/">
+      <img class="thumb" src="assets/agentgarten-card.jpg" width="960" height="540" alt="" loading="lazy">
+      <div class="body">
+        <span class="mono">arXiv 2610.12374 · Technical report</span>
+        <h3>AgentGarten: Code Worlds for Evolving Agents</h3>
+        <p>Keep the world’s rules in code and let a video model only paint what agents see. Covers exact replay for training, and agents that improve each round by writing playbooks.</p>
+        <div class="tags"><span>18 min</span><span>8 chapters</span><span>110 beats</span><span class="go">Watch →</span></div>
       </div>
+    </a>
+    <div class="next">
+      <span class="mono">Next</span>
+      <b>Attention Is All You Need</b>
+      <span>The Transformer, one sentence followed through every step.</span>
+      <span class="soon">arXiv 1706.03762 · Coming soon</span>
     </div>
   </section>
 
   <section id="inside">
     <div class="head">
-      <div><span class="mono">Inside a film</span><h2>The same eight chapters, every time</h2></div>
+      <span class="mono">Inside a film</span><h2>The same eight chapters, every time</h2>
       <p>You always know where you are. Use the chapters to skip to the part you need.</p>
     </div>
-    <div class="chapters">
-      <div class="ch"><span class="n">00</span><h4>Overview</h4><p>The paper in one paragraph and up to four numbers to remember.</p></div>
-      <div class="ch"><span class="n">01</span><h4>The problem</h4><p>Only the problem: what was missing before this paper.</p></div>
-      <div class="ch"><span class="n">02</span><h4>The core idea</h4><p>The idea as one picture, in plain words, with a takeaway for work.</p></div>
-      <div class="ch"><span class="n">03</span><h4>How it works</h4><p>The paper’s own architecture, with one example followed through each step.</p></div>
-      <div class="ch"><span class="n">04</span><h4>Evidence</h4><p>Every test at a glance: what was measured, how, and the real numbers.</p></div>
-      <div class="ch"><span class="n">05</span><h4>Using it</h4><p>When it fits, when it doesn’t, the settings that matter, what breaks.</p></div>
-      <div class="ch"><span class="n">06</span><h4>The authors’ thinking</h4><p>Six reasoning moves you can reuse, each with a “Try it”.</p></div>
-      <div class="ch"><span class="n">07</span><h4>Glossary</h4><p>Every term used in the film, in one place.</p></div>
-    </div>
-
-    <div class="frames" style="margin-top:40px">
-      <div class="frame"><figure><div class="win"><img src="assets/f-problem.jpg" width="960" height="540" alt="Problem chapter frame: a robot agent practising in a simple world." loading="lazy"></div>
-        <figcaption><h4>Pictures carry the idea</h4><p>Every beat changes the drawing, and the caption says what changed.</p></figcaption></figure></div>
-      <div class="frame"><figure><div class="win"><img src="assets/f-idea.jpg" width="960" height="540" alt="Core idea frame: the AgentGarten setup mapped onto an online game." loading="lazy"></div>
-        <figcaption><h4>Connected to what you know</h4><p>Analogies and toy numbers are clearly marked as our own notes.</p></figcaption></figure></div>
-      <div class="frame"><figure><div class="win"><img src="assets/f-how.jpg" width="960" height="540" alt="How it works frame: exact replay, recording a run and then replaying it with gradients." loading="lazy"></div>
-        <figcaption><h4>The real mechanism</h4><p>Components, names and steps exactly as the paper describes them.</p></figcaption></figure></div>
+    <div class="inside">
+      <ol class="chapters">
+        <li><span class="n">00</span><b>Overview</b><span>The paper in one paragraph and up to four numbers to remember.</span></li>
+        <li><span class="n">01</span><b>The problem</b><span>What was missing before this paper.</span></li>
+        <li><span class="n">02</span><b>The core idea</b><span>The idea as one picture, in plain words.</span></li>
+        <li><span class="n">03</span><b>How it works</b><span>The paper’s own architecture, one example followed through each step.</span></li>
+        <li><span class="n">04</span><b>Evidence</b><span>Every test: what was measured, how, and the real numbers.</span></li>
+        <li><span class="n">05</span><b>Using it</b><span>When it fits, when it doesn’t, the settings that matter.</span></li>
+        <li><span class="n">06</span><b>The authors’ thinking</b><span>Six reasoning moves you can reuse, each with a “Try it”.</span></li>
+        <li><span class="n">07</span><b>Glossary</b><span>Every term used in the film, in one place.</span></li>
+      </ol>
+      <figure class="peek">
+        <div class="win"><img src="assets/f-how.jpg" width="960" height="540" alt="How it works frame: building a world from one photo, with the agent writing the scene program." loading="lazy"></div>
+        <figcaption>Every beat changes the drawing, and the caption says what changed and which section of the paper it comes from.</figcaption>
+      </figure>
     </div>
   </section>
 
   <section id="rules">
     <div class="head">
-      <div><span class="mono">Principles</span><h2>Simple, but never wrong</h2></div>
+      <span class="mono">Principles</span><h2>Simple, but never wrong</h2>
     </div>
     <div class="rules">
       <div class="rule"><div class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2F5BEA" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h12M4 10h8M4 14h10"/></svg></div>
@@ -246,9 +239,9 @@ footer a{color:var(--label)}
   </section>
 
   <div class="cta">
-    <span class="mono">Start here</span>
+    <div><span class="mono">Start here</span>
     <h2>Watch a paper in 18 minutes</h2>
-    <p>Or in under 5 at 4× speed. No sign-up and nothing to install.</p>
+    <p>Or in under 5 at 4× speed. No sign-up and nothing to install.</p></div>
     <a class="btn pri" href="agentgarten/"><span class="tri"></span>Play AgentGarten</a>
   </div>
 </main>
