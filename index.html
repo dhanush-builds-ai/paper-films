@@ -77,12 +77,14 @@ h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.6vw,42px);lin
 .head p{margin:10px 0 0;color:var(--muted);max-width:560px;font-size:16.5px}
 
 /* films */
-.film{display:grid;grid-template-columns:1.15fr 1fr;background:var(--card);border-radius:20px;outline:1px solid var(--edge);box-shadow:var(--lift);overflow:hidden;text-decoration:none;transition:transform .2s,box-shadow .2s}
+.films{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.film{display:flex;flex-direction:column;background:var(--card);border-radius:16px;outline:1px solid var(--edge);box-shadow:var(--lift);overflow:hidden;text-decoration:none;transition:transform .2s,box-shadow .2s}
 .film:hover{transform:translateY(-3px);box-shadow:var(--float)}
-.film .thumb{width:100%;height:100%;aspect-ratio:16/9;object-fit:cover;border-right:1px solid var(--rule)}
-.film .body{padding:32px 34px;display:flex;flex-direction:column;gap:12px;justify-content:center}
-.film h3{font-family:var(--serif);font-weight:500;font-size:28px;line-height:1.15;margin:0;letter-spacing:-.01em}
-.film p{margin:0;color:var(--label);font-size:16px}
+.film .thumb{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-bottom:1px solid var(--rule)}
+.film .body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:8px;flex:1}
+.film h3{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.2;margin:0;letter-spacing:-.01em}
+.film p{margin:0;color:var(--label);font-size:14.5px;line-height:1.5}
+.film .tags{margin-top:auto}
 .tags{display:flex;flex-wrap:wrap;gap:8px;padding-top:8px}
 .tags span{font:500 12.5px var(--mono);color:var(--label);background:var(--bg);border:1px solid var(--rule);border-radius:999px;padding:5px 11px}
 .tags span.go{background:var(--accSoft);border-color:transparent;color:var(--acc)}
@@ -117,8 +119,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--label)}
 
 @media (max-width:900px){
-  .film{grid-template-columns:1fr}
-  .film .thumb{border-right:0;border-bottom:1px solid var(--rule)}
   .inside{grid-template-columns:1fr;gap:32px}
   .peek{position:static}
   .rules{grid-template-columns:1fr;gap:28px}
@@ -129,7 +129,7 @@ footer a{color:var(--label)}
   .hero{padding-top:48px}
   .chapters li{grid-template-columns:32px 1fr;row-gap:2px}
   .chapters li>span:last-child{grid-column:2}
-  .film .body{padding:24px}
+  .film .body{padding:16px 18px 18px}
   .cta{padding:28px 24px}
   .bar .time{display:none}
   .badge{font-size:11px}
@@ -184,6 +184,7 @@ footer a{color:var(--label)}
       <span class="mono">Library</span><h2>Films</h2>
       <p>Each film is one page. Open it in any browser, pause anywhere, jump between chapters, or play it at up to 4× speed.</p>
     </div>
+    <div class="films">
     <a class="film" href="agentgarten/">
       <img class="thumb" src="assets/agentgarten-card.jpg" width="960" height="540" alt="" loading="lazy">
       <div class="body">
@@ -193,7 +194,7 @@ footer a{color:var(--label)}
         <div class="tags"><span>18 min</span><span>8 chapters</span><span>110 beats</span><span class="go">Watch →</span></div>
       </div>
     </a>
-    <a class="film" href="selfsearch/" style="margin-top:20px">
+    <a class="film" href="selfsearch/">
       <img class="thumb" src="assets/selfsearch-card.jpg" width="960" height="540" alt="" loading="lazy">
       <div class="body">
         <span class="mono">arXiv 2609.37968 · Preprint</span>
@@ -202,7 +203,7 @@ footer a{color:var(--label)}
         <div class="tags"><span>19 min</span><span>8 chapters</span><span>113 beats</span><span class="go">Watch →</span></div>
       </div>
     </a>
-    <a class="film" href="mistral7b/" style="margin-top:20px">
+    <a class="film" href="mistral7b/">
       <img class="thumb" src="assets/mistral7b-card.jpg" width="960" height="540" alt="" loading="lazy">
       <div class="body">
         <span class="mono">arXiv 2310.06825 · Preprint</span>
@@ -211,6 +212,7 @@ footer a{color:var(--label)}
         <div class="tags"><span>20 min</span><span>8 chapters</span><span>118 beats</span><span class="go">Watch →</span></div>
       </div>
     </a>
+    </div>
     <div class="next">
       <span class="mono">Next</span>
       <b>Attention Is All You Need</b>
