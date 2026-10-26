@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SelfSearch: Reward-Free Search for Self-Improving Agents · paper film</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{height:100%}
+#film{height:100vh}
+body{margin:0}
+button{cursor:pointer;font-family:inherit}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes plpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes plflow{to{stroke-dashoffset:-26}}
+@keyframes plblink{0%,100%{opacity:.15}50%{opacity:1}}
+.h{font-family:'Newsreader',serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--rule);background:var(--card);font-size:13.5px;color:var(--ink)}
+.seg{height:100%;border:none;padding:0;background:transparent;border-right:2px solid var(--card)}
+.seg:hover{background:rgba(0,0,0,.08)}
+.chap{height:32px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="film"></div>
+<template id="film-tpl">
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --ink: {{t.ink}}; --muted: {{t.muted}}; --label: {{t.label}}; --rule: {{t.rule}}; --acc: {{accent}}; --accsoft: {{accSoft}}; width: 100%; height: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: {{t.page}}; color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 14px 24px 16px; overflow: hidden">
+
+<div data-topbar="1" style="flex-shrink: 0; display: flex; align-items: flex-end; gap: 20px; padding: 4px 4px 0; min-width: 0">
+<div data-papertitle="1" style="min-width: 0; flex: 1 1 auto">
+<div class="h" style="font-size: 26px; line-height: 1.2; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.title}}</div>
+<div style="margin-top: 5px; font-size: 14px; line-height: 1.3; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.line}}</div>
+</div>
+<div style="display: flex; gap: 8px; flex-shrink: 0; padding-bottom: 2px">
+<sc-for list="{{meta.links}}" as="lk" hint-placeholder-count="2"><a href="{{lk.u}}" target="_blank" rel="noopener" style="height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--card); color: var(--acc); font-size: 13.5px; text-decoration: none">{{lk.t}} ↗</a></sc-for>
+</div>
+</div>
+<div data-chips="1" style="flex-shrink: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 14px 0 10px; padding: 0 4px">
+<div style="display: flex; gap: 6px; width: max-content">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><button class="chap" onClick="{{c.pick}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.fw}}"><span class="mono" style="font-size: 11px; opacity: .7; margin-right: 6px">{{c.n}}</span>{{c.name}}</button></sc-for>
+</div>
+</div>
+
+<div id="{{pid}}-holder" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 0 22px">
+<div style="position: relative; width: {{stW}}px; height: {{stH}}px; flex-shrink: 0">
+<div data-stage="1" style="--tf: {{tf}}; position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale({{scale}}); transform-origin: 0 0; background: var(--card); border-radius: 22px; outline: 1px solid {{t.edge}}; box-shadow: 0 1px 2px {{t.shSoft}}, 0 6px 16px -6px {{t.shSoft}}, 0 24px 48px -12px {{t.sh}}, 0 60px 90px -40px {{t.shDeep}}; overflow: hidden">
+
+<sc-for list="{{scenes}}" as="sc" hint-placeholder-count="6">
+<div data-scene="1" style="position: absolute; inset: 0; opacity: {{sc.op}}; transition: opacity calc(.7s * var(--tf)) ease; pointer-events: {{sc.pe}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 196px; background: {{t.band}}; border-bottom: 1px solid {{t.rule}}; opacity: {{sc.band}}"></div>
+<div class="mono" style="position: absolute; left: 48px; top: 26px; font-size: 13px; letter-spacing: .08em; color: var(--acc); text-transform: uppercase">{{sc.tag}}</div>
+<div data-headline="1" class="h" style="position: absolute; left: 48px; top: 46px; width: 1000px; font-size: 34px; line-height: 1.12; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</div>
+<div style="position: absolute; right: 48px; top: 32px; display: flex; gap: 6px; align-items: center">
+<sc-for list="{{sc.dots}}" as="dt" hint-placeholder-count="6"><button onClick="{{dt.pick}}" aria-label="Beat {{dt.no}}" style="width: {{dt.w}}px; height: 8px; border-radius: 4px; border: none; padding: 0; background: {{dt.bg}}; transition: width calc(.4s * var(--tf)), background calc(.4s * var(--tf))"></button></sc-for>
+</div>
+
+<sc-for list="{{sc.actors}}" as="a" hint-placeholder-count="12">
+<div data-actor="{{a.id}}" data-type="{{a.type}}" style="position: absolute; left: 0; top: 0; width: {{a.w}}px; transform: translate({{a.x}}px, {{a.y}}px) scale({{a.s}}); transform-origin: 0 0; opacity: {{a.op}}; transition: transform calc(1.2s * var(--tf)) cubic-bezier(.45,0,.2,1) calc({{a.dl}}s * var(--tf)), opacity calc(.8s * var(--tf)) ease calc({{a.dl}}s * var(--tf))">
+<sc-if value="{{a.isSvg}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; width: {{a.w}}px; height: {{a.h}}px; animation: {{a.anim}}">
+<svg width="{{a.w}}" height="{{a.h}}" viewBox="0 0 {{a.w}} {{a.h}}" style="overflow: visible; display: block">
+<sc-for list="{{a.prims}}" as="q" hint-placeholder-count="8">
+<sc-if value="{{q.isRect}}" hint-placeholder-val="{{ false }}"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), stroke calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), opacity calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf))"></rect></sc-if>
+<sc-if value="{{q.isPath}}" hint-placeholder-val="{{ false }}"><path d="{{q.d}}" transform="{{q.tf}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}; transition: opacity calc(.8s * var(--tf)) ease calc({{q.tdl}}s * var(--tf)), stroke calc(.8s * var(--tf)) ease, fill calc(.8s * var(--tf)) ease, d calc(.9s * var(--tf)) ease"></path></sc-if>
+<sc-if value="{{q.isCirc}}" hint-placeholder-val="{{ false }}"><circle cx="{{q.cx}}" cy="{{q.cy}}" r="{{q.r}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill calc(.8s * var(--tf)) ease, opacity calc(.8s * var(--tf)) ease"></circle></sc-if>
+<sc-if value="{{q.isPoly}}" hint-placeholder-val="{{ false }}"><polyline points="{{q.pts}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}"></polyline></sc-if>
+</sc-for>
+</svg>
+<sc-for list="{{a.labels}}" as="lb" hint-placeholder-count="4"><div data-lbl="1" style="position: absolute; left: {{lb.x}}px; top: {{lb.y}}px; transform: translateX({{lb.tx}}%); white-space: nowrap; line-height: 1; font-size: {{lb.fs}}px; font-weight: {{lb.fw}}; font-family: {{lb.font}}; color: {{lb.fill}}; opacity: {{lb.op}}; transition: opacity calc(.8s * var(--tf)) ease calc({{lb.tdl}}s * var(--tf)), color calc(.8s * var(--tf)) ease; pointer-events: none">{{lb.txt}}</div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isText}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; font-weight: {{a.fw}}; font-family: {{a.font}}; font-style: {{a.fst}}; line-height: {{a.lh}}; color: {{a.color}}; text-align: {{a.align}}; background: {{a.bg}}; padding: {{a.pad}}; border-radius: {{a.rad}}; border: {{a.bd}}; box-sizing: border-box"><sc-for list="{{a.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{a.isStat}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; box-sizing: border-box; padding: 20px 22px; border-radius: 18px; background: {{a.bg}}; border: 1px solid {{a.bd}}">
+<div class="h" style="font-size: {{a.fs}}px; color: {{a.c}}; line-height: 1; font-weight: 500">{{a.v}}</div>
+<div style="font-size: 17px; color: var(--label); margin-top: 10px; line-height: 1.35">{{a.l}}</div>
+</div>
+</sc-if>
+<sc-if value="{{a.isTable}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; line-height: 1.35">
+<div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); font-weight: 600; color: var(--label); font-size: {{a.hfs}}px"><sc-for list="{{a.head}}" as="hc" hint-placeholder-count="4"><div style="text-align: {{hc.al}}">{{hc.t}}</div></sc-for></div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="5"><div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: {{a.rpad}}px 14px; border-bottom: 1px solid var(--rule); background: {{r.bg}}; opacity: {{r.op}}; transition: opacity calc(.6s * var(--tf)) ease, background calc(.6s * var(--tf)) ease"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="text-align: {{c.al}}; font-weight: {{c.fw}}; color: {{c.c}}; font-family: {{c.font}}">{{c.t}}</div></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isBars}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<div style="font-size: {{a.tfs}}px; font-weight: 600; margin-bottom: 4px">{{a.title}}</div>
+<div style="font-size: 14px; color: var(--muted); margin-bottom: 10px">{{a.sub}}</div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: {{a.lw}}px minmax(0, 1fr) {{a.vw}}px; align-items: center; gap: 12px; margin: {{a.gap}}px 0; opacity: {{r.op}}; transition: opacity calc(.5s * var(--tf)) ease"><div style="font-size: {{a.fs}}px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.n}}</div><div style="position: relative; height: {{a.bh}}px; border-radius: 6px; background: var(--bg); overflow: hidden"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{r.w}}%; border-radius: 6px; background: {{r.c}}; transition: width calc(1.1s * var(--tf)) cubic-bezier(.3,0,.2,1) calc({{r.dl}}s * var(--tf))"></div></div><div class="mono" style="font-size: {{a.fs}}px; font-weight: {{r.fw}}; color: {{r.vc}}">{{r.l}}</div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isList}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<sc-if value="{{a.hasTitle}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.tfs}}px; font-weight: 600; color: {{a.tc}}; margin-bottom: 14px">{{a.title}}</div></sc-if>
+<sc-for list="{{a.items}}" as="it" hint-placeholder-count="4"><div style="display: flex; gap: 14px; align-items: flex-start; margin: 0 0 {{a.gap}}px; opacity: {{it.op}}; transform: translateX({{it.dx}}px); transition: opacity calc(.6s * var(--tf)) ease calc({{it.dl}}s * var(--tf)), transform calc(.6s * var(--tf)) ease calc({{it.dl}}s * var(--tf))"><div style="flex-shrink: 0; width: {{a.mk}}px; height: {{a.mk}}px; margin-top: {{a.mt}}px; border-radius: 50%; background: {{it.mbg}}; color: {{it.mc}}; border: {{it.mbd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{a.mfs}}px; font-weight: 600">{{it.m}}</div><div style="min-width: 0"><div style="font-size: {{a.fs}}px; font-weight: {{a.tfw}}; line-height: 1.32">{{it.t}}</div><sc-if value="{{it.hasS}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.sfs}}px; color: var(--muted); line-height: 1.4; margin-top: 4px">{{it.s}}</div></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-for list="{{sc.caps}}" as="cp" hint-placeholder-count="5">
+<div data-cap="1" style="position: absolute; left: 48px; top: {{sc.capTop}}px; width: 1184px; font-size: 23px; line-height: 1.38; opacity: {{cp.op}}; transform: translateY({{cp.dy}}px); transition: opacity calc(.5s * var(--tf)) ease, transform calc(.5s * var(--tf)) ease"><sc-for list="{{cp.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for><span class="mono" style="display: inline-block; vertical-align: 3px; margin-left: 12px; font-size: 13px; padding: 2px 9px; border-radius: 6px; border: {{cp.cbd}}; color: {{cp.cfg}}; opacity: {{cp.cop}}">{{cp.chip}}</span></div>
+</sc-for>
+
+</div>
+</sc-for>
+
+</div>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin-top: 14px; height: 50px; display: flex; align-items: center; gap: 12px">
+<button onClick="{{pl.toggle}}" aria-label="{{pl.playLabel}}" style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--acc); color: #FFFFFF; font-size: 15px">{{pl.icon}}</button>
+<button class="btn" onClick="{{pl.prev}}" aria-label="Previous" style="width: 36px; padding: 0; flex-shrink: 0">⏮</button>
+<button class="btn" onClick="{{pl.next}}" aria-label="Next" style="width: 36px; padding: 0; flex-shrink: 0">⏭</button>
+<div style="flex: 1; min-width: 0; padding: 0 6px">
+<div style="display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; margin-bottom: 7px"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pl.label}}</span><span class="mono" style="color: var(--muted); white-space: nowrap">{{pl.time}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 5px; background: {{t.track}}; overflow: hidden">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pl.w}}%; background: var(--acc); transition: width {{pl.tr}}s linear"></div>
+<div style="position: absolute; inset: 0; display: flex">
+<sc-for list="{{pl.segs}}" as="sg" hint-placeholder-count="8"><button class="seg" onClick="{{sg.pick}}" aria-label="Jump to {{sg.name}}" title="{{sg.name}}" style="flex-grow: {{sg.w}}"></button></sc-for>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0">
+<div style="position: relative">
+<button onClick="{{pl.toggleSpeed}}" aria-label="Playback speed, now {{pl.speedLabel}}" style="height: 36px; min-width: 64px; padding: 0 12px; border-radius: 999px; border: 1px solid {{pl.speedBd}}; background: var(--card); color: var(--ink); font-size: 13px; font-family: 'IBM Plex Mono', monospace">{{pl.speedLabel}} ▾</button>
+<sc-if value="{{pl.speedOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; right: 0; bottom: 44px; z-index: 30; min-width: 96px; padding: 6px; border-radius: 12px; border: 1px solid var(--rule); background: var(--card); box-shadow: 0 12px 28px -8px {{t.sh}}; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{pl.speeds}}" as="sp" hint-placeholder-count="7"><button onClick="{{sp.pick}}" style="height: 30px; padding: 0 12px; border: none; border-radius: 8px; text-align: left; background: {{sp.bg}}; color: {{sp.fg}}; font-weight: {{sp.fw}}; font-size: 13px; font-family: 'IBM Plex Mono', monospace">{{sp.l}}</button></sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</template>
+<script>
+/* paper-film standalone runtime (MIT).
+ * Renders the film template without any host runtime:
+ *   {{path}} holes in text and attributes, <sc-for list as>, <sc-if value>, onClick="{{fn}}".
+ * Re-renders patch the existing DOM in place, so CSS transitions play between beats.
+ */
+(function () {
+  var SVG = 'http://www.w3.org/2000/svg';
+  var HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  var ONLY = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+
+  function lookup(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return +path;
+    var parts = path.split('.'), v = scope[parts[0]];
+    for (var i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+    return v;
+  }
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) { var v = lookup(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // template node -> array of vnodes
+  function build(node, scope, inSvg) {
+    if (node.nodeType === 3) {
+      var t = node.nodeValue;
+      if (t.indexOf('{{') < 0) return /\S/.test(t) || t === ' ' ? [{ text: t }] : (t.length ? [{ text: t }] : []);
+      return [{ text: interp(t, scope) }];
+    }
+    if (node.nodeType !== 1) return [];
+    var tag = node.localName;
+    if (tag === 'sc-for') {
+      var m = ONLY.exec(node.getAttribute('list') || ''), list = m ? lookup(scope, m[1]) : null, as = node.getAttribute('as') || 'item';
+      var out = [];
+      (list || []).forEach(function (item, idx) {
+        var s = Object.create(scope); s[as] = item; s.$index = idx;
+        kidsOf(node).forEach(function (c) { out.push.apply(out, build(c, s, inSvg)); });
+      });
+      return out;
+    }
+    if (tag === 'sc-if') {
+      var mv = ONLY.exec(node.getAttribute('value') || ''), ok = mv ? lookup(scope, mv[1]) : false;
+      if (!ok) return [];
+      var res = [];
+      kidsOf(node).forEach(function (c) { res.push.apply(res, build(c, scope, inSvg)); });
+      return res;
+    }
+    var svg = inSvg || tag === 'svg', v = { tag: tag, svg: svg, attrs: {}, on: {}, kids: [] };
+    for (var i = 0; i < node.attributes.length; i++) {
+      var a = node.attributes[i], name = a.name, val = a.value;
+      if (name.indexOf('hint-') === 0) continue;
+      if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
+        var mm = ONLY.exec(val); if (mm) v.on[name.slice(2).toLowerCase()] = lookup(scope, mm[1]);
+        continue;
+      }
+      var only = ONLY.exec(val);
+      v.attrs[name] = only ? lookup(scope, only[1]) : (val.indexOf('{{') >= 0 ? interp(val, scope) : val);
+    }
+    kidsOf(node).forEach(function (c) { v.kids.push.apply(v.kids, build(c, scope, svg)); });
+    return [v];
+  }
+  function kidsOf(node) { return Array.prototype.slice.call((node.content || node).childNodes); }
+
+  function create(v) {
+    if (v.text != null) { var tn = document.createTextNode(v.text); tn.__v = v; return tn; }
+    var el = v.svg ? document.createElementNS(SVG, v.tag) : document.createElement(v.tag);
+    el.__v = { tag: v.tag, attrs: {}, on: {}, kids: [] };
+    update(el, v);
+    return el;
+  }
+  function setAttr(el, k, val) {
+    if (val == null || val === false) { el.removeAttribute(k); return; }
+    if (k === 'class') k = 'class';
+    el.setAttribute(k, val === true ? '' : String(val));
+  }
+  function update(el, v) {
+    var old = el.__v || { attrs: {}, on: {}, kids: [] };
+    for (var k in v.attrs) if (old.attrs[k] !== v.attrs[k]) setAttr(el, k, v.attrs[k]);
+    for (var k2 in old.attrs) if (!(k2 in v.attrs)) el.removeAttribute(k2);
+    for (var e in v.on) el['on' + e] = typeof v.on[e] === 'function' ? v.on[e] : null;
+    for (var e2 in old.on) if (!(e2 in v.on)) el['on' + e2] = null;
+    patchKids(el, v.kids);
+    el.__v = { tag: v.tag, attrs: v.attrs, on: v.on, kids: v.kids };
+  }
+  function patchKids(el, kids) {
+    var cur = el.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      var nv = kids[i], ex = cur[i];
+      if (!ex) { el.appendChild(create(nv)); continue; }
+      var ov = ex.__v;
+      if (nv.text != null) {
+        if (ex.nodeType === 3) { if (ex.nodeValue !== nv.text) ex.nodeValue = nv.text; ex.__v = nv; }
+        else el.replaceChild(create(nv), ex);
+      } else if (ex.nodeType === 1 && ov && ov.tag === nv.tag) update(ex, nv);
+      else el.replaceChild(create(nv), ex);
+    }
+    while (el.childNodes.length > kids.length) el.removeChild(el.lastChild);
+  }
+
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (o) {
+    Object.assign(this.state, typeof o === 'function' ? o(this.state) : o);
+    if (this.__schedule) this.__schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = function () { if (this.__schedule) this.__schedule(); };
+
+  window.mountFilm = function (Component, tplId, mountId, props) {
+    var tpl = document.getElementById(tplId), root = document.getElementById(mountId);
+    var comp = new Component(props || {}), queued = false;
+    var render = function () {
+      queued = false;
+      var vals = comp.renderVals(), vnodes = [];
+      kidsOf(tpl).forEach(function (n) { vnodes.push.apply(vnodes, build(n, vals, false)); });
+      patchKids(root, vnodes.filter(function (v) { return v.text == null || /\S/.test(v.text); }));
+    };
+    comp.__schedule = function () { if (!queued) { queued = true; requestAnimationFrame(render); } };
+    render();
+    if (comp.componentDidMount) comp.componentDidMount();
+    return comp;
+  };
+})();
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, scene: 0, playing: true, speed: 1, speedOpen: false, frac: 0, scale: this._fit() };
+    this._speed = 1;
+    var self = this;
+    if (typeof window !== 'undefined') {
+      var key = '__paperfilm_' + this.pid();
+      if (window[key] && window[key] !== this) { window[key]._dead = true; clearTimeout(window[key]._tm); }
+      window[key] = this;
+      setTimeout(function () { if (!self._dead && self.state.playing) self._schedule(self.state.scene, 0, true); }, 1400);
+      window.addEventListener('resize', function () { if (!self._dead) self.setState({ scale: self._fit() }); });
+      setTimeout(function () { if (!self._dead) self.setState({ scale: self._fit() }); }, 300);
+      document.addEventListener('visibilitychange', function () { if (document.hidden && self.state.playing && !self._dead) self._toggle(); });
+    }
+  }
+  _fit() {
+    if (typeof window === 'undefined') return 1;
+    var holder = document.getElementById(this.pid() + '-holder');
+    var W = holder ? holder.clientWidth : window.innerWidth - 48;
+    var H = holder ? holder.clientHeight : window.innerHeight - 215;
+    if (!W || !H) { W = window.innerWidth - 48; H = window.innerHeight - 215; }
+    return Math.max(0.3, Math.min((W - 24) / 1280, (H - 28) / 720)); // leave room for the shadow
+  }
+
+  /* ---------------- film timeline ---------------- */
+  pid() { if (!this._pid) this._pid = String(this.report().meta.title || 'r').replace(/[^A-Za-z0-9]/g, '').slice(0, 16); return this._pid; }
+  chScenes(ch, ci) {
+    if (!this._chs) this._chs = {};
+    if (this._chs[ci]) return this._chs[ci];
+    var out = [];
+    if (ch.card !== false) {
+      out.push({ card: true, title: '', tag: '', beats: [{ cap: '', dur: ch.cardDur || 4.2 }], actors: [
+        { id: 'n', type: 'text', x: 120, y: 200, w: 400, text: ch.n, fs: 120, font: 'serif', tone: 'acc', lh: 1 },
+        { id: 't', type: 'text', x: 120, y: 340, w: 1040, text: ch.name, fs: 64, font: 'serif', lh: 1.05 },
+        { id: 'l', type: 'text', x: 120, y: 436, w: 980, text: ch.lede || '', fs: 26, tone: 'muted', lh: 1.4 }
+      ] });
+    }
+    ch.scenes.forEach(function (s) { out.push(s); });
+    this._chs[ci] = out;
+    return out;
+  }
+  film() {
+    if (this._film) return this._film;
+    var self = this, R = this.report(), list = [], chStart = [];
+    var W = function (x) { return x ? String(x).replace(/\*/g, '').split(/\s+/).filter(Boolean).length : 0; };
+    R.chapters.forEach(function (ch, ci) {
+      chStart[ci] = list.length;
+      self.chScenes(ch, ci).forEach(function (s, si) {
+        s.beats.forEach(function (b, bi) {
+          var d = b.dur || Math.max(4.5, Math.min(17, 2.4 + W(b.cap) / 2.5 + (b.read || 0)));
+          list.push({ ch: ci, sc: si, beat: bi, nb: s.beats.length, dur: d, label: (ch.n ? ch.n + ' ' : '') + ch.name + (s.title ? ' · ' + s.title : '') });
+        });
+      });
+    });
+    var t = 0; list.forEach(function (x) { x.start = t; t += x.dur; });
+    this._film = { list: list, chStart: chStart, total: t };
+    return this._film;
+  }
+  _schedule(i, frac, playing) {
+    var self = this, L = this.film().list;
+    clearTimeout(this._tm);
+    if (this._dead || !playing || typeof window === 'undefined') return;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var d = L[i].dur / this._speed;
+    this._t0 = Date.now() - d * frac * 1000;
+    this._tm = setTimeout(function () {
+      if (self._dead) return;
+      if (i + 1 < L.length) self._go(i + 1, true);
+      else self.setState({ playing: false, frac: 1 });
+    }, Math.max(50, d * (1 - frac) * 1000));
+  }
+  _go(i, keepPlaying) {
+    var L = this.film().list;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var playing = keepPlaying === undefined ? this.state.playing : keepPlaying;
+    this.setState({ scene: i, frac: 0, playing: playing });
+    this._schedule(i, 0, playing);
+  }
+  _frac() {
+    if (!this.state.playing || !this._t0) return this.state.frac || 0;
+    var d = this.film().list[this.state.scene].dur / this._speed;
+    return Math.max(0, Math.min(0.999, (Date.now() - this._t0) / 1000 / d));
+  }
+  _toggle() {
+    var L = this.film().list;
+    if (this.state.playing) { var fr = this._frac(); clearTimeout(this._tm); this.setState({ playing: false, frac: fr }); return; }
+    var i = this.state.scene, f2 = this.state.frac || 0;
+    if (i >= L.length - 1 && f2 >= 1) { i = 0; f2 = 0; }
+    this.setState({ playing: true, scene: i, frac: f2 });
+    this._schedule(i, f2, true);
+  }
+  _setSpeed(v) {
+    var fr = this._frac();
+    this._speed = v;
+    this.setState({ speed: v, frac: fr, speedOpen: false });
+    if (this.state.playing) this._schedule(this.state.scene, fr, true);
+  }
+
+  report() {
+    if (!this._R) this._R = {"meta": {"line": "Paper film · arXiv:2609.37968 · preprint", "title": "SelfSearch: Reward-Free Search for Self-Improving Agents", "links": [{"t": "Paper", "u": "https://arxiv.org/abs/2609.37968"}]}, "chapters": [{"n": "", "name": "Overview", "short": "Overview", "lede": "", "scenes": [{"title": "", "actors": [{"id": "tag", "type": "text", "x": 120, "y": 170, "w": 900, "text": "PAPER FILMS", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "ti", "type": "text", "x": 120, "y": 205, "w": 1040, "text": "SelfSearch: Reward-Free Search for Self-Improving Agents", "font": "serif", "fs": 52, "lh": 1.08}, {"id": "au", "type": "text", "x": 120, "y": 345, "w": 1000, "text": "Jungwoo Yang, Injin Kong, Yohan Jo · Graduate School of Data Science, Seoul National University", "fs": 18, "tone": "muted", "lh": 1.5}, {"id": "me", "type": "text", "x": 120, "y": 400, "w": 1000, "text": "arXiv:2609.37968 · preprint · v2, 30 Sep 2026", "fs": 16, "tone": "muted", "font": "mono"}, {"id": "r0", "type": "robot", "x": 160, "y": 455, "label": "B₀"}, {"id": "b01", "type": "beam", "x": 0, "y": 0, "pts": "238,500 392,500", "label": "record", "lfs": 12, "lx": 315, "ly": 482}, {"id": "r1", "type": "robot", "x": 400, "y": 455, "label": "B₁"}, {"id": "b12", "type": "beam", "x": 0, "y": 0, "pts": "478,500 632,500", "label": "record", "lfs": 12, "lx": 555, "ly": 482}, {"id": "r2", "type": "robot", "x": 640, "y": 455, "label": "B₂", "think": true}], "beats": [{"cap": "", "dur": 4.5}]}, {"title": "The paper in one paragraph", "actors": [{"id": "p", "type": "text", "x": 48, "y": 140, "w": 1150, "text": "SelfSearch lets a coding agent *edit its own code*: its instructions, tools and procedures. Every edit leaves a record of how it went. The next agent *reads those records* to choose its next edit. No benchmark score guides the search. After 10 generations, mean success rises in all six model–benchmark settings, at *lower search cost* than score-guided search.", "font": "serif", "fs": 28, "lh": 1.42}, {"id": "s0", "type": "stat", "x": 48, "y": 400, "w": 278, "v": "+11.2 pts", "l": "best single gain, Terminal-Bench 2.1 (GPT)", "op": 0}, {"id": "s1", "type": "stat", "x": 350, "y": 400, "w": 278, "v": "−38.5%", "l": "cost on tasks both agents solve, SWE-bench Multilingual", "op": 0, "dl": 0.12}, {"id": "s2", "type": "stat", "x": 652, "y": 400, "w": 278, "v": "$4.03", "l": "whole search cost with DeepSeek", "op": 0, "dl": 0.24}, {"id": "s3", "type": "stat", "x": 954, "y": 400, "w": 278, "v": "82.0%", "l": "Terminal-Bench 2.1, tied with Codex", "op": 0, "dl": 0.36}], "beats": [{"cap": "Everything in this film expands this one paragraph.", "kind": "ours", "read": 6}, {"cap": "Four numbers to remember. The Evidence chapter shows how each one was measured.", "src": "Abstract, §3", "set": {"s0": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}, "read": 3}]}], "card": false}, {"n": "01", "name": "The problem", "short": "Problem", "lede": "Agents can rewrite themselves, but every search for a better agent pays to score each candidate on tasks.", "scenes": [{"title": "Agents can now edit their own code", "actors": [{"id": "ag", "type": "robot", "x": 100, "y": 300, "label": "agent B₀"}, {"id": "rp", "type": "panel", "x": 300, "y": 160, "w": 420, "h": 300, "label": "Its repository"}, {"id": "c1", "type": "card", "x": 320, "y": 205, "w": 380, "h": 40, "icon": "book", "label": "Instructions"}, {"id": "c2", "type": "card", "x": 320, "y": 260, "w": 380, "h": 40, "icon": "gear", "label": "Tools"}, {"id": "c3", "type": "card", "x": 320, "y": 315, "w": 380, "h": 40, "icon": "code", "label": "Execution logic"}, {"id": "c4", "type": "card", "x": 320, "y": 370, "w": 380, "h": 40, "icon": "box3d", "label": "Code organization"}, {"id": "fx", "type": "text", "x": 300, "y": 480, "w": 420, "text": "model weights: fixed", "fs": 15, "tone": "muted", "font": "mono", "op": 0}, {"id": "be", "type": "beam", "x": 0, "y": 0, "pts": "176,346 294,346", "op": 0}, {"id": "bc", "type": "beam", "x": 0, "y": 0, "pts": "724,310 812,296", "op": 0}, {"id": "k1", "type": "robot", "x": 820, "y": 250, "label": "candidate 1", "op": 0}, {"id": "k2", "type": "robot", "x": 960, "y": 250, "label": "candidate 2", "op": 0, "dl": 0.1}, {"id": "k3", "type": "robot", "x": 1100, "y": 250, "label": "candidate 3", "op": 0, "dl": 0.2}, {"id": "q", "type": "badge", "x": 880, "y": 410, "text": "Which edit helped?", "tone": "bad", "op": 0}], "beats": [{"cap": "Coding agents can read and change code. That includes the code that runs them.", "src": "§1"}, {"cap": "Any part of the repository can change: instructions, tools, execution logic, code layout. The model itself stays fixed.", "src": "§1, §2", "set": {"be": {"op": 1}, "fx": {"op": 1}, "c1": {"on": true}, "c2": {"on": true}, "c3": {"on": true}, "c4": {"on": true}}}, {"cap": "Each edit gives a new candidate agent.", "src": "§1", "set": {"c1": {"on": false}, "c2": {"on": false}, "c3": {"on": false}, "c4": {"on": false}, "bc": {"op": 1}, "k1": {"op": 1}, "k2": {"op": 1}, "k3": {"op": 1}}}, {"cap": "To improve, a search must know which edits helped. Something has to give that signal.", "kind": "ours", "set": {"q": {"op": 1}}}]}, {"title": "The usual signal: score every candidate", "actors": [{"id": "il", "type": "text", "x": 210, "y": 150, "w": 500, "text": "10 development tasks per candidate · illustration", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "l0", "type": "text", "x": 48, "y": 196, "w": 150, "text": "revision 1", "fs": 17, "op": 1}, {"id": "r0", "type": "cells", "x": 210, "y": 190, "pat": "gwggwgggwg", "cw": 34, "ch": 34, "gap": 6, "op": 1, "dl": 0.1}, {"id": "s0", "type": "text", "x": 640, "y": 194, "w": 200, "text": "score 7 / 10", "fs": 17, "font": "mono", "tone": "acc", "op": 1}, {"id": "l1", "type": "text", "x": 48, "y": 256, "w": 150, "text": "revision 2", "fs": 17, "op": 0}, {"id": "r1", "type": "cells", "x": 210, "y": 250, "pat": "ggwgwggggw", "cw": 34, "ch": 34, "gap": 6, "op": 0, "dl": 0.1}, {"id": "s1", "type": "text", "x": 640, "y": 254, "w": 200, "text": "score 7 / 10", "fs": 17, "font": "mono", "tone": "acc", "op": 0}, {"id": "l2", "type": "text", "x": 48, "y": 316, "w": 150, "text": "revision 3", "fs": 17, "op": 0}, {"id": "r2", "type": "cells", "x": 210, "y": 310, "pat": "gggwgwgggg", "cw": 34, "ch": 34, "gap": 6, "op": 0, "dl": 0.1}, {"id": "s2", "type": "text", "x": 640, "y": 314, "w": 200, "text": "score 8 / 10", "fs": 17, "font": "mono", "tone": "acc", "op": 0}, {"id": "l9", "type": "text", "x": 48, "y": 376, "w": 150, "text": "… revision 10", "fs": 17, "tone": "muted", "op": 0}, {"id": "ar", "type": "text", "x": 48, "y": 440, "w": 760, "text": "10 revisions × 10 tasks = *100 task runs*, only to steer the search (our arithmetic)", "fs": 18, "box": "plain", "op": 0}, {"id": "tie", "type": "text", "x": 860, "y": 190, "w": 372, "text": "The score says what helps *on these tasks*. More tasks: a better signal, and a bigger bill.", "fs": 19, "box": "bad", "lh": 1.4, "op": 0}], "beats": [{"cap": "Earlier systems search by evaluation. Each candidate runs on a set of tasks, and its score decides what to keep.", "src": "§1, §5"}, {"cap": "The next revision runs the same tasks again. This cost comes back for every candidate.", "src": "§1", "set": {"l1": {"op": 1}, "r1": {"op": 1}, "s1": {"op": 1}, "l2": {"op": 1}, "r2": {"op": 1}, "s2": {"op": 1}, "l9": {"op": 1}}}, {"cap": "The score-guided baselines in this paper make 10 revisions on a 10-task development set.", "src": "App. C.3", "set": {"ar": {"op": 1}}}, {"cap": "The score also ties the search to the tasks it was measured on. Wider coverage costs more.", "src": "§1, §6", "set": {"tie": {"op": 1}}}]}, {"title": "What existing designs leave out", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 165, "w": 1184, "head": ["Design", "Task agent evolves", "Improver evolves", "One agent does both", "No reward in the search"], "rows": [{"c": ["DGM", "✓", "—", "—", "—"], "tones": [null, "ok", null, null, null]}, {"c": ["HGM", "✓", "—", "—", "—"], "tones": [null, "ok", null, null, null]}, {"c": ["Hyperagents", "✓", "✓", "—", "—"], "tones": [null, "ok", "ok", null, null]}, {"c": ["SICA", "✓", "✓", "✓", "—"], "tones": [null, "ok", "ok", "ok", null]}, {"c": ["Wanted", "✓", "✓", "✓", "✓"], "tones": [null, "ok", "ok", "ok", "ok"], "hl": true}], "fs": 19, "hfs": 15, "rpad": 14, "cols": "1.3fr 1fr 1fr 1fr 1fr", "align": ["left", "center", "center", "center", "center"], "upto": 0, "ghost": true}, {"id": "n", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "improver = the part that proposes and makes changes to the agent", "fs": 15, "tone": "muted", "font": "mono"}], "beats": [{"cap": "DGM and HGM evolve the agent that solves tasks. A separate, fixed procedure proposes the changes.", "src": "App. F, Table 13", "set": {"tb": {"upto": 2}}}, {"cap": "Hyperagents also evolves the improver, but as a separate meta-agent.", "src": "App. F", "set": {"tb": {"upto": 3}}}, {"cap": "SICA uses one agent to solve tasks and to change itself. But downstream rewards still guide its search.", "src": "§5, Table 13", "set": {"tb": {"upto": 4}}}, {"cap": "No design has all four: one agent that improves itself, with no task score in the loop. That is the problem.", "src": "§1, Table 13", "set": {"tb": {"upto": 5}}}]}]}, {"n": "02", "name": "The core idea", "short": "Idea", "lede": "Let the agent improve itself from the records of its own earlier self-edits, with no task score in the loop.", "scenes": [{"title": "Learn from the record of the last edit", "actors": [{"id": "rec", "type": "card", "x": 60, "y": 150, "w": 280, "h": 104, "icon": "book", "label": "Records of earlier edits", "fill": "list", "lines": ["reasoning", "tool actions and their results", "code changes"], "op": 0}, {"id": "r2b", "type": "beam", "x": 0, "y": 0, "pts": "184,258 184,296", "op": 0}, {"id": "bk", "type": "robot", "x": 150, "y": 300, "label": "agent Bₖ"}, {"id": "b2c", "type": "beam", "x": 0, "y": 0, "pts": "224,346 340,346"}, {"id": "cp", "type": "panel", "x": 344, "y": 262, "w": 290, "h": 150, "label": "Editable copy of Bₖ"}, {"id": "ed", "type": "card", "x": 360, "y": 296, "w": 258, "h": 102, "icon": "code", "label": "edit + local check", "fill": "code", "lines": ["+ def search(path, query):", "+     ...", "  local test: pass"], "op": 0}, {"id": "nob", "type": "badge", "x": 360, "y": 430, "text": "no task score used", "tone": "ink", "op": 0}, {"id": "c2s", "type": "beam", "x": 0, "y": 0, "pts": "638,346 752,346", "op": 0}, {"id": "bk1", "type": "robot", "x": 760, "y": 300, "label": "successor Bₖ₊₁", "op": 0}, {"id": "p2e", "type": "beam", "x": 0, "y": 0, "pts": "636,262 716,214", "op": 0}, {"id": "ek", "type": "card", "x": 720, "y": 150, "w": 270, "h": 104, "icon": "page", "label": "New record eₖ", "fill": "list", "lines": ["reasoning", "tool actions and their results", "code changes"], "op": 0}, {"id": "s2n", "type": "beam", "x": 0, "y": 0, "pts": "834,346 1072,346", "op": 0}, {"id": "e2n", "type": "beam", "x": 0, "y": 0, "pts": "994,200 1115,200 1115,292", "op": 0}, {"id": "bk2", "type": "robot", "x": 1080, "y": 300, "label": "next episode", "op": 0, "think": true}, {"id": "rule", "type": "text", "x": 48, "y": 490, "w": 1184, "text": "The record of one self-edit is *evidence for the next one*.", "fs": 24, "box": "acc", "align": "center", "op": 0}], "beats": [{"cap": "Start with agent Bₖ. It gets an editable copy of its own repository.", "src": "§2"}, {"cap": "It also reads records of earlier self-edits: the reasoning, the tool actions, their results and the code changes.", "src": "§2", "set": {"rec": {"op": 1}, "r2b": {"op": 1}}}, {"cap": "It chooses a change, edits the copy and checks it locally. No benchmark task or score is used.", "src": "§2", "set": {"ed": {"op": 1}, "nob": {"op": 1}}}, {"cap": "The edited copy becomes the successor. The episode also leaves a new record of how the edit went.", "src": "§2, Eq. 1", "set": {"c2s": {"op": 1}, "bk1": {"op": 1}, "p2e": {"op": 1}, "ek": {"op": 1}}}, {"cap": "The successor runs the next episode, guided by that record. Its improved tools also help it edit.", "src": "§1, §2", "set": {"s2n": {"op": 1}, "e2n": {"op": 1}, "bk2": {"op": 1}, "rule": {"op": 1}}}]}, {"title": "The one equation", "actors": [{"id": "eq", "type": "text", "x": 190, "y": 160, "w": 900, "text": "(Bₖ₊₁, eₖ) = SelfImprove(Bₖ ; Eₖ, d)", "font": "mono", "fs": 34, "box": "plain", "align": "center"}, {"id": "lg", "type": "table", "x": 190, "y": 270, "w": 900, "head": ["Symbol", "Meaning in the paper"], "rows": [{"c": ["Bₖ", "the agent in episode k: a repository of instructions, tools and execution logic"]}, {"c": ["Eₖ", "read-only records of earlier self-improvement episodes"]}, {"c": ["d", "the search direction: a plain-text instruction on what to look into"]}, {"c": ["Bₖ₊₁", "the successor: the edited copy, which runs the next episode"]}, {"c": ["eₖ", "this episode’s record: trajectory plus code changes"]}], "fs": 17, "hfs": 15, "rpad": 10, "cols": "0.5fr 3fr", "mono": [0], "upto": 0, "ghost": true}], "beats": [{"cap": "The paper writes one episode as one function.", "src": "§2, Eq. 1"}, {"cap": "In: the current agent, the records of earlier episodes, and a direction.", "src": "§2", "set": {"lg": {"upto": 3}}, "read": 2}, {"cap": "Out: a successor agent and a new record. The running agent does not change during the episode.", "src": "§2", "set": {"lg": {"upto": 5}}, "read": 2}]}, {"title": "Take this home", "actors": [{"id": "l1", "type": "text", "x": 60, "y": 155, "w": 640, "text": "Before: every change waits for a score", "fs": 17, "tone": "muted"}, {"id": "ch1", "type": "beam", "x": 0, "y": 0, "pts": "120,214 640,214", "tone": "muted"}, {"id": "t1", "type": "tokens", "x": 60, "y": 190, "words": ["change", "run evals", "score", "pick"], "tw": 130, "th": 48, "gap": 30, "fs": 16}, {"id": "l2", "type": "text", "x": 60, "y": 300, "w": 640, "text": "After: every change reads the last change’s record", "fs": 17, "tone": "acc", "op": 0}, {"id": "ch2", "type": "beam", "x": 0, "y": 0, "pts": "120,359 640,359", "op": 0}, {"id": "t2", "type": "tokens", "x": 60, "y": 335, "words": ["change", "keep record", "read it", "change"], "tw": 130, "th": 48, "gap": 30, "fs": 16, "on": [1, 2], "op": 0}, {"id": "l3", "type": "text", "x": 60, "y": 410, "w": 640, "text": "Evaluate frozen candidates at the end, separately.", "fs": 17, "tone": "muted", "op": 0}, {"id": "ls", "type": "list", "x": 760, "y": 155, "w": 470, "items": [{"t": "Your own agent harness", "s": "Save the full transcript of every session that edits prompts or tools. Hand it to the next session."}, {"t": "Friction becomes tools", "s": "A clipped log, a failed edit, a slow search: each is a concrete ticket for a tool."}, {"t": "Expensive eval suites", "s": "Run them on checkpoints, not on every candidate change."}], "upto": 0, "fs": 19, "gap": 18, "stagger": true, "sfs": 15, "tfw": 600, "mark": "dot", "mk": 18, "mt": 5, "title": "Where it fits (our examples)", "tfs": 16}], "beats": [{"cap": "The idea works beyond this paper. Many improvement loops wait for a score after each change.", "kind": "ours"}, {"cap": "Keep the record of how each change was made, and give it to whoever makes the next change. Score at the end.", "kind": "ours", "set": {"l2": {"op": 1}, "ch2": {"op": 1}, "t2": {"op": 1}, "l3": {"op": 1}}}, {"cap": "Three places this fits in a product team.", "kind": "ours", "set": {"ls": {"upto": 3}}, "read": 7}, {"cap": "One question to ask: do you keep how each change was made, or only its score?", "kind": "ours"}]}]}, {"n": "03", "name": "How it works", "short": "How it works", "lede": "Figure 1, the runtime boundary, then one tool followed from a clipped record to a real task.", "scenes": [{"title": "The loop, as in the paper’s Figure 1", "actors": [{"id": "act", "type": "robot", "x": 120, "y": 300, "label": "Actor Bₖ"}, {"id": "env2", "type": "panel", "x": 414, "y": 174, "w": 420, "h": 280, "label": "", "op": 0}, {"id": "env", "type": "panel", "x": 400, "y": 160, "w": 420, "h": 280, "label": "Environment"}, {"id": "cp", "type": "card", "x": 420, "y": 210, "w": 380, "h": 60, "icon": "code", "label": "Editable copy of Bₖ", "sub": "instructions · tools · execution logic"}, {"id": "rc", "type": "card", "x": 420, "y": 290, "w": 380, "h": 60, "icon": "book", "label": "Previous episode records", "sub": "e¹ₖ₋₁ … eᵂₖ₋₁ · read-only"}, {"id": "ba", "type": "beam", "x": 0, "y": 0, "pts": "194,322 396,322", "label": "Actions", "lfs": 12, "lx": 295, "ly": 304, "op": 0}, {"id": "bo", "type": "beam", "x": 0, "y": 0, "pts": "396,380 194,380", "label": "Observations", "lfs": 12, "lx": 295, "ly": 398, "op": 0}, {"id": "nx", "type": "robot", "x": 1000, "y": 190, "label": "Next actor Bₖ₊₁", "op": 0}, {"id": "ep", "type": "card", "x": 930, "y": 360, "w": 280, "h": 60, "icon": "page", "label": "Episode record eₖ", "sub": "trajectory + code changes", "op": 0}, {"id": "bn", "type": "beam", "x": 0, "y": 0, "pts": "824,240 992,236", "op": 0}, {"id": "be", "type": "beam", "x": 0, "y": 0, "pts": "824,390 926,390", "op": 0}, {"id": "note", "type": "text", "x": 400, "y": 478, "w": 440, "text": "stacked boxes = parallel lineages · lineage marks left out", "fs": 14, "tone": "muted", "font": "mono", "op": 0}], "beats": [{"cap": "This is the paper’s Figure 1. On the left is the actor, agent Bₖ. It is also the agent being improved.", "src": "Fig. 1"}, {"cap": "Its environment holds an editable copy of itself and the read-only records of earlier episodes.", "src": "Fig. 1, §2", "set": {"cp": {"on": true}, "rc": {"on": true}}}, {"cap": "The actor works through actions and observations: it runs shell commands and uses a file editor.", "src": "Fig. 1, App. A", "set": {"cp": {"on": false}, "rc": {"on": false}, "ba": {"op": 1}, "bo": {"op": 1}}}, {"cap": "Each episode outputs two things: the successor, which becomes the next actor, and the episode record.", "src": "Fig. 1, Eq. 1", "set": {"nx": {"op": 1}, "ep": {"op": 1}, "bn": {"op": 1}, "be": {"op": 1}}}, {"cap": "The stacked boxes stand for parallel lineages. The paper runs two of them.", "src": "Fig. 1, §2", "set": {"env2": {"op": 1}, "note": {"op": 1}}}]}, {"title": "What the agent may change, and what it may not", "actors": [{"id": "lp", "type": "panel", "x": 48, "y": 150, "w": 500, "h": 270, "label": "Editable repository"}, {"id": "l1", "type": "card", "x": 68, "y": 192, "w": 460, "h": 40, "icon": "book", "label": "Instructions (system prompt)"}, {"id": "l2", "type": "card", "x": 68, "y": 247, "w": 460, "h": 40, "icon": "gear", "label": "Tools, defined with @tool"}, {"id": "l3", "type": "card", "x": 68, "y": 302, "w": 460, "h": 40, "icon": "page", "label": "Policy library"}, {"id": "l4", "type": "card", "x": 68, "y": 357, "w": 460, "h": 40, "icon": "code", "label": "Task-level orchestration: agent.run(task)"}, {"id": "rp", "type": "panel", "x": 732, "y": 150, "w": 500, "h": 270, "label": "Fixed runtime, outside the repository", "op": 0.25}, {"id": "r1", "type": "card", "x": 752, "y": 192, "w": 460, "h": 40, "icon": "net", "label": "Model and reasoning effort", "op": 0.25}, {"id": "r2", "type": "card", "x": 752, "y": 247, "w": 460, "h": 40, "icon": "gear", "label": "Generation settings and output limits", "op": 0.25}, {"id": "r3", "type": "card", "x": 752, "y": 302, "w": 460, "h": 40, "icon": "clock", "label": "Budgets: model calls, tool steps, time", "op": 0.25}, {"id": "r4", "type": "card", "x": 752, "y": 357, "w": 460, "h": 40, "icon": "film", "label": "Trajectory recording", "op": 0.25}, {"id": "bl", "type": "beam", "x": 0, "y": 0, "pts": "298,424 298,460 486,460", "op": 0}, {"id": "rs", "type": "card", "x": 490, "y": 440, "w": 300, "h": 40, "icon": "code", "label": "self.respond(message)", "op": 0}, {"id": "br", "type": "beam", "x": 0, "y": 0, "pts": "794,460 982,460 982,424", "op": 0}, {"id": "fd", "type": "text", "x": 48, "y": 510, "w": 1184, "text": "/app/agent: running agent, read-only  ·  /workspace: editable copy → the successor  ·  /evidence/0, /evidence/1: two earlier episodes, read-only", "fs": 15, "font": "mono", "box": "plain", "op": 0}], "beats": [{"cap": "Left: the whole agent repository is editable. That includes its instructions, tools, policy library and orchestration.", "src": "App. A"}, {"cap": "Right: a fixed runtime holds the model, effort, output limits and budgets. It also records every trajectory.", "src": "App. A", "set": {"rp": {"op": 1}, "r1": {"op": 1}, "r2": {"op": 1}, "r3": {"op": 1}, "r4": {"op": 1}}}, {"cap": "They meet at one call, respond(message). Keeping that loop outside gives a stable way to run and record agents while their code changes.", "src": "App. A, §2", "set": {"bl": {"op": 1}, "rs": {"op": 1}, "br": {"op": 1}}}, {"cap": "Inside an episode, edits go to /workspace. They shape the successor, not the agent that is running now.", "src": "App. B", "set": {"fd": {"op": 1}}}]}, {"title": "One episode, from the paper’s Figure 3", "actors": [{"id": "t1", "type": "text", "x": 48, "y": 150, "w": 600, "text": "*Thought* · Let’s inspect the previous trajectory to see where the agent struggled.", "fs": 16, "box": "plain", "lh": 1.35}, {"id": "a1", "type": "card", "x": 48, "y": 230, "w": 600, "h": 120, "icon": "code", "label": "Action · read trajectory events", "fill": "code", "lines": ["bash(\"python ...", "for line in open(path):", "    event = json.loads(line)", "...\")"], "op": 0}, {"id": "t3", "type": "text", "x": 48, "y": 356, "w": 600, "text": "*Observation* · {messages, reasoning, tool calls, tool results, …}  [20,000 characters]  <response clipped>", "fs": 16, "box": "bad", "lh": 1.35, "op": 0}, {"id": "t4", "type": "text", "x": 48, "y": 448, "w": 600, "text": "*Thought* · The previous output was clipped. I should add a search tool that returns only relevant excerpts.", "fs": 16, "box": "plain", "lh": 1.35, "op": 0}, {"id": "b1", "type": "beam", "x": 0, "y": 0, "pts": "652,480 690,480 690,260 706,260", "op": 0}, {"id": "ed", "type": "card", "x": 710, "y": 182, "w": 520, "h": 138, "icon": "code", "label": "Action · extend its own editor", "fill": "code", "lines": ["Function: editor.search", "Input:  path, query", "Output: file location + matching excerpt", "e.g. trajectory.jsonl:11", "     “…errors from a tool…”"], "op": 0}, {"id": "b2", "type": "beam", "x": 0, "y": 0, "pts": "970,324 970,396", "op": 0}, {"id": "rec", "type": "card", "x": 710, "y": 400, "w": 520, "h": 84, "icon": "page", "label": "Episode record eₖ", "fill": "list", "lines": ["the clipped read, the thought, the new tool", "the code change to the editor"], "op": 0}], "beats": [{"cap": "One episode from the paper’s Figure 3. A GPT agent reads an earlier episode’s record with a short script, one JSON event per line.", "src": "Fig. 3", "set": {"a1": {"op": 1}}}, {"cap": "The output is 20,000 characters, and the runtime clips it. The agent cannot see what it came for.", "src": "Fig. 3", "set": {"t3": {"op": 1}}}, {"cap": "The clipped read is the lesson. The agent decides it needs a search tool that returns only matching excerpts.", "src": "Fig. 3", "set": {"t4": {"op": 1}}}, {"cap": "It adds editor.search(path, query) to its own editor. It returns a file location and the matching excerpt.", "src": "Fig. 3", "set": {"b1": {"op": 1}, "ed": {"op": 1}}}, {"cap": "All of this, the clipped read included, goes into the record. Later agents read it.", "src": "§2, §4.2", "set": {"b2": {"op": 1}, "rec": {"op": 1}}}]}, {"title": "Two lineages, ten generations", "actors": [{"id": "gh", "type": "text", "x": 148, "y": 160, "w": 600, "text": "generation 0 → 10", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "lc", "type": "text", "x": 48, "y": 228, "w": 110, "text": "capability", "fs": 16, "fw": 600}, {"id": "lcs", "type": "text", "x": 48, "y": 254, "w": 110, "text": "build tools", "fs": 13, "tone": "muted"}, {"id": "la", "type": "text", "x": 48, "y": 398, "w": 110, "text": "adaptive", "fs": 16, "fw": 600}, {"id": "las", "type": "text", "x": 48, "y": 424, "w": 110, "text": "revise the approach", "fs": 13, "tone": "muted"}, {"id": "rowc", "type": "beam", "x": 0, "y": 0, "pts": "192,242 1144,242", "tone": "muted"}, {"id": "rowa", "type": "beam", "x": 0, "y": 0, "pts": "192,412 1144,412", "tone": "muted"}, {"id": "x0", "type": "beam", "x": 0, "y": 0, "pts": "176,264 264,390", "op": 0}, {"id": "y0", "type": "beam", "x": 0, "y": 0, "pts": "176,390 264,264", "op": 0}, {"id": "x1", "type": "beam", "x": 0, "y": 0, "pts": "276,264 364,390", "op": 0}, {"id": "y1", "type": "beam", "x": 0, "y": 0, "pts": "276,390 364,264", "op": 0}, {"id": "x2", "type": "beam", "x": 0, "y": 0, "pts": "376,264 464,390", "op": 0}, {"id": "y2", "type": "beam", "x": 0, "y": 0, "pts": "376,390 464,264", "op": 0}, {"id": "x3", "type": "beam", "x": 0, "y": 0, "pts": "476,264 564,390", "op": 0}, {"id": "y3", "type": "beam", "x": 0, "y": 0, "pts": "476,390 564,264", "op": 0}, {"id": "x4", "type": "beam", "x": 0, "y": 0, "pts": "576,264 664,390", "op": 0}, {"id": "y4", "type": "beam", "x": 0, "y": 0, "pts": "576,390 664,264", "op": 0}, {"id": "x5", "type": "beam", "x": 0, "y": 0, "pts": "676,264 764,390", "op": 0}, {"id": "y5", "type": "beam", "x": 0, "y": 0, "pts": "676,390 764,264", "op": 0}, {"id": "x6", "type": "beam", "x": 0, "y": 0, "pts": "776,264 864,390", "op": 0}, {"id": "y6", "type": "beam", "x": 0, "y": 0, "pts": "776,390 864,264", "op": 0}, {"id": "x7", "type": "beam", "x": 0, "y": 0, "pts": "876,264 964,390", "op": 0}, {"id": "y7", "type": "beam", "x": 0, "y": 0, "pts": "876,390 964,264", "op": 0}, {"id": "x8", "type": "beam", "x": 0, "y": 0, "pts": "976,264 1064,390", "op": 0}, {"id": "y8", "type": "beam", "x": 0, "y": 0, "pts": "976,390 1064,264", "op": 0}, {"id": "x9", "type": "beam", "x": 0, "y": 0, "pts": "1076,264 1164,390", "op": 0}, {"id": "y9", "type": "beam", "x": 0, "y": 0, "pts": "1076,390 1164,264", "op": 0}, {"id": "c0", "type": "node", "x": 148, "y": 220, "r": 22, "text": "B₀", "fs": 15}, {"id": "a0", "type": "node", "x": 148, "y": 390, "r": 22, "text": "B₀", "fs": 15}, {"id": "c1", "type": "node", "x": 248, "y": 220, "r": 22, "text": "1", "fs": 15}, {"id": "a1", "type": "node", "x": 248, "y": 390, "r": 22, "text": "1", "fs": 15}, {"id": "c2", "type": "node", "x": 348, "y": 220, "r": 22, "text": "2", "fs": 15}, {"id": "a2", "type": "node", "x": 348, "y": 390, "r": 22, "text": "2", "fs": 15}, {"id": "c3", "type": "node", "x": 448, "y": 220, "r": 22, "text": "3", "fs": 15}, {"id": "a3", "type": "node", "x": 448, "y": 390, "r": 22, "text": "3", "fs": 15}, {"id": "c4", "type": "node", "x": 548, "y": 220, "r": 22, "text": "4", "fs": 15}, {"id": "a4", "type": "node", "x": 548, "y": 390, "r": 22, "text": "4", "fs": 15}, {"id": "c5", "type": "node", "x": 648, "y": 220, "r": 22, "text": "5", "fs": 15}, {"id": "a5", "type": "node", "x": 648, "y": 390, "r": 22, "text": "5", "fs": 15}, {"id": "c6", "type": "node", "x": 748, "y": 220, "r": 22, "text": "6", "fs": 15}, {"id": "a6", "type": "node", "x": 748, "y": 390, "r": 22, "text": "6", "fs": 15}, {"id": "c7", "type": "node", "x": 848, "y": 220, "r": 22, "text": "7", "fs": 15}, {"id": "a7", "type": "node", "x": 848, "y": 390, "r": 22, "text": "7", "fs": 15}, {"id": "c8", "type": "node", "x": 948, "y": 220, "r": 22, "text": "8", "fs": 15}, {"id": "a8", "type": "node", "x": 948, "y": 390, "r": 22, "text": "8", "fs": 15}, {"id": "c9", "type": "node", "x": 1048, "y": 220, "r": 22, "text": "9", "fs": 15}, {"id": "a9", "type": "node", "x": 1048, "y": 390, "r": 22, "text": "9", "fs": 15}, {"id": "c10", "type": "node", "x": 1148, "y": 220, "r": 22, "text": "10", "fs": 15}, {"id": "a10", "type": "node", "x": 1148, "y": 390, "r": 22, "text": "10", "fs": 15}, {"id": "dis", "type": "badge", "x": 92, "y": 470, "text": "gen 0: records kept, edits discarded", "tone": "ink", "op": 0}, {"id": "arc", "type": "db", "x": 1110, "y": 466, "w": 80, "h": 64, "label": "archive C", "op": 0}, {"id": "xl", "type": "text", "x": 300, "y": 312, "w": 200, "text": "both records", "fs": 13, "tone": "acc", "font": "mono", "op": 0}], "beats": [{"cap": "The search runs two lineages side by side, for 10 generations. Each lineage has its own direction.", "src": "§2, §3.1"}, {"cap": "Capability: find limits shown by slow, failed or hard operations. Build reusable tools or procedures for them.", "src": "§2, App. B", "set": {"c0": {"on": true}}}, {"cap": "Adaptive: improve how the agent changes its approach when actions fail or evidence contradicts its plan.", "src": "§2, App. B", "set": {"c0": {"on": false}, "a0": {"on": true}}}, {"cap": "Generation 0 makes the first records. B₀ runs once per direction. The records stay; the edits are thrown away.", "src": "§2", "set": {"a0": {"on": false, "done": true}, "c0": {"done": true}, "dis": {"op": 1}}}, {"cap": "Then each lineage edits its own agent and reads both records from the previous generation.", "src": "§2, Alg. 1", "set": {"x0": {"op": 1}, "y0": {"op": 1}, "c1": {"on": true}, "a1": {"on": true}, "xl": {"op": 1}, "dis": {"op": 0}}}, {"cap": "After 10 generations, every agent is in the archive. The paper evaluates the last agent of each lineage, with no selection.", "src": "§2, §3.1", "set": {"x1": {"op": 0.45}, "x2": {"op": 0.45}, "x3": {"op": 0.45}, "x4": {"op": 0.45}, "x5": {"op": 0.45}, "x6": {"op": 0.45}, "x7": {"op": 0.45}, "x8": {"op": 0.45}, "x9": {"op": 0.45}, "y1": {"op": 0.45}, "y2": {"op": 0.45}, "y3": {"op": 0.45}, "y4": {"op": 0.45}, "y5": {"op": 0.45}, "y6": {"op": 0.45}, "y7": {"op": 0.45}, "y8": {"op": 0.45}, "y9": {"op": 0.45}, "xl": {"op": 0}, "arc": {"op": 1}, "c1": {"on": false, "done": true}, "c2": {"on": false, "done": true}, "c3": {"on": false, "done": true}, "c4": {"on": false, "done": true}, "c5": {"on": false, "done": true}, "c6": {"on": false, "done": true}, "c7": {"on": false, "done": true}, "c8": {"on": false, "done": true}, "c9": {"on": false, "done": true}, "c10": {"on": true, "done": false}, "a1": {"on": false, "done": true}, "a2": {"on": false, "done": true}, "a3": {"on": false, "done": true}, "a4": {"on": false, "done": true}, "a5": {"on": false, "done": true}, "a6": {"on": false, "done": true}, "a7": {"on": false, "done": true}, "a8": {"on": false, "done": true}, "a9": {"on": false, "done": true}, "a10": {"on": true, "done": false}}}]}, {"title": "The tool grows across generations (GPT)", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 148, "w": 1184, "head": ["Gen.", "Capability lineage", "Adaptive lineage"], "rows": [{"c": ["1", "Exact-text replacement", "Plan revision and failure recovery"], "hl": false}, {"c": ["2", "Line-range file viewing", "Exact-text replacement"], "hl": false}, {"c": ["3", "Plan revision and failure recovery", "Line-range file viewing"], "hl": false}, {"c": ["4", "Character-range file viewing", "General instructions loaded at startup"], "hl": false}, {"c": ["5", "General instructions loaded at startup", "Character-range file viewing"], "hl": false}, {"c": ["6", "Text search with output limits", "Structured trajectory reader"], "hl": false}, {"c": ["7", "Structured trajectory reader", "Text search with output limits"], "hl": false}, {"c": ["8", "Output limits for trajectories and diffs", "Trajectory output limits with call/result IDs"], "hl": false}, {"c": ["9", "Trajectory filters and tool-name lookup", "Call arguments linked to results across pages"], "hl": false}, {"c": ["10", "Prior-call matching with arguments", "Trajectory filters with call/result links"], "hl": false}], "fs": 15.5, "hfs": 13, "rpad": 6, "cols": "0.35fr 2fr 2fr", "upto": 5, "ghost": true}], "beats": [{"cap": "These are the GPT lineages’ changes, generation by generation. The early ones are basic editor operations.", "src": "Table 5", "read": 3}, {"cap": "Generation 6: capability adds text search with output limits. Adaptive adds a trajectory reader.", "src": "§4.2, Table 5", "set": {"tb": {"upto": 6, "rows": [{"c": ["1", "Exact-text replacement", "Plan revision and failure recovery"], "hl": false}, {"c": ["2", "Line-range file viewing", "Exact-text replacement"], "hl": false}, {"c": ["3", "Plan revision and failure recovery", "Line-range file viewing"], "hl": false}, {"c": ["4", "Character-range file viewing", "General instructions loaded at startup"], "hl": false}, {"c": ["5", "General instructions loaded at startup", "Character-range file viewing"], "hl": false}, {"c": ["6", "Text search with output limits", "Structured trajectory reader"], "hl": true}, {"c": ["7", "Structured trajectory reader", "Text search with output limits"], "hl": false}, {"c": ["8", "Output limits for trajectories and diffs", "Trajectory output limits with call/result IDs"], "hl": false}, {"c": ["9", "Trajectory filters and tool-name lookup", "Call arguments linked to results across pages"], "hl": false}, {"c": ["10", "Prior-call matching with arguments", "Trajectory filters with call/result links"], "hl": false}]}}}, {"cap": "Generation 7: each lineage takes the other’s tool. It finds it by reading the other lineage’s record.", "src": "§4.2", "set": {"tb": {"upto": 7, "rows": [{"c": ["1", "Exact-text replacement", "Plan revision and failure recovery"], "hl": false}, {"c": ["2", "Line-range file viewing", "Exact-text replacement"], "hl": false}, {"c": ["3", "Plan revision and failure recovery", "Line-range file viewing"], "hl": false}, {"c": ["4", "Character-range file viewing", "General instructions loaded at startup"], "hl": false}, {"c": ["5", "General instructions loaded at startup", "Character-range file viewing"], "hl": false}, {"c": ["6", "Text search with output limits", "Structured trajectory reader"], "hl": false}, {"c": ["7", "Structured trajectory reader", "Text search with output limits"], "hl": true}, {"c": ["8", "Output limits for trajectories and diffs", "Trajectory output limits with call/result IDs"], "hl": false}, {"c": ["9", "Trajectory filters and tool-name lookup", "Call arguments linked to results across pages"], "hl": false}, {"c": ["10", "Prior-call matching with arguments", "Trajectory filters with call/result links"], "hl": false}]}}}, {"cap": "Reading records shows that several short excerpts can still be too long. Generation 8 adds overall output limits.", "src": "§4.2, App. E.1", "set": {"tb": {"upto": 8, "rows": [{"c": ["1", "Exact-text replacement", "Plan revision and failure recovery"], "hl": false}, {"c": ["2", "Line-range file viewing", "Exact-text replacement"], "hl": false}, {"c": ["3", "Plan revision and failure recovery", "Line-range file viewing"], "hl": false}, {"c": ["4", "Character-range file viewing", "General instructions loaded at startup"], "hl": false}, {"c": ["5", "General instructions loaded at startup", "Character-range file viewing"], "hl": false}, {"c": ["6", "Text search with output limits", "Structured trajectory reader"], "hl": false}, {"c": ["7", "Structured trajectory reader", "Text search with output limits"], "hl": false}, {"c": ["8", "Output limits for trajectories and diffs", "Trajectory output limits with call/result IDs"], "hl": true}, {"c": ["9", "Trajectory filters and tool-name lookup", "Call arguments linked to results across pages"], "hl": false}, {"c": ["10", "Prior-call matching with arguments", "Trajectory filters with call/result links"], "hl": false}]}}}, {"cap": "Generations 9 and 10 add filters, and link each tool result to the call and arguments that produced it.", "src": "§4.2, App. E.1", "set": {"tb": {"upto": 10, "rows": [{"c": ["1", "Exact-text replacement", "Plan revision and failure recovery"], "hl": false}, {"c": ["2", "Line-range file viewing", "Exact-text replacement"], "hl": false}, {"c": ["3", "Plan revision and failure recovery", "Line-range file viewing"], "hl": false}, {"c": ["4", "Character-range file viewing", "General instructions loaded at startup"], "hl": false}, {"c": ["5", "General instructions loaded at startup", "Character-range file viewing"], "hl": false}, {"c": ["6", "Text search with output limits", "Structured trajectory reader"], "hl": false}, {"c": ["7", "Structured trajectory reader", "Text search with output limits"], "hl": false}, {"c": ["8", "Output limits for trajectories and diffs", "Trajectory output limits with call/result IDs"], "hl": false}, {"c": ["9", "Trajectory filters and tool-name lookup", "Call arguments linked to results across pages"], "hl": true}, {"c": ["10", "Prior-call matching with arguments", "Trajectory filters with call/result links"], "hl": true}]}}}]}, {"title": "A repair passed between lineages (DeepSeek)", "actors": [{"id": "il", "type": "text", "x": 300, "y": 150, "w": 740, "text": "illustration · one long line of search output · accent = the match", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "lnl", "type": "text", "x": 48, "y": 184, "w": 240, "text": "full line", "fs": 15, "op": 1}, {"id": "ln", "type": "cells", "x": 300, "y": 180, "pat": "bbbbbbbbbbbbbPPPbbbbbbbbbbbbbb", "cw": 22, "ch": 30, "gap": 3, "op": 1}, {"id": "g5l", "type": "text", "x": 48, "y": 264, "w": 240, "text": "gen 5 · adaptive", "fs": 15, "op": 0}, {"id": "g5", "type": "cells", "x": 300, "y": 260, "pat": "bbbbbbxxxxxxxxxxxxxxxxxxbbbbbb", "cw": 22, "ch": 30, "gap": 3, "op": 0}, {"id": "g5b", "type": "badge", "x": 1065, "y": 260, "text": "match hidden", "tone": "bad", "op": 0}, {"id": "g6l", "type": "text", "x": 48, "y": 344, "w": 240, "text": "gen 6 · capability", "fs": 15, "op": 0}, {"id": "g6", "type": "cells", "x": 300, "y": 340, "pat": "xxxxxxxbbbbbbPPPbbbbbbxxxxxxxx", "cw": 22, "ch": 30, "gap": 3, "op": 0}, {"id": "g6b", "type": "badge", "x": 1065, "y": 340, "text": "match visible", "tone": "ok", "op": 0}, {"id": "g7l", "type": "text", "x": 48, "y": 424, "w": 240, "text": "gen 7 · adaptive", "fs": 15, "op": 0}, {"id": "g7", "type": "cells", "x": 300, "y": 420, "pat": "xxxxxxxggggggPPPggggggxxxxxxxx", "cw": 22, "ch": 30, "gap": 3, "op": 0}, {"id": "g7b", "type": "badge", "x": 1065, "y": 420, "text": "verified", "tone": "ok", "op": 0}, {"id": "tl", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "Later DeepSeek generations fix other quiet losses in file edits: *tabs* and *line endings* are now kept.", "fs": 18, "box": "plain", "op": 0}], "beats": [{"cap": "A second story, from the DeepSeek lineages. Search results can have very long lines, so the tool must shorten them.", "src": "§4.2"}, {"cap": "Generation 5, adaptive: keep the start and the end of each long line. A match in the middle disappears.", "src": "§4.2", "set": {"g5l": {"op": 1}, "g5": {"op": 1}, "g5b": {"op": 1}}}, {"cap": "Generation 6, capability: it uses that episode’s record and centres each excerpt on the match.", "src": "§4.2", "set": {"g6l": {"op": 1}, "g6": {"op": 1}, "g6b": {"op": 1}}}, {"cap": "Generation 7, adaptive: it reproduces the failure, takes the other lineage’s repair, and checks the match stays visible.", "src": "§4.2", "set": {"g7l": {"op": 1}, "g7": {"op": 1}, "g7b": {"op": 1}}}, {"cap": "Other repairs keep file content intact during edits.", "src": "§4.2, Table 11", "set": {"tl": {"op": 1}}}]}, {"title": "The tool comes back on a real task", "actors": [{"id": "th", "type": "text", "x": 48, "y": 150, "w": 620, "text": "*Thought* · Let’s inspect how signature parsing handles default values.", "fs": 16, "box": "plain", "lh": 1.35}, {"id": "ac", "type": "card", "x": 48, "y": 222, "w": 620, "h": 120, "icon": "code", "label": "Action · search code", "fill": "code", "lines": ["editor.search(", "    \"/testbed/sphinx\",", "    \"signature_from_str(\"", ")"], "op": 0}, {"id": "ob", "type": "card", "x": 48, "y": 360, "w": 620, "h": 102, "icon": "check", "label": "Observation · 2 matches", "fill": "code", "lines": ["domains/python.py:147   signature_from_str(…)", "util/inspect.py:514     def signature_from_str(…)", ""], "op": 0}, {"id": "wh", "type": "text", "x": 730, "y": 160, "w": 500, "text": "Built to read *clipped episode records*.", "fs": 20, "box": "acc", "lh": 1.4, "op": 0}, {"id": "bw", "type": "beam", "x": 0, "y": 0, "pts": "980,214 980,276", "op": 0}, {"id": "us", "type": "text", "x": 730, "y": 280, "w": 500, "text": "Used to find a function’s callers and tests in a *SWE-bench task*.", "fs": 20, "box": "ok", "lh": 1.4, "op": 0}], "beats": [{"cap": "Later, the GPT capability agent works on a SWE-bench task in the Sphinx project. It has repaired a function.", "src": "Fig. 3, §4.3"}, {"cap": "To check its fix, it calls the search tool it built for reading records.", "src": "Fig. 3, §4.3", "set": {"ac": {"op": 1}}}, {"cap": "Two matches: a call site and the definition. A tool built for self-improvement now helps on a task the search never saw.", "src": "Fig. 3, §4.3", "set": {"ob": {"op": 1}, "wh": {"op": 1}, "bw": {"op": 1}, "us": {"op": 1}}}]}, {"title": "The setup", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Role", "GPT setup", "DeepSeek setup"], "rows": [{"c": ["Search: runs the self-edits", "gpt-5.6-sol", "deepseek-v4-pro-0813"]}, {"c": ["Downstream: solves the tasks", "gpt-5.6-luna", "deepseek-v4-flash-0731"]}, {"c": ["Output limit per call in search", "8,192 tokens", "16,384 tokens"]}], "fs": 17, "hfs": 15, "rpad": 10, "cols": "1.4fr 1fr 1fr", "mono": [1, 2]}, {"id": "s0", "type": "stat", "x": 48, "y": 330, "w": 278, "v": "2 × 10", "l": "lineages × generations per search", "op": 0}, {"id": "s1", "type": "stat", "x": 350, "y": 330, "w": 278, "v": "512", "l": "tool steps per episode, and 513 model calls", "op": 0, "dl": 0.1}, {"id": "s2", "type": "stat", "x": 652, "y": 330, "w": 278, "v": "4 h", "l": "per episode, in a container with no network", "op": 0, "dl": 0.2}, {"id": "s3", "type": "stat", "x": 954, "y": 330, "w": 278, "v": "$4.03", "l": "whole search cost with DeepSeek; $6.52 with GPT", "op": 0, "dl": 0.3}, {"id": "b0", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "Starting agent B₀, adapted from DGM: shell + file editor (view, create, replace whole file) + an editable policy library", "fs": 16, "box": "plain", "op": 0}], "beats": [{"cap": "Two model setups. A stronger model runs the search; a cheaper one solves tasks. Both use medium reasoning effort.", "src": "§3.1, App. C.1", "read": 2}, {"cap": "Each episode gets up to 513 model calls, 512 tool steps and 4 hours, with no network.", "src": "App. C.1, Table 8", "set": {"s0": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}}, {"cap": "The starting agent comes from DGM’s released coding agent, with a policy library added.", "src": "§3.1, App. A", "set": {"b0": {"op": 1}}}, {"cap": "The prompts were tuned in pilot searches by reading trajectories, not benchmark scores. Then they were fixed.", "src": "App. B"}]}]}, {"n": "04", "name": "Evidence", "short": "Evidence", "lede": "Six tests: success and cost, score-guided search, transfer, a public comparison, ablations, tool use.", "scenes": [{"title": "How they tested it", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Test", "Question", "How they measured", "Result"], "rows": [{"c": ["Downstream tasks", "Do evolved agents solve more?", "Success and cost per task: 120 SWE-bench Verified, 60 Multilingual, 89 Terminal-Bench 2.1", "Mean up in 6 of 6 settings"], "tones": [null, null, null, "acc"]}, {"c": ["Score-guided search", "Is it as good, for less?", "Same success metric on 110 held-out tasks; search cost in USD", "Competitive; 13–53% cheaper"], "tones": [null, null, null, "acc"]}, {"c": ["Transfer", "Does the harness help another model?", "SWE-bench Verified success with the other model family", "Gains in both directions"], "tones": [null, null, null, "acc"]}, {"c": ["Public comparison", "How does it rank among harnesses?", "Terminal-Bench 2.1, DeepSeek V4 Flash, a public nine-harness setup", "82.0%, tied with Codex"], "tones": [null, null, null, "acc"]}, {"c": ["Ablations", "Do records and the evolving improver matter?", "Remove one; SWE-bench Verified mean success", "Full version best"], "tones": [null, null, null, "acc"]}, {"c": ["Tool use", "Are new tools used on tasks?", "Share of 269 tasks with at least one call", "Some yes, one never"], "tones": [null, null, null, "acc"]}], "fs": 15, "hfs": 13, "rpad": 8, "cols": "1fr 1.3fr 2.2fr 1.2fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The paper runs six tests. First, downstream success and cost. Second, a comparison with score-guided search.", "src": "§3.2, §3.3", "set": {"tb": {"upto": 2}}, "read": 2}, {"cap": "Third, transfer to another model. Fourth, a public harness comparison.", "src": "§3.4, §3.5", "set": {"tb": {"upto": 4}}, "read": 2}, {"cap": "Fifth, ablations of the two key parts. Sixth, whether the new tools get used.", "src": "§4.1, §4.3", "set": {"tb": {"upto": 6}}, "read": 3}]}, {"title": "Success after 10 generations", "actors": [{"id": "g", "type": "bars", "x": 48, "y": 150, "w": 560, "title": "GPT-5.6 Luna runs the tasks", "sub": "success %, higher is better · bars start at 40", "max": 50, "upto": 0, "lw": 170, "vw": 56, "fs": 14, "bh": 13, "gap": 5, "rows": [{"n": "SWE-V · B₀", "v": 35.0, "l": "75.0", "hl": false}, {"n": "SWE-V · Bᶜ", "v": 37.5, "l": "77.5", "hl": true}, {"n": "SWE-V · Bᵃ", "v": 35.0, "l": "75.0", "hl": true}, {"n": "Multilingual · B₀", "v": 13.3, "l": "53.3", "hl": false}, {"n": "Multilingual · Bᶜ", "v": 20.0, "l": "60.0", "hl": true}, {"n": "Multilingual · Bᵃ", "v": 18.3, "l": "58.3", "hl": true}, {"n": "Terminal · B₀", "v": 3.8, "l": "43.8", "hl": false}, {"n": "Terminal · Bᶜ", "v": 15.1, "l": "55.1", "hl": true}, {"n": "Terminal · Bᵃ", "v": 4.9, "l": "44.9", "hl": true}]}, {"id": "d", "type": "bars", "x": 672, "y": 150, "w": 560, "title": "DeepSeek V4 Flash runs the tasks", "sub": "success %, higher is better · bars start at 40", "max": 50, "upto": 0, "lw": 170, "vw": 56, "fs": 14, "bh": 13, "gap": 5, "rows": [{"n": "SWE-V · B₀", "v": 41.7, "l": "81.7", "hl": false}, {"n": "SWE-V · Bᶜ", "v": 46.7, "l": "86.7", "hl": true}, {"n": "SWE-V · Bᵃ", "v": 46.7, "l": "86.7", "hl": true}, {"n": "Multilingual · B₀", "v": 28.3, "l": "68.3", "hl": false}, {"n": "Multilingual · Bᶜ", "v": 26.7, "l": "66.7", "hl": true}, {"n": "Multilingual · Bᵃ", "v": 33.3, "l": "73.3", "hl": true}, {"n": "Terminal · B₀", "v": 25.2, "l": "65.2", "hl": false}, {"n": "Terminal · Bᶜ", "v": 33.0, "l": "73.0", "hl": true}, {"n": "Terminal · Bᵃ", "v": 31.9, "l": "71.9", "hl": true}]}, {"id": "rn", "type": "text", "x": 48, "y": 490, "w": 1184, "text": "Our note: the paper reports the Terminal-Bench gain as +11.2 points; the rounded table values give 11.3.", "fs": 14, "tone": "muted", "op": 0}, {"id": "n", "type": "text", "x": 48, "y": 540, "w": 1184, "text": "B₀ = initial agent · Bᶜ = capability · Bᵃ = adaptive · SWE-V = SWE-bench Verified · Terminal = Terminal-Bench 2.1", "fs": 13, "tone": "muted", "font": "mono"}], "beats": [{"cap": "With GPT, the capability agent gains most: Terminal-Bench 2.1 from 43.8% to 55.1%, and Multilingual from 53.3% to 60.0%.", "src": "Table 1, §3.2", "set": {"g": {"upto": 9}}, "read": 3}, {"cap": "With DeepSeek, both agents reach 86.7% on SWE-bench Verified. But the capability agent drops on Multilingual, 68.3% to 66.7%.", "src": "Table 1, §3.2", "set": {"d": {"upto": 9}}, "read": 3}, {"cap": "The mean of the two agents beats B₀ in all 6 settings. Which lineage wins changes with benchmark and model.", "src": "§3.2", "set": {"rn": {"op": 1}}}]}, {"title": "Cost per task", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 600, "head": ["Setting", "B₀", "Bᶜ", "Bᵃ"], "rows": [{"c": ["SWE-V · GPT", "0.96¢", "0.91¢", "0.93¢"], "tones": [null, null, "ok", "ok"]}, {"c": ["Multilingual · GPT", "1.31¢", "1.35¢", "1.33¢"], "tones": [null, null, "bad", "bad"]}, {"c": ["Terminal · GPT", "2.12¢", "2.19¢", "1.99¢"], "tones": [null, null, "bad", "ok"]}, {"c": ["SWE-V · DeepSeek", "2.14¢", "1.69¢", "1.84¢"], "tones": [null, null, "ok", "ok"]}, {"c": ["Multilingual · DeepSeek", "5.21¢", "3.21¢", "3.32¢"], "tones": [null, null, "ok", "ok"]}, {"c": ["Terminal · DeepSeek", "3.01¢", "2.64¢", "2.50¢"], "tones": [null, null, "ok", "ok"]}], "fs": 16, "hfs": 13, "rpad": 9, "cols": "1.7fr 0.8fr 0.8fr 0.8fr", "align": ["left", "right", "right", "right"], "mono": [1, 2, 3]}, {"id": "tn", "type": "text", "x": 48, "y": 470, "w": 600, "text": "US cents per task, all tasks incl. failures · lower is better · search cost not included", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "sh", "type": "bars", "x": 690, "y": 150, "w": 540, "title": "Cost cut on tasks both agents solve", "sub": "% vs B₀, higher = cheaper", "max": 55, "upto": 0, "lw": 200, "vw": 76, "fs": 13, "bh": 11, "gap": 5, "rows": [{"n": "GPT · SWE-V · Bᶜ", "v": 8.7, "l": "8.7", "hl": false}, {"n": "GPT · SWE-V · Bᵃ", "v": 13.6, "l": "13.6", "hl": false}, {"n": "GPT · Multi · Bᶜ", "v": 4.1, "l": "4.1", "hl": false}, {"n": "GPT · Multi · Bᵃ", "v": 8.3, "l": "8.3", "hl": false}, {"n": "GPT · Terminal · Bᶜ", "v": 0, "l": "−2.4 (up)", "hl": false}, {"n": "GPT · Terminal · Bᵃ", "v": 15.2, "l": "15.2", "hl": false}, {"n": "DS · SWE-V · Bᶜ", "v": 36.1, "l": "36.1", "hl": false}, {"n": "DS · SWE-V · Bᵃ", "v": 19.7, "l": "19.7", "hl": false}, {"n": "DS · Multi · Bᶜ", "v": 52.9, "l": "52.9", "hl": false}, {"n": "DS · Multi · Bᵃ", "v": 38.5, "l": "38.5", "hl": true}, {"n": "DS · Terminal · Bᶜ", "v": 16.5, "l": "16.5", "hl": false}, {"n": "DS · Terminal · Bᵃ", "v": 18.6, "l": "18.6", "hl": false}], "op": 0}], "beats": [{"cap": "Cost per task counts every attempt, failures too. DeepSeek agents get cheaper on every benchmark; GPT costs move a little either way.", "src": "Table 1, §3.2", "read": 4}, {"cap": "On tasks both agents solved, the DeepSeek adaptive agent cuts cost by 38.5% on Multilingual, while solving 5.0 points more overall.", "src": "§3.2, Table 10", "set": {"sh": {"op": 1, "upto": 12}}, "read": 3}, {"cap": "Most of these costs fall. One rises: the GPT capability agent on Terminal-Bench 2.1, by 2.4%.", "src": "Table 10"}]}, {"title": "Against score-guided search", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 720, "head": ["Method", "GPT SWE-V", "GPT Multi", "DS SWE-V", "DS Multi"], "rows": [{"c": ["Initial B₀", "76.4", "53.3", "81.8", "68.3"]}, {"c": ["Linear search", "77.3", "60.0", "81.8", "73.3"]}, {"c": ["Archive search", "76.4", "56.7", "86.4", "70.0"]}, {"c": ["SelfSearch Bᶜ", "78.2", "60.0", "87.3", "66.7"], "hl": true}, {"c": ["SelfSearch Bᵃ", "75.5", "58.3", "87.3", "73.3"], "hl": true}], "fs": 17, "hfs": 13, "rpad": 10, "cols": "1.6fr 1fr 1fr 1fr 1fr", "align": ["left", "right", "right", "right", "right"], "mono": [1, 2, 3, 4], "upto": 3, "ghost": true}, {"id": "tn", "type": "text", "x": 48, "y": 452, "w": 720, "text": "success %, higher is better · SWE-V = 110 tasks outside the dev set", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "sc", "type": "bars", "x": 820, "y": 150, "w": 412, "title": "Search cost, USD", "sub": "lower is better · SelfSearch = both lineages", "max": 13, "upto": 0, "lw": 140, "vw": 52, "fs": 14, "bh": 13, "gap": 6, "rows": [{"n": "GPT · linear", "v": 12.35, "l": "12.35", "hl": false}, {"n": "GPT · archive", "v": 7.53, "l": "7.53", "hl": false}, {"n": "GPT · SelfSearch", "v": 6.52, "l": "6.52", "hl": true}, {"n": "DS · linear", "v": 8.59, "l": "8.59", "hl": false}, {"n": "DS · archive", "v": 7.9, "l": "7.90", "hl": false}, {"n": "DS · SelfSearch", "v": 4.03, "l": "4.03", "hl": true}], "op": 0}, {"id": "bm", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "Not budget-matched: baselines keep their best-scoring revision; SelfSearch reports both final agents, unselected.", "fs": 17, "box": "plain", "op": 0}], "beats": [{"cap": "Two baselines use scores on a 10-task development set to guide 10 revisions: linear search and archive search.", "src": "§3.3, App. C.3", "read": 3}, {"cap": "On 110 held-out tasks, SelfSearch is competitive with no score in the loop. With GPT, its capability agent matches or beats both.", "src": "Table 2, §3.3", "set": {"tb": {"upto": 5}}, "read": 3}, {"cap": "Searching both lineages costs 13.4–47.2% less than the baselines with GPT, and 49.0–53.2% less with DeepSeek.", "src": "§3.3, Table 2", "set": {"sc": {"op": 1, "upto": 6}}}, {"cap": "The paper says the comparison is not budget-matched. The GPT adaptive agent shows mixed results.", "src": "App. C.3, §3.3", "set": {"bm": {"op": 1}}}]}, {"title": "Transfer to another model", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 170, "w": 1184, "head": ["Runs the tasks", "B₀", "Found with GPT · Bᶜ", "GPT · Bᵃ", "Found with DeepSeek · Bᶜ", "DeepSeek · Bᵃ"], "rows": [{"c": ["DeepSeek V4 Flash", "81.7", "83.3", "85.0", "86.7", "86.7"], "tones": [null, null, "acc", "acc", null, null]}, {"c": ["GPT-5.6 Luna", "75.0", "77.5", "75.0", "79.2", "76.7"], "tones": [null, null, null, null, "acc", "acc"]}], "fs": 18, "hfs": 13, "rpad": 14, "cols": "1.4fr 0.6fr 1fr 0.8fr 1.1fr 0.9fr", "align": ["left", "right", "right", "right", "right", "right"], "mono": [1, 2, 3, 4, 5], "upto": 0, "ghost": true}, {"id": "tn", "type": "text", "x": 48, "y": 320, "w": 1184, "text": "SWE-bench Verified success %, higher is better · accent = agent run by the other model family", "fs": 13, "tone": "muted", "font": "mono"}], "beats": [{"cap": "Run an agent with the other model family, with no further search. Agents found with GPT lift DeepSeek V4 Flash from 81.7% to 83.3% and 85.0%.", "src": "§3.4, Table 3", "set": {"tb": {"upto": 1}}}, {"cap": "Agents found with DeepSeek lift GPT-5.6 Luna from 75.0% to 79.2% and 76.7%. The changes are not tied to one model.", "src": "Table 3, §3.4", "set": {"tb": {"upto": 2}}}]}, {"title": "Against public harnesses", "actors": [{"id": "s0", "type": "stat", "x": 48, "y": 160, "w": 278, "v": "82.0%", "l": "73 of 89 Terminal-Bench 2.1 tasks", "on": true}, {"id": "s1", "type": "stat", "x": 350, "y": 160, "w": 278, "v": "73", "l": "tasks solved by Codex, the top of nine harnesses", "op": 0, "dl": 0.1}, {"id": "s2", "type": "stat", "x": 652, "y": 160, "w": 278, "v": "66 + 7", "l": "solved by both, plus 7 solved only by each", "op": 0, "dl": 0.2}, {"id": "s3", "type": "stat", "x": 954, "y": 160, "w": 278, "v": "$4.03", "l": "search cost of this agent’s run", "op": 0, "dl": 0.3}, {"id": "cv", "type": "text", "x": 48, "y": 360, "w": 1184, "text": "Settings differ from the earlier tables: DeepSeek V4 Flash at *xhigh* reasoning, each task’s own time limit, 100,000 tool steps. The paper gives only Codex’s score from that comparison.", "fs": 18, "box": "plain", "lh": 1.45, "op": 0}], "beats": [{"cap": "The DeepSeek capability agent runs a public test: nine harnesses on Terminal-Bench 2.1, all with DeepSeek V4 Flash.", "src": "§3.5"}, {"cap": "It solves 73 of 89 tasks, the same as Codex, the top harness. Each solves 7 tasks the other does not.", "src": "§3.5, App. D.3", "set": {"s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}}, {"cap": "This test uses its own settings, aligned with the public evaluation.", "src": "§3.5, App. D.3", "set": {"cv": {"op": 1}}}]}, {"title": "Ablations: records and the evolving improver", "actors": [{"id": "g", "type": "bars", "x": 48, "y": 160, "w": 560, "title": "GPT", "sub": "mean success %, SWE-bench Verified · bars start at 70", "max": 18, "upto": 0, "lw": 200, "vw": 56, "fs": 15, "bh": 16, "gap": 8, "rows": [{"n": "Initial agent", "v": 5.0, "l": "75.0", "hl": false}, {"n": "without records", "v": 4.2, "l": "74.2", "hl": false}, {"n": "fixed improver", "v": 4.6, "l": "74.6", "hl": false}, {"n": "SelfSearch, full", "v": 6.2, "l": "76.2", "hl": true}]}, {"id": "d", "type": "bars", "x": 672, "y": 160, "w": 560, "title": "DeepSeek", "sub": "mean success %, SWE-bench Verified · bars start at 70", "max": 18, "upto": 0, "lw": 200, "vw": 56, "fs": 15, "bh": 16, "gap": 8, "rows": [{"n": "Initial agent", "v": 11.7, "l": "81.7", "hl": false}, {"n": "without records", "v": 13.8, "l": "83.8", "hl": false}, {"n": "fixed improver", "v": 13.8, "l": "83.8", "hl": false}, {"n": "SelfSearch, full", "v": 16.7, "l": "86.7", "hl": true}]}, {"id": "n", "type": "text", "x": 48, "y": 380, "w": 1184, "text": "*Without records:* each new agent edits with no access to earlier episode records.   *Fixed improver:* B₀ makes every edit; the edited code still carries forward.", "fs": 17, "box": "plain", "lh": 1.45}, {"id": "cv", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "Rounded table values give 2.0 and 1.6 points for GPT. With GPT, the fixed improver is slightly better in the adaptive lineage: 75.8 vs 75.0.", "fs": 16, "box": "bad", "lh": 1.4, "op": 0}], "beats": [{"cap": "Two ablations. Each removes one part: the earlier records, or the improver that evolves.", "src": "§4.1", "set": {"g": {"upto": 4}, "d": {"upto": 4}}, "read": 3}, {"cap": "Full SelfSearch has the highest mean in both settings. Without records: −2.1 and −2.9 points. Fixed improver: −1.7 and −2.9.", "src": "§4.1, Table 4", "read": 2}, {"cap": "Two details from the table, not the text.", "src": "Table 4", "set": {"cv": {"op": 1}}, "read": 4}]}, {"title": "Do the new tools get used?", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 160, "w": 1184, "head": ["Operation", "GPT Bᶜ", "GPT Bᵃ", "DeepSeek Bᶜ", "DeepSeek Bᵃ"], "rows": [{"c": ["Exact-text replacement", "76.6", "79.2", "72.5", "71.0"]}, {"c": ["Line-range viewing", "38.7", "42.0", "29.0", "38.7"]}, {"c": ["Text search", "7.8", "9.3", "21.6", "25.7"]}, {"c": ["Trajectory reader", "0.0", "0.0", "—", "—"], "tones": [null, "bad", "bad", null, null]}], "fs": 18, "hfs": 13, "rpad": 12, "cols": "1.6fr 1fr 1fr 1fr 1fr", "align": ["left", "right", "right", "right", "right"], "mono": [1, 2, 3, 4], "upto": 0, "ghost": true}, {"id": "tn", "type": "text", "x": 48, "y": 420, "w": 1184, "text": "% of 269 tasks with at least one call · all three benchmarks pooled · shell commands like grep not counted · — = not built", "fs": 13, "tone": "muted", "font": "mono"}], "beats": [{"cap": "Do evolved tools get used on real tasks? The paper counts the share of 269 tasks where each final agent calls them.", "src": "§4.3, Table 12", "set": {"tb": {"upto": 2}}, "read": 3}, {"cap": "Search use differs by family: 8.6% of tasks for GPT, 23.6% for DeepSeek. The trajectory reader is never used on tasks.", "src": "§4.3, Table 12", "set": {"tb": {"upto": 4}}, "read": 3}]}]}, {"n": "05", "name": "Using it", "short": "Using it", "lede": "Is it for you? Three ways to use it, the settings, and what breaks.", "scenes": [{"title": "Is it for you?", "actors": [{"id": "use", "type": "list", "x": 48, "y": 165, "w": 560, "items": [{"t": "You run a coding agent whose harness lives in a repository it can edit."}, {"t": "Scoring every candidate on tasks is too slow or costly."}, {"t": "You can store full trajectories and give them to the next run."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "check", "mk": 30, "title": "Use it when", "ttone": "ok", "tfs": 18}, {"id": "skip", "type": "list", "x": 672, "y": 165, "w": 560, "items": [{"t": "You need a sure gain: consistency across repeated searches is untested."}, {"t": "You cannot sandbox self-edits away from the model, limits and logs."}, {"t": "You cannot evaluate before shipping: some lineages regress on some benchmarks."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "cross", "mk": 30, "title": "Skip it, or adapt it, when", "ttone": "bad", "tfs": 18}], "beats": [{"cap": "Use it when the agent can edit its own harness and evaluation is the bottleneck.", "src": "§1, §6", "set": {"use": {"upto": 3}}, "read": 3}, {"cap": "Adapt it when you need guarantees. The paper asks how consistent gains are across independent searches.", "src": "§6, Table 1", "set": {"skip": {"upto": 3}}, "read": 3}]}, {"title": "Three ways to use it", "actors": [{"id": "c0t", "type": "text", "x": 48, "y": 162, "w": 380, "text": "Run it on your harness", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c0w", "type": "text", "x": 48, "y": 196, "w": 380, "text": "You maintain a coding agent.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c0", "type": "list", "x": 48, "y": 250, "w": 380, "items": [{"t": "Put model, limits and logging in a fixed runtime."}, {"t": "Run two lineages: capability and adaptive."}, {"t": "Share both records each generation."}, {"t": "Evaluate the final agents once, at the end."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c1t", "type": "text", "x": 450, "y": 162, "w": 380, "text": "Combine it with scores", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c1w", "type": "text", "x": 450, "y": 196, "w": 380, "text": "You already run score-guided search.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c1", "type": "list", "x": 450, "y": 250, "w": 380, "items": [{"t": "Replace each single edit with several generations of SelfSearch."}, {"t": "Score only the resulting candidate."}, {"t": "Compare at the same total budget."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c2t", "type": "text", "x": 852, "y": 162, "w": 380, "text": "Borrow the idea", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c2w", "type": "text", "x": 852, "y": 196, "w": 380, "text": "Your team improves its own tools.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c2", "type": "list", "x": 852, "y": 250, "w": 380, "items": [{"t": "Keep the full log of how each change was made."}, {"t": "Give it to whoever makes the next change."}, {"t": "Turn repeated friction into a tool."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}], "beats": [{"cap": "Path 1: run SelfSearch as the paper does, with the runtime boundary first.", "src": "App. A, §2", "set": {"c0t": {"op": 1}, "c0w": {"op": 1}, "c0": {"upto": 4}}, "read": 3}, {"cap": "Path 2: the paper suggests SelfSearch as the edit step inside a score-guided search. It has not tested this.", "src": "§6", "set": {"c1t": {"op": 1}, "c1w": {"op": 1}, "c1": {"upto": 3}}, "read": 3}, {"cap": "Path 3: borrow only the idea. Records of how changes were made are evidence.", "kind": "ours", "set": {"c2t": {"op": 1}, "c2w": {"op": 1}, "c2": {"upto": 3}}, "read": 3}]}, {"title": "Settings that matter", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Setting", "Paper default", "What changing it did, or costs", "Source"], "rows": [{"c": ["Episode records", "both from last generation", "Removed: −2.1 (GPT) and −2.9 (DeepSeek) mean points", "Table 4"]}, {"c": ["Improver", "the evolving successor", "Fixed to B₀: −1.7 and −2.9 mean points", "Table 4"]}, {"c": ["Directions", "capability + adaptive", "Lineages share records and copy each other’s tools", "§2, §4.2"]}, {"c": ["Generations", "10", "Search cost: $6.52 (GPT), $4.03 (DeepSeek), both lineages", "Table 8"]}, {"c": ["Episode budget", "513 calls, 512 steps, 4 h", "No network, isolated containers", "App. C.1"]}, {"c": ["Selection", "none: last agent of each lineage", "Untested here; the paper leaves it to later work", "§3.1, §6"]}], "fs": 16, "hfs": 13, "rpad": 9, "cols": "1fr 1.2fr 2.2fr 0.6fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The paper’s defaults, and what the ablations say about the two key parts.", "src": "Table 4, §2", "set": {"tb": {"upto": 3}}, "read": 3}, {"cap": "The budget per search, and the choice not to select by score.", "src": "Table 8, App. C.1", "set": {"tb": {"upto": 6}}, "read": 3}]}, {"title": "What breaks, and what to do", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Problem", "Why", "What to do"], "rows": [{"c": ["Records too long to read", "A 20,000-character read was clipped (Fig. 3)", "Expect agents to build search and readers; add overall output limits"]}, {"c": ["Shortened output hides matches", "Head-and-tail excerpts dropped the middle (§4.2)", "Centre excerpts on the match; test with a known match"]}, {"c": ["Edits damage files", "Tabs and line endings were lost (Table 11)", "Check that edits keep tabs, line endings and binary files"]}, {"c": ["Agent edits its own limits", "The paper keeps them outside the repository (App. A)", "Put model, budgets and trajectory logs in a fixed runtime"]}, {"c": ["A lineage regresses", "DeepSeek Bᶜ fell on Multilingual (Table 1)", "Evaluate frozen agents before you ship one"]}, {"c": ["Tools serve only the improver", "Trajectory reader: 0% task use (Table 12)", "Fine: some tools exist only to improve the next agent"]}], "fs": 15.5, "hfs": 13, "rpad": 8, "cols": "1.2fr 1.7fr 2fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The first three problems come from tools the agents wrote. The paper shows each one being found and fixed.", "src": "Fig. 3, §4.2", "set": {"tb": {"upto": 3}}, "read": 3}, {"cap": "The last three are about the search itself: the boundary, regressions, and tools with no task use.", "src": "App. A, Table 1, Table 12", "set": {"tb": {"upto": 6}}, "read": 3}]}, {"title": "", "actors": [{"id": "q", "type": "text", "x": 140, "y": 220, "w": 1000, "text": "“Keep the record of how each change was made. It is evidence for the next change.”", "font": "serif", "fs": 50, "italic": true, "lh": 1.15, "align": "center"}, {"id": "s", "type": "text", "x": 200, "y": 420, "w": 880, "text": "SelfSearch improves agents with no task score in the loop, only records of earlier self-edits.", "fs": 24, "tone": "muted", "align": "center"}], "beats": [{"cap": "The one idea to take from this paper.", "kind": "ours", "dur": 6}]}]}, {"n": "06", "name": "How the authors got there", "short": "Their thinking", "lede": "Six thinking moves behind the design. You can reuse them on your own problems.", "scenes": [{"title": "Six moves from a cost to a design", "actors": [{"id": "trail", "type": "beam", "x": 0, "y": 0, "pts": "146,210 1134,210", "tone": "muted"}, {"id": "n0", "type": "node", "x": 120, "y": 184, "text": "1"}, {"id": "n1", "type": "node", "x": 318, "y": 184, "text": "2"}, {"id": "n2", "type": "node", "x": 515, "y": 184, "text": "3"}, {"id": "n3", "type": "node", "x": 713, "y": 184, "text": "4"}, {"id": "n4", "type": "node", "x": 910, "y": 184, "text": "5"}, {"id": "n5", "type": "node", "x": 1108, "y": 184, "text": "6"}, {"id": "lab", "type": "text", "x": 120, "y": 340, "w": 600, "text": "IN THIS PAPER", "font": "mono", "fs": 14, "tone": "muted", "op": 0}, {"id": "t0", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Ask what else a step produces", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p0", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "An edit yields a candidate agent and also a record of how it was made.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y0", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* List the by-products of your process that you throw away.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t1", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Take the costly signal out of the loop", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p1", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "No tasks or scores during search. Evaluation happens after the agents are frozen.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y1", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Separate making candidates from judging them.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t2", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Make the improver the thing you improve", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p2", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "One agent solves tasks and edits itself, so better tools help it edit too.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y2", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Point your tool work at the people or agents who build tools.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t3", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Fix what must not change", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p3", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Model, limits and trajectory logs live in a runtime the agent cannot edit.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y3", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Draw the boundary a self-changing system may never cross.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t4", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Run two briefs and share notes", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p4", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Capability and adaptive lineages read each other’s records.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y4", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Give two teams different briefs and swap their logs.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t5", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Remove each part once", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p5", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Ablations drop the records, then freeze the improver.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y5", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Turn off one part of your loop at a time to see what carries it.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "sum", "type": "list", "x": 120, "y": 272, "w": 1040, "items": [{"t": "Ask what else a step produces"}, {"t": "Take the costly signal out of the loop"}, {"t": "Make the improver the thing you improve"}, {"t": "Fix what must not change"}, {"t": "Run two briefs and share notes"}, {"t": "Remove each part once"}], "upto": 6, "fs": 22, "gap": 10, "op": 0, "mk": 30}], "beats": [{"cap": "The paper does not tell the story of the project. It does give its reasoning in order. Here it is as moves you can reuse.", "kind": "ours"}, {"cap": "Move 1. Ask what else a step produces.", "src": "§1", "set": {"n0": {"on": true}, "t0": {"op": 1}, "p0": {"op": 1}, "y0": {"op": 1}, "lab": {"op": 1}}, "read": 9}, {"cap": "Move 2. Take the costly signal out of the loop.", "src": "§2", "set": {"n1": {"on": true}, "t1": {"op": 1}, "p1": {"op": 1}, "y1": {"op": 1}, "lab": {"op": 1}, "n0": {"on": false, "done": true}, "t0": {"op": 0}, "p0": {"op": 0}, "y0": {"op": 0}}, "read": 9}, {"cap": "Move 3. Make the improver the thing you improve.", "src": "§1, §2", "set": {"n2": {"on": true}, "t2": {"op": 1}, "p2": {"op": 1}, "y2": {"op": 1}, "lab": {"op": 1}, "n1": {"on": false, "done": true}, "t1": {"op": 0}, "p1": {"op": 0}, "y1": {"op": 0}}, "read": 9}, {"cap": "Move 4. Fix what must not change.", "src": "App. A", "set": {"n3": {"on": true}, "t3": {"op": 1}, "p3": {"op": 1}, "y3": {"op": 1}, "lab": {"op": 1}, "n2": {"on": false, "done": true}, "t2": {"op": 0}, "p2": {"op": 0}, "y2": {"op": 0}}, "read": 9}, {"cap": "Move 5. Run two briefs and share notes.", "src": "§2, §4.2", "set": {"n4": {"on": true}, "t4": {"op": 1}, "p4": {"op": 1}, "y4": {"op": 1}, "lab": {"op": 1}, "n3": {"on": false, "done": true}, "t3": {"op": 0}, "p3": {"op": 0}, "y3": {"op": 0}}, "read": 9}, {"cap": "Move 6. Remove each part once.", "src": "§4.1", "set": {"n5": {"on": true}, "t5": {"op": 1}, "p5": {"op": 1}, "y5": {"op": 1}, "lab": {"op": 1}, "n4": {"on": false, "done": true}, "t4": {"op": 0}, "p4": {"op": 0}, "y4": {"op": 0}}, "read": 9}, {"cap": "This is our reading of the paper’s order, not its history.", "kind": "ours", "read": 4, "set": {"n5": {"on": false, "done": true}, "t5": {"op": 0}, "p5": {"op": 0}, "y5": {"op": 0}, "lab": {"op": 0}, "sum": {"op": 1}}}]}]}, {"n": "07", "name": "Glossary", "short": "Glossary", "lede": "The terms used in this film, in one place.", "scenes": [{"title": "Glossary", "actors": [{"id": "a", "type": "table", "x": 48, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Agent harness", "The code around a model: instructions, tools and the loop that runs them."]}, {"c": ["Self-improvement episode", "One run in which an agent edits a copy of its own repository."]}, {"c": ["Episode record", "The episode’s trajectory (reasoning, tool actions, results) plus its code changes."]}, {"c": ["Successor", "The edited copy. It runs the next episode."]}, {"c": ["Lineage", "A chain of successors that follows one search direction."]}, {"c": ["Search direction", "A plain-text instruction on what kinds of change to look into."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}, {"id": "b", "type": "table", "x": 652, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Reward-free search", "A search that uses no task scores to guide edits or select agents."]}, {"c": ["Score-guided search", "A search that runs candidates on tasks and keeps what scores best."]}, {"c": ["Fixed runtime", "The part the agent cannot edit: model, limits, budgets, trajectory logs."]}, {"c": ["Population mean", "The average success of the two final agents."]}, {"c": ["Shared successes", "Tasks solved by both the initial and the evolved agent."]}, {"c": ["Terminal-Bench 2.1", "89 hard command-line tasks for agents."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}], "beats": [{"cap": "Paper: arxiv.org/abs/2609.37968 · The paper gives no code link.", "kind": "none", "dur": 14}]}]}]};
+    return this._R;
+  }
+
+
+  sceneKit(type, p, T) {
+    var P = [];
+    var base = function (o) {
+      var d = { isRect: false, isPath: false, isCirc: false, isText: false, isPoly: false, x: 0, y: 0, w: 0, h: 0, rx: 0, d: '', cx: 0, cy: 0, r: 0, pts: '', fill: 'none', stroke: 'none', sw: 0, dash: 'none', op: 1, anim: 'none', fs: 12, fw: 400, anchor: 'start', txt: '', font: T.body, tf: '', tdl: 0 };
+      for (var k in o) { if (o[k] !== undefined) d[k] = o[k]; }
+      P.push(d); return d;
+    };
+    var rect = function (x, y, w, h, o) { o = o || {}; o.isRect = true; o.x = x; o.y = y; o.w = Math.max(0, w); o.h = Math.max(0, h); return base(o); };
+    var path = function (d, o) { o = o || {}; o.isPath = true; o.d = d; return base(o); };
+    var circ = function (cx, cy, r, o) { o = o || {}; o.isCirc = true; o.cx = cx; o.cy = cy; o.r = r; return base(o); };
+    var text = function (x, y, t2, o) { o = o || {}; o.isText = true; o.x = x; o.y = y; o.txt = t2 == null ? '' : String(t2); if (o.fill === undefined) o.fill = T.ink; return base(o); };
+    var poly = function (pts, o) { o = o || {}; o.isPoly = true; o.pts = pts; return base(o); };
+    var I = {
+      gear: 'M12 8a4 4 0 1 0 .01 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1',
+      net: 'M5 4a2 2 0 1 0 .01 0 M5 16a2 2 0 1 0 .01 0 M19 10a2 2 0 1 0 .01 0 M12 4a2 2 0 1 0 .01 0 M12 16a2 2 0 1 0 .01 0 M7 6h3 M7 18h3 M14 7l3 4 M14 17l3-4 M7 7l3 9',
+      photo: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 8a1.5 1.5 0 1 0 .01 0',
+      depth: 'M4 5h16 M4 9h16 M4 13h16 M4 17h16',
+      code: 'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16',
+      task: 'M6 3h12v18H6z M9 8h6 M9 12h6 M9 16h4',
+      mask: 'M12 3a4 4 0 1 0 .01 0 M5 21c0-4 3-7 7-7s7 3 7 7z',
+      box3d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5',
+      mesh: 'M3 20L12 4l9 16z M7.5 12h9 M7.5 12L12 20l4.5-8',
+      camera: 'M3 8h4l2-3h6l2 3h4v11H3z M12 10a3.5 3.5 0 1 0 .01 0',
+      clock: 'M12 3a9 9 0 1 0 .01 0 M12 7v5l3 2',
+      book: 'M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z',
+      page: 'M6 3h9l4 4v14H6z M15 3v4h4 M9 12h7 M9 16h5',
+      eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 .01 0',
+      eyeoff: 'M3 3l18 18 M10.6 6.1A10 10 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.4 4 M6.6 6.6C3.9 8.4 2 12 2 12s4 6 10 6a9 9 0 0 0 4.4-1.1',
+      gpu: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+      film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+      brush: 'M14 4l6 6-8 8-6-6z M6 12l-3 8 8-3',
+      check: 'M5 12l5 5 9-10', cross: 'M6 6l12 12 M18 6L6 18', pause: 'M9 5v14 M15 5v14', dot: 'M12 11a1 1 0 1 0 .01 0'
+    };
+    var icon = function (name, x, y, k, col, op) { path(I[name] || I.dot, { tf: 'translate(' + x + ' ' + y + ') scale(' + k + ')', stroke: col || T.ink, sw: 1.7 / k, op: op == null ? 1 : op }); };
+    var toneCol = function (tn) { return tn === 'ok' ? T.ok : (tn === 'bad' ? T.bad : (tn === 'acc' ? T.acc : (tn === 'muted' ? T.muted : T.ink))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? T.accSoft : T.card)); };
+    var look = p.look || 'paint', wo = look === 'wire' ? 1 : 0, po = 1 - wo, w, h;
+    if (type === 'robot') {
+      var ex = p.lookdir === 'l' ? -3 : (p.lookdir === 'r' ? 3 : 0), th = !!p.think;
+      rect(20, 82, 10, 10, { rx: 2, fill: T.ink }); rect(40, 82, 10, 10, { rx: 2, fill: T.ink });
+      path('M10 52 L0 67', { stroke: T.ink, sw: 2.6 }); path('M60 52 L70 65', { stroke: T.ink, sw: 2.6 });
+      rect(10, 40, 50, 44, { rx: 12, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(35, 61, 6, { fill: th ? T.acc : T.rule, anim: th ? 'plpulse 1s ease-in-out infinite' : 'none' });
+      rect(15, 8, 40, 32, { rx: 10, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(28 + ex, 24, 3.6, { fill: T.ink }); circ(42 + ex, 24, 3.6, { fill: T.ink });
+      path('M35 8 V0', { stroke: T.ink, sw: 2 }); circ(35, -1, 3.2, { fill: p.col || T.acc });
+      circ(62, -6, 3, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out infinite' : 'none' });
+      circ(70, -15, 4, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .2s infinite' : 'none' });
+      circ(80, -26, 5, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .4s infinite' : 'none' });
+      if (p.label) text(35, 108, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+      w = 70; h = 92;
+    } else if (type === 'ground') {
+      w = p.w || 300; h = 24;
+      path('M0 1 H' + w, { stroke: T.acc, sw: 1.6, dash: '6 5', op: wo });
+      for (var gi = 12; gi < w; gi += 28) path('M' + gi + ' 2 l-9 11', { stroke: T.acc, sw: 1, op: wo * 0.6 });
+      rect(0, 0, w, h, { fill: T.grass, op: po }); rect(0, 0, w, 5, { fill: T.grassTop, op: po });
+    } else if (type === 'crate') {
+      w = h = p.w || 56;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      path('M0 0 L' + w + ' ' + h + ' M' + w + ' 0 L0 ' + h, { stroke: T.acc, sw: 1, dash: '4 4', op: wo });
+      rect(0, 0, w, h, { rx: 3, fill: T.crate, stroke: T.crateEdge, sw: 2, op: po });
+      path('M0 ' + (h / 3) + ' H' + w + ' M0 ' + (2 * h / 3) + ' H' + w + ' M4 4 L' + (w - 4) + ' ' + (h - 4), { stroke: T.crateEdge, sw: 1.3, op: po });
+    } else if (type === 'wall') {
+      w = p.w || 22; h = p.h || 120;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 2, fill: T.wall, stroke: T.wallEdge, sw: 1.5, op: po });
+      var bl = ''; for (var wy = 15; wy < h; wy += 15) bl += 'M0 ' + wy + ' H' + w + ' ';
+      if (bl) path(bl, { stroke: T.wallEdge, sw: 1, op: po * 0.7 });
+    } else if (type === 'block') {
+      w = p.w || 80; h = p.h || 40;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 4, fill: p.color || '#E9D7B9', stroke: '#A88B5E', sw: 1.5, op: po });
+      if (p.label) text(w / 2, h / 2 + 4, p.label, { anchor: 'middle', fs: 11, fill: wo ? T.acc : '#6E5634' });
+    } else if (type === 'card') {
+      w = p.w || 150; h = p.h || 96;
+      var small = h < 70;
+      if (p.on) rect(-5, -5, w + 10, h + 10, { rx: 16, stroke: T.acc, sw: 2, anim: 'plpulse 1.4s ease-in-out infinite' });
+      rect(0, 0, w, h, { rx: 12, fill: T.card, stroke: p.on ? T.acc : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 12, small ? (h - 20) / 2 : 10, 0.85, p.on ? T.acc : T.ink);
+      text(38, small ? h / 2 - (p.sub ? 1 : -5) : 26, p.label, { fs: 13.5, fw: 600 });
+      if (p.sub) text(38, small ? h / 2 + 14 : h - 12, p.sub, { fs: 11, fill: T.muted });
+      if (!small && p.fill) {
+        var bx = 10, by = 38, bw = w - 20, bh = h - (p.sub ? 62 : 48);
+        if (p.fill === 'depth') { for (var di = 0; di < 6; di++) rect(bx, by + di * bh / 6, bw, bh / 6 + 0.6, { fill: T.depth[di] }); }
+        else if (p.fill === 'paint') { rect(bx, by, bw, bh, { rx: 4, fill: T.sky }); circ(bx + bw - 18, by + 14, 8, { fill: T.sun }); rect(bx, by + bh * 0.72, bw, bh * 0.28, { fill: T.grass }); }
+        else if (p.fill === 'code' || p.fill === 'list') {
+          (p.lines || []).forEach(function (ln, li) {
+            if (li === p.hl) rect(bx - 3, by + li * 18 - 2, bw + 6, 18, { rx: 3, fill: T.accSoft });
+            text(bx, by + 11 + li * 18, ln, { fs: 11.5, font: p.fill === 'code' ? T.mono : T.body, fill: li === p.hl ? T.acc : T.ink });
+          });
+        }
+      }
+    } else if (type === 'icon') {
+      w = 48; h = 48;
+      rect(0, 0, 48, 48, { rx: 12, fill: T.card, stroke: p.tone ? toneCol(p.tone) : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 9, 9, 1.25, p.tone ? toneCol(p.tone) : T.ink);
+      if (p.label) text(24, 66, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+    } else if (type === 'badge') {
+      var bt = String(p.text || ''); w = Math.round(bt.length * 7.3 + 30); h = 32;
+      rect(0, 0, w, h, { rx: 16, fill: toneBg(p.tone), stroke: toneCol(p.tone), sw: 1.5 });
+      text(w / 2, 21, bt, { anchor: 'middle', fs: 13, fw: 600, fill: toneCol(p.tone) });
+    } else if (type === 'bubble') {
+      var bt2 = String(p.text || ''); w = Math.round(bt2.length * 7.4 + 26); h = 34;
+      path('M' + (w - 34) + ' 33 l10 12 l4 -12', { fill: T.card, stroke: T.ink, sw: 1.5 });
+      rect(0, 0, w, h, { rx: 10, fill: T.card, stroke: T.ink, sw: 1.5 });
+      text(13, 22, bt2, { fs: 12.5, font: T.mono });
+    } else if (type === 'label') {
+      var fs = p.fs || 13, lt = String(p.text || ''); w = Math.round(lt.length * fs * 0.56); h = fs + 6;
+      text(p.anchor === 'middle' ? w / 2 : 0, fs, lt, { fs: fs, fw: p.fw || 500, fill: toneCol(p.tone || 'muted'), anchor: p.anchor || 'start' });
+    } else if (type === 'panel') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 14, fill: T.card, stroke: T.ruleDark, sw: 1.2 });
+      text(16, 26, p.label, { fs: 13.5, fw: 600, fill: T.label });
+    } else if (type === 'curtain') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 10, fill: T.bg, op: 0.94 });
+      icon('eyeoff', w / 2 - 14, h / 2 - 34, 1.2, T.muted);
+      text(w / 2, h / 2 + 14, p.text || '', { anchor: 'middle', fs: 13, fill: T.muted });
+    } else if (type === 'cells') {
+      var pat = String(p.pat || ''), cw = p.cw || 26, ch = p.ch || 30, gap = p.gap == null ? 6 : p.gap, tx = p.texts || [];
+      w = Math.max(1, pat.length * (cw + gap) - gap); h = ch;
+      for (var ci = 0; ci < pat.length; ci++) {
+        var c = pat.charAt(ci), cx0 = ci * (cw + gap), st = { rx: 5, fill: T.rule, stroke: 'none', sw: 0, op: 1, anim: 'none', tdl: +(ci * 0.07).toFixed(2), dash: 'none' };
+        if (c === '.') st.op = 0;
+        else if (c === 'P') { st.fill = T.acc; }
+        else if (c === 'r') { st.fill = '#DCE3EE'; st.stroke = '#B5C0D2'; st.sw = 1; }
+        else if (c === 'N') { st.fill = T.acc; st.op = 0.85; st.anim = 'plpulse 1.2s ease-in-out infinite'; }
+        else if (c === 'x') { st.fill = T.rule; st.op = 0.2; }
+        else if (c === 'd') { st.fill = T.depth[1 + ci % 4]; }
+        else if (c === 'p') { st.fill = T.paintCell; }
+        else if (c === 'b') { st.fill = T.card; st.stroke = T.ink; st.sw = 1.5; }
+        else if (c === 'g') { st.fill = '#E3F4EB'; st.stroke = T.ok; st.sw = 1.5; }
+        else if (c === 'w') { st.fill = '#FBE6E6'; st.stroke = T.bad; st.sw = 1.6; st.dash = '7 5'; st.anim = 'plflow .7s linear infinite'; }
+        rect(cx0, 0, cw, ch, st);
+        if (tx[ci]) text(cx0 + cw / 2, ch / 2 + 4, tx[ci], { anchor: 'middle', fs: 12, fill: c === 'P' || c === 'N' ? '#FFFFFF' : T.ink, op: c === '.' ? 0 : 1, tdl: st.tdl });
+      }
+    } else if (type === 'strip') {
+      var sp = String(p.pat || ''), fw = p.fw || 40, fh = p.fh || 30, sg = p.gap == null ? 5 : p.gap;
+      w = Math.max(1, sp.length * (fw + sg) - sg); h = fh;
+      for (var si2 = 0; si2 < sp.length; si2++) {
+        var ch2 = sp.charAt(si2), x0 = si2 * (fw + sg), dl2 = +(si2 * 0.06).toFixed(2), cxr = x0 + fw * (0.12 + (si2 % 8) * 0.06), cs = fw * 0.2;
+        if (ch2 === '.') continue;
+        if (ch2 === 'x') { rect(x0, 0, fw, fh, { rx: 3, fill: T.rule, op: 0.3, tdl: dl2 }); continue; }
+        if (ch2 === 'd') {
+          for (var bd = 0; bd < 4; bd++) rect(x0, bd * fh / 4, fw, fh / 4 + 0.5, { fill: T.depth[2 + bd], tdl: dl2 });
+          rect(cxr, fh * 0.45, cs, fh * 0.38, { fill: T.depth[0], tdl: dl2 });
+          continue;
+        }
+        var faint = ch2 === 'N' ? 0.55 : 1;
+        rect(x0, 0, fw, fh, { fill: T.sky, op: faint, tdl: dl2 });
+        rect(x0, fh * 0.74, fw, fh * 0.26, { fill: T.grass, op: faint, tdl: dl2 });
+        if (ch2 !== 'q') rect(cxr, fh * 0.74 - fh * 0.34, cs, fh * 0.34, { fill: T.crate, stroke: T.crateEdge, sw: 1, op: faint, tdl: dl2 });
+        if (ch2 === 'P') rect(x0, 0, fw, fh, { rx: 3, stroke: T.acc, sw: 2.2 });
+        else if (ch2 === 'N') rect(x0 - 1, -1, fw + 2, fh + 2, { rx: 3, stroke: T.acc, sw: 2, anim: 'plpulse 1.1s ease-in-out infinite' });
+        else rect(x0, 0, fw, fh, { rx: 3, stroke: T.ruleDark, sw: 1 });
+      }
+      if (p.texts) p.texts.forEach(function (tx2, k2) { if (tx2) text(k2 * (fw + sg) + fw / 2, fh + 13, tx2, { anchor: 'middle', fs: 10.5, fill: T.muted }); });
+    } else if (type === 'beam') {
+      w = p.W || 840; h = p.H || 400;
+      var col = toneCol(p.tone || 'acc'), pts = String(p.pts || '0,0 1,1');
+      poly(pts, { stroke: col, sw: 7, op: 0.12 });
+      poly(pts, { stroke: col, sw: 2, dash: '7 6', anim: 'plflow 1s linear infinite' });
+      var pp = pts.trim().split(/\s+/).map(function (q) { return q.split(',').map(Number); });
+      var a2 = pp[pp.length - 1], a1 = pp[pp.length - 2] || [0, 0];
+      var ang = Math.atan2(a2[1] - a1[1], a2[0] - a1[0]) * 180 / Math.PI;
+      path('M0 0 L-11 -6 L-11 6 Z', { tf: 'translate(' + a2[0] + ' ' + a2[1] + ') rotate(' + ang.toFixed(1) + ')', fill: col });
+      if (p.label) {
+        var lfs = p.lfs || 11.5, lw = Math.round(String(p.label).length * lfs * 0.6 + 18), lx = p.lx == null ? (pp[0][0] + a2[0]) / 2 : p.lx, ly = p.ly == null ? (pp[0][1] + a2[1]) / 2 : p.ly;
+        rect(lx - lw / 2, ly - lfs, lw, lfs * 2, { rx: lfs, fill: T.card, stroke: col, sw: 1 });
+        text(lx, ly + lfs * 0.36, p.label, { anchor: 'middle', fs: lfs, fw: 600, fill: col });
+      }
+    } else if (type === 'tv') {
+      var sw2 = p.w || 220, sh2 = p.h || 140, kind = p.show || 'paint', ccx = 8 + sw2 * (p.cx == null ? 0.35 : p.cx), csz = sh2 * 0.26, gy = 8 + sh2 * 0.74;
+      w = sw2 + 16; h = sh2 + 40;
+      rect(0, 0, w, sh2 + 16, { rx: 12, fill: '#1E232B' });
+      if (kind === 'paint' || kind === 'ghost') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.sky });
+        circ(8 + sw2 * 0.85, 8 + sh2 * 0.2, sh2 * 0.08, { fill: T.sun });
+        rect(8, gy, sw2, sh2 * 0.26, { fill: T.grass }); rect(8, gy, sw2, 4, { fill: T.grassTop });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.wall, stroke: T.wallEdge, sw: 1 });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { rx: 2, fill: T.crate, stroke: T.crateEdge, sw: 1.5, op: kind === 'ghost' ? 0.28 : 1 });
+      } else if (kind === 'depth') {
+        for (var dq = 0; dq < 5; dq++) rect(8, 8 + dq * sh2 / 5, sw2, sh2 / 5 + 0.5, { fill: T.depth[1 + dq] });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.depth[1] });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { fill: T.depth[0] });
+      } else if (kind === 'wire') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.card });
+        path('M8 ' + gy + ' H' + (8 + sw2), { stroke: T.acc, sw: 1.5, dash: '6 5' });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { stroke: T.acc, sw: 1.5, dash: '5 4' });
+      } else { rect(8, 8, sw2, sh2, { rx: 4, fill: '#2A303A' }); }
+      if (p.q) text(8 + sw2 / 2, 8 + sh2 / 2 + 16, '?', { anchor: 'middle', fs: 44, fw: 700, fill: T.bad });
+      rect(w / 2 - 6, sh2 + 16, 12, 14, { fill: '#1E232B' }); rect(w / 2 - 34, sh2 + 28, 68, 6, { rx: 3, fill: '#1E232B' });
+      if (p.label) text(w / 2, sh2 + 58, p.label, { anchor: 'middle', fs: p.lfs || 14, fill: T.label, fw: 500 });
+    } else if (type === 'ramp') {
+      w = p.w || 110; h = p.h || 60;
+      path(p.flip ? 'M0 0 L0 ' + h + ' L' + w + ' ' + h + ' Z' : 'M0 ' + h + ' L' + w + ' ' + h + ' L' + w + ' 0 Z', look === 'wire' ? { stroke: T.acc, sw: 1.6, dash: '5 4' } : { fill: '#E9D7B9', stroke: '#A88B5E', sw: 1.6 });
+    } else if (type === 'scale') {
+      var SW = p.w || 380, th2 = (p.tilt || 0) * 14 * Math.PI / 180, LL = SW / 2 - 40, pc = SW / 2;
+      var ends = [[pc - LL * Math.cos(th2), 46 - LL * Math.sin(th2)], [pc + LL * Math.cos(th2), 46 + LL * Math.sin(th2)]];
+      w = SW; h = 250;
+      rect(pc - 5, 46, 10, 170, { fill: T.ink }); rect(pc - 70, 214, 140, 12, { rx: 4, fill: T.ink });
+      path('M' + ends[0][0].toFixed(1) + ' ' + ends[0][1].toFixed(1) + ' L' + ends[1][0].toFixed(1) + ' ' + ends[1][1].toFixed(1), { stroke: T.ink, sw: 6 });
+      circ(pc, 46, 9, { fill: T.acc });
+      [[p.lt, p.ls, p.lc], [p.rt, p.rs, p.rc]].forEach(function (L2, q) {
+        var ex2 = ends[q][0], ey2 = ends[q][1];
+        path('M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 - 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 + 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1), { stroke: T.muted, sw: 1.5 });
+        path('M' + (ex2 - 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Q' + ex2.toFixed(1) + ' ' + (ey2 + 108).toFixed(1) + ' ' + (ex2 + 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Z', { fill: L2[2] ? toneBg(L2[2]) : T.card, stroke: L2[2] ? toneCol(L2[2]) : T.ink, sw: 2 });
+        if (L2[0]) text(ex2, ey2 + 62, L2[0], { anchor: 'middle', fs: 16, fw: 600, fill: L2[2] ? toneCol(L2[2]) : T.ink });
+        if (L2[1]) text(ex2, ey2 + 130, L2[1], { anchor: 'middle', fs: 13, fill: T.muted });
+      });
+    } else if (type === 'db') {
+      w = p.w || 92; h = p.h || 110; var ry = 14;
+      path('M0 ' + ry + ' V' + (h - ry) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h - ry) + ' V' + ry, { fill: p.on ? T.accSoft : T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 ' + w + ' ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 0 ' + ry, { fill: T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + (h * 0.42) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h * 0.42), { stroke: p.on ? T.acc : T.ink, sw: 1.5 });
+      if (p.label) text(w / 2, h + 24, p.label, { anchor: 'middle', fs: p.lfs || 14, fw: 500, fill: T.label });
+    } else if (type === 'node') {
+      var r2 = p.r || 26; w = h = r2 * 2;
+      if (p.on) circ(r2, r2, r2 + 7, { stroke: T.acc, sw: 2, anim: 'plpulse 1.3s ease-in-out infinite' });
+      circ(r2, r2, r2, { fill: p.on ? T.acc : T.card, stroke: p.on || p.done ? T.acc : T.ruleDark, sw: 2 });
+      text(r2, r2 + 6, p.text || '', { anchor: 'middle', fs: p.fs || 18, fw: 600, fill: p.on ? '#FFFFFF' : (p.done ? T.acc : T.muted) });
+    } else if (type === 'tokens') {
+      var words = p.words || [], tw = p.tw || 86, th = p.th || 40, tg = p.gap == null ? 8 : p.gap, onl = p.on || [], upto = p.upto == null ? 999 : p.upto;
+      w = Math.max(1, words.length * (tw + tg) - tg); h = th + (p.subs ? 20 : 0);
+      words.forEach(function (wd, i) {
+        var on = onl.indexOf(i) >= 0, sh = i < upto, x0 = i * (tw + tg), dl = +(i * 0.05).toFixed(2);
+        rect(x0, 0, tw, th, { rx: 8, fill: on ? T.acc : T.card, stroke: on ? T.acc : T.ink, sw: 1.6, op: sh ? 1 : 0.12, tdl: dl });
+        text(x0 + tw / 2, th / 2 + (p.fs || 16) * 0.36, wd, { anchor: 'middle', fs: p.fs || 16, fw: 500, fill: on ? '#FFFFFF' : T.ink, op: sh ? 1 : 0.12, tdl: dl });
+        if (p.subs && p.subs[i]) text(x0 + tw / 2, th + 15, p.subs[i], { anchor: 'middle', fs: 11, fill: T.muted, op: sh ? 1 : 0.12, font: T.mono });
+      });
+    } else if (type === 'arcs') {
+      var n2 = p.n || 6, tw2 = p.tw || 86, tg2 = p.gap == null ? 8 : p.gap, fr = p.from || 0, ws = p.weights || [], AH = p.h || 120;
+      var cc = function (i) { return i * (tw2 + tg2) + tw2 / 2; };
+      w = Math.max(1, n2 * (tw2 + tg2) - tg2); h = 1;
+      for (var j2 = 0; j2 < n2; j2++) {
+        var wv = ws[j2] == null ? 0.2 : ws[j2];
+        if (j2 === fr) { circ(cc(j2), -6, 3 + wv * 6, { fill: T.acc, op: 0.3 + 0.7 * wv }); continue; }
+        var pk = -(AH * (0.35 + 0.65 * Math.abs(fr - j2) / n2));
+        path('M' + cc(fr) + ' -2 Q' + ((cc(fr) + cc(j2)) / 2).toFixed(1) + ' ' + pk.toFixed(1) + ' ' + cc(j2) + ' -2', { stroke: T.acc, sw: +(1 + 7 * wv).toFixed(1), op: +(0.18 + 0.82 * wv).toFixed(2) });
+        if (p.showw) text(cc(j2), -14, wv.toFixed(2), { anchor: 'middle', fs: 13, fw: 600, fill: T.acc, font: T.mono });
+      }
+    } else if (type === 'heat') {
+      var R2 = p.rows || [], C2 = p.cols || [], V2 = p.w || [], cs2 = p.cs || 34, lw2 = R2.length && p.labels !== false ? (p.lw || 74) : 0, tp = C2.length && p.labels !== false ? (p.top || 26) : 0;
+      var nr = V2.length, nc = nr ? V2[0].length : 0;
+      w = lw2 + nc * cs2; h = tp + nr * cs2;
+      if (lw2) R2.forEach(function (rl, i) { text(lw2 - 8, tp + i * cs2 + cs2 / 2 + 4, rl, { anchor: 'end', fs: p.lfs || 12, fill: p.hlr === i ? T.acc : T.label, fw: p.hlr === i ? 600 : 400 }); });
+      if (tp) C2.forEach(function (cl, j) { text(lw2 + j * cs2 + cs2 / 2, tp - 9, cl, { anchor: 'middle', fs: p.lfs || 12, fill: T.label }); });
+      for (var i3 = 0; i3 < nr; i3++) for (var j3 = 0; j3 < nc; j3++) {
+        var vv = V2[i3][j3], blocked = p.mask && j3 > i3, dl3 = +((i3 * nc + j3) * 0.006).toFixed(3);
+        rect(lw2 + j3 * cs2 + 1, tp + i3 * cs2 + 1, cs2 - 2, cs2 - 2, { rx: 3, fill: blocked ? T.rule : (p.tone === 'ink' ? T.ink : T.acc), op: blocked ? 0.55 : +(0.06 + 0.94 * vv).toFixed(2), tdl: dl3 });
+        if (p.showv && !blocked) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, (p.fmt === 'int' ? Math.round(vv * 10) : vv.toFixed(2)).toString().replace(/^0\./, '.'), { anchor: 'middle', fs: p.vfs || 11, fill: vv > 0.5 ? '#FFFFFF' : T.ink, font: T.mono });
+        if (blocked && p.showx) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, '×', { anchor: 'middle', fs: 13, fill: T.muted });
+      }
+      if (p.hlr != null && p.hlr >= 0) rect(lw2 - 2, tp + p.hlr * cs2 - 1, nc * cs2 + 4, cs2 + 2, { rx: 5, stroke: T.ink, sw: 2 });
+    } else if (type === 'plot') {
+      w = p.w || 500; h = p.h || 200;
+      path('M0 ' + (p.axisY == null ? h : p.axisY) + ' H' + w + ' M0 0 V' + h, { stroke: T.ruleDark, sw: 1.2 });
+      (p.series || []).forEach(function (sr) { poly(sr.pts, { stroke: sr.tone === 'acc' ? T.acc : (sr.tone === 'muted' ? T.muted : T.ink), sw: sr.sw || 2.4, dash: sr.dash ? '6 5' : 'none', op: sr.op == null ? 1 : sr.op }); });
+    } else { w = 10; h = 10; }
+    return { w: w, h: h, prims: P };
+  }
+
+
+  /* ---------------- rendering ---------------- */
+  renderVals() {
+    var self = this, S = this.state;
+    var themes = [
+      { name: 'Cloud', page: '#E3E7EE', bg: '#F2F4F7', band: '#F6F8FB', card: '#FFFFFF', ink: '#12161C', muted: '#5E6773', label: '#3E4652', rule: '#DFE3E9', edge: 'rgba(20, 35, 60, 0.10)', track: 'rgba(20, 35, 60, 0.14)', sh: 'rgba(20, 35, 60, 0.20)', shSoft: 'rgba(20, 35, 60, 0.08)', shDeep: 'rgba(20, 35, 60, 0.32)' },
+      { name: 'Sky', page: '#D9E4F3', bg: '#E9F0FA', band: '#F3F7FD', card: '#FFFFFF', ink: '#0F1A2B', muted: '#56657A', label: '#33445C', rule: '#D6E0EE', edge: 'rgba(30, 70, 140, 0.12)', track: 'rgba(30, 70, 140, 0.16)', sh: 'rgba(30, 70, 140, 0.20)', shSoft: 'rgba(30, 70, 140, 0.08)', shDeep: 'rgba(30, 70, 140, 0.30)' },
+      { name: 'Mint', page: '#D8EAE1', bg: '#E8F4EF', band: '#F2F9F6', card: '#FFFFFF', ink: '#0F1F19', muted: '#52685F', label: '#32483F', rule: '#D2E4DB', edge: 'rgba(20, 90, 60, 0.12)', track: 'rgba(20, 90, 60, 0.16)', sh: 'rgba(20, 90, 60, 0.18)', shSoft: 'rgba(20, 90, 60, 0.08)', shDeep: 'rgba(20, 90, 60, 0.28)' },
+      { name: 'Lilac', page: '#E1DDF4', bg: '#EFEDFA', band: '#F6F5FD', card: '#FFFFFF', ink: '#17142A', muted: '#615C7A', label: '#433E5E', rule: '#DFDAF1', edge: 'rgba(70, 50, 150, 0.12)', track: 'rgba(70, 50, 150, 0.16)', sh: 'rgba(70, 50, 150, 0.18)', shSoft: 'rgba(70, 50, 150, 0.08)', shDeep: 'rgba(70, 50, 150, 0.28)' },
+      { name: 'Stone', page: '#DCDDE1', bg: '#EBECEE', band: '#F4F5F6', card: '#FFFFFF', ink: '#141518', muted: '#5D6068', label: '#3B3E45', rule: '#DADCE0', edge: 'rgba(20, 22, 30, 0.10)', track: 'rgba(20, 22, 30, 0.14)', sh: 'rgba(20, 22, 30, 0.20)', shSoft: 'rgba(20, 22, 30, 0.08)', shDeep: 'rgba(20, 22, 30, 0.32)' }
+    ];
+    var chosen = S.theme ?? (this.props.paper ?? 'Cloud');
+    var t = themes.find(function (x) { return x.name === chosen; }) || themes[0];
+    var accent = this.props.accent ?? '#2F5BEA';
+    var hex = accent.replace('#', '');
+    var cr = parseInt(hex.substring(0, 2), 16), cg = parseInt(hex.substring(2, 4), 16), cb = parseInt(hex.substring(4, 6), 16);
+    var rgba = function (a) { return 'rgba(' + cr + ', ' + cg + ', ' + cb + ', ' + a + ')'; };
+    var OK = '#1F9D63', BAD = '#D64545';
+    var tone = function (tn, dflt) { return tn === 'acc' ? accent : (tn === 'ok' ? OK : (tn === 'bad' ? BAD : (tn === 'muted' ? t.muted : (tn === 'label' ? t.label : (dflt || t.ink))))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? rgba(0.1) : t.bg)); };
+    var SANS = "'IBM Plex Sans', sans-serif", SERIF = "'Newsreader', serif", MONO = "'IBM Plex Mono', monospace";
+    var segs = function (txt, base) {
+      var out = [], parts = String(txt == null ? '' : txt).split('*');
+      parts.forEach(function (p, k) { if (p) out.push({ t: p, c: k % 2 ? accent : (base || 'inherit'), fw: k % 2 ? 600 : 'inherit' }); });
+      if (!out.length) out.push({ t: '', c: 'inherit', fw: 'inherit' });
+      return out;
+    };
+    var TK = { acc: accent, accSoft: rgba(0.12), ink: t.ink, muted: t.muted, label: t.label, rule: t.rule, ruleDark: t.muted + '66', card: t.card, bg: t.bg,
+      ok: OK, bad: BAD, sky: '#D3E6F8', grass: '#BFE3C6', grassTop: '#8CC796', crate: '#DDAE73', crateEdge: '#9A6B36', wall: '#C3C9D3', wallEdge: '#8C94A3', sun: '#F5C451',
+      depth: ['#273041', '#3B475C', '#56647B', '#7684A0', '#9AA7C0', '#C3CCDD'], paintCell: '#A9CDEB', body: SANS, mono: MONO };
+
+    var R = this.report(), F = this.film(), LIST = F.list;
+    var si = Math.max(0, Math.min(LIST.length - 1, S.scene)), cur = LIST[si], playing = !!S.playing;
+    var ch = R.chapters[cur.ch], chs = this.chScenes(ch, cur.ch);
+
+    var DY = 70; // captions sit at the top; the picture zone is y 210-650 (scripts author it as 140-580)
+    var actorView = function (a, st, z, ox, oy) {
+      var html = ['text', 'stat', 'table', 'bars', 'list'].indexOf(st.type) >= 0;
+      var vid = a.id, vtype = st.type;
+      var v = { isSvg: false, isText: false, isStat: false, isTable: false, isBars: false, isList: false, x: 0, y: 0, s: 1, op: st.op == null ? 1 : st.op, dl: st.dl || 0, w: 10, h: 10, anim: 'none', prims: [], labels: [] };
+      if (!html) {
+        var kk = self.sceneKit(st.type, Object.assign({ W: 1280, H: 720 }, st), TK);
+        var isBeam = st.type === 'beam';
+        v.isSvg = true; v.w = kk.w; v.h = kk.h;
+        v.prims = kk.prims.filter(function (q) { return !q.isText; });
+        v.labels = kk.prims.filter(function (q) { return q.isText && q.txt !== ''; }).map(function (q) {
+          return { x: q.x, y: +(q.y - q.fs * 0.76).toFixed(1), tx: q.anchor === 'middle' ? -50 : (q.anchor === 'end' ? -100 : 0), txt: q.txt, fs: q.fs, fw: q.fw, font: q.font, fill: q.fill, op: q.op, tdl: q.tdl };
+        });
+        v.x = +(ox + (isBeam ? 0 : (st.x || 0)) * z).toFixed(1); v.y = +(DY + oy + (isBeam ? 0 : (st.y || 0)) * z).toFixed(1); v.s = +((st.s || 1) * z).toFixed(3);
+        v.anim = st.type === 'robot' && st.bob !== false ? 'bob 3.2s ease-in-out infinite' : 'none';
+        v.id = vid; v.type = vtype;
+        return v;
+      }
+      v.x = st.x || 0; v.y = DY + (st.y || 0); v.s = st.s || 1; v.w = st.w || 400;
+      var upto = st.upto == null ? 999 : st.upto;
+      if (st.type === 'text') {
+        v.isText = true; v.fs = st.fs || 22; v.fw = st.fw || (st.font === 'serif' ? 500 : 400); v.font = st.font === 'serif' ? SERIF : (st.font === 'mono' ? MONO : SANS);
+        v.fst = st.italic ? 'italic' : 'normal'; v.lh = st.lh || 1.35; v.color = tone(st.tone); v.align = st.align || 'left';
+        v.bg = st.box ? toneBg(st.box) : 'transparent'; v.pad = st.box ? (st.pad || '14px 18px') : '0'; v.rad = st.box ? '14px' : '0';
+        v.bd = st.box ? '1px solid ' + (st.box === 'plain' ? t.rule : tone(st.box)) : 'none';
+        v.segs = segs(st.text);
+      } else if (st.type === 'stat') {
+        v.isStat = true; v.v = st.v; v.l = st.l; v.fs = st.fs || 52; v.c = tone(st.tone || 'acc'); v.bg = st.on ? rgba(0.08) : t.card; v.bd = st.on ? accent : t.rule;
+      } else if (st.type === 'table') {
+        v.isTable = true; v.fs = st.fs || 18; v.hfs = st.hfs || 15; v.rpad = st.rpad || 11;
+        v.cols = st.cols || st.head.map(function () { return '1fr'; }).join(' ');
+        var al = st.align || [];
+        v.head = st.head.map(function (h2, k) { return { t: h2, al: al[k] || 'left' }; });
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto, hl = r.hl || st.hl === k;
+          return { bg: hl && shown ? rgba(0.08) : 'transparent', op: shown ? 1 : (st.ghost ? 0.12 : 0),
+            cells: r.c.map(function (c, j) {
+              var tn = (r.tones || [])[j];
+              return { t: c, al: al[j] || 'left', fw: j === 0 || (r.bold || []).indexOf(j) >= 0 ? 600 : 400, c: tn ? tone(tn) : (j === 0 ? t.ink : t.label), font: (st.mono || []).indexOf(j) >= 0 ? MONO : 'inherit' };
+            }) };
+        });
+      } else if (st.type === 'bars') {
+        v.isBars = true; v.title = st.title || ''; v.sub = st.sub || ''; v.tfs = st.tfs || 18; v.fs = st.fs || 16; v.lw = st.lw || 150; v.vw = st.vw || 90; v.bh = st.bh || 22; v.gap = st.gap == null ? 8 : st.gap;
+        var mx = st.max || Math.max.apply(null, st.rows.map(function (r) { return r.v; }));
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto;
+          return { n: r.n, l: r.l || String(r.v), w: shown ? Math.max(r.v > 0 ? 1.5 : 0, Math.min(100, r.v / mx * 100)).toFixed(1) : '0', c: r.hl ? accent : (r.tone ? tone(r.tone) : '#9AA3AF'), op: shown ? 1 : 0.25, dl: (k * 0.12).toFixed(2), fw: r.hl ? 600 : 400, vc: r.hl ? accent : t.label };
+        });
+      } else if (st.type === 'list') {
+        v.isList = true; v.fs = st.fs || 20; v.sfs = st.sfs || 16; v.tfw = st.tfw || 500; v.gap = st.gap == null ? 16 : st.gap; v.mk = st.mk || 30; v.mt = st.mt == null ? -1 : st.mt; v.mfs = st.mfs || 15;
+        v.hasTitle = !!st.title; v.title = st.title || ''; v.tfs = st.tfs || 18; v.tc = tone(st.ttone || 'label');
+        v.items = st.items.map(function (it, k) {
+          var shown = k < upto, mk = it.m || st.mark || 'num', m, mbg, mc, mbd = 'none';
+          if (mk === 'check') { m = '✓'; mbg = '#E3F4EB'; mc = OK; }
+          else if (mk === 'cross') { m = '✕'; mbg = '#FBE6E6'; mc = BAD; }
+          else if (mk === 'dot') { m = ''; mbg = 'transparent'; mc = accent; mbd = '6px solid ' + accent; }
+          else { m = String(it.no || k + 1); var on2 = it.hl || st.hl === k; mbg = on2 ? accent : rgba(0.1); mc = on2 ? '#FFFFFF' : accent; }
+          return { m: m, mbg: mbg, mc: mc, mbd: mbd, t: it.t, s: it.s || '', hasS: !!it.s, op: shown ? 1 : (st.ghost ? 0.15 : 0), dx: shown ? 0 : -12, dl: (st.stagger ? k * 0.12 : 0).toFixed(2) };
+        });
+      }
+      v.id = vid; v.type = vtype;
+      return v;
+    };
+
+    var curSc = cur.sc;
+    var scenes = chs.map(function (s, k) {
+      var nb = s.beats.length, kb = k < curSc ? nb - 1 : (k > curSc ? 0 : cur.beat);
+      var stt = {};
+      s.actors.forEach(function (a) { stt[a.id] = Object.assign({}, a); });
+      for (var qb = 0; qb <= kb; qb++) { var set = s.beats[qb].set || {}; for (var aid in set) { if (stt[aid]) Object.assign(stt[aid], set[aid]); } }
+      var z = s.zoom || 1, ox = s.ox || 0, oy = s.oy || 0;
+      var on = k === curSc;
+      var hasCaps = s.beats.some(function (b) { return b.cap; });
+      return {
+        op: on ? 1 : 0, pe: on ? 'auto' : 'none', band: hasCaps ? 1 : 0, capTop: s.title ? 104 : 40,
+        tag: s.card ? '' : (ch.n ? ch.n + ' · ' : '') + ch.name, title: s.title || '',
+        dots: nb > 1 ? s.beats.map(function (b, k2) { return { no: k2 + 1, w: k2 === kb ? 22 : 8, bg: k2 <= kb ? accent : t.rule, pick: function () { self._go(F.chStart[cur.ch] + self._offset(cur.ch, k) + k2); } }; }) : [],
+        actors: on || Math.abs(k - curSc) <= 1 ? s.actors.map(function (a) { return actorView(a, stt[a.id], z, ox, oy); }) : [],
+        caps: s.beats.map(function (b, k2) {
+          var src = b.src, ours = b.kind === 'ours';
+          return { segs: segs(b.cap), op: k2 === kb ? 1 : 0, dy: k2 === kb ? 0 : (k2 < kb ? -8 : 8), chip: src || (ours ? 'Our note' : ''),
+            cop: src || ours ? 1 : 0, cbd: ours ? '1px dashed ' + accent : '1px solid ' + t.rule, cfg: ours ? accent : t.label };
+        })
+      };
+    });
+
+    var fmtT = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); };
+    var frac = playing ? 0 : (S.frac || 0);
+    var pos = cur.start + cur.dur * frac, total = F.total;
+    var speeds = [0.75, 1, 1.25, 1.5, 2, 3, 4];
+    var pl = {
+      icon: playing ? '❚❚' : '▶', playLabel: playing ? 'Pause' : 'Play',
+      toggle: function () { self._toggle(); }, prev: function () { self._go(si - 1); }, next: function () { self._go(si + 1); },
+      label: cur.label + (cur.nb > 1 ? ' · ' + (cur.beat + 1) + '/' + cur.nb : ''),
+      time: fmtT(pos / S.speed) + ' / ' + fmtT(total / S.speed),
+      w: playing ? ((cur.start + cur.dur) / total * 100).toFixed(2) : (pos / total * 100).toFixed(2),
+      tr: playing ? (cur.dur / S.speed).toFixed(2) : '0',
+      segs: R.chapters.map(function (c, ci) {
+        var a = LIST[F.chStart[ci]].start, b = ci + 1 < R.chapters.length ? LIST[F.chStart[ci + 1]].start : total;
+        return { name: (c.n ? c.n + ' ' : '') + c.name, w: (b - a).toFixed(1), pick: function () { self._go(F.chStart[ci]); } };
+      }),
+      speedLabel: S.speed + '×', speedOpen: !!S.speedOpen, speedBd: S.speed === 1 ? t.rule : accent,
+      toggleSpeed: function () { self.setState({ speedOpen: !self.state.speedOpen }); },
+      speeds: speeds.map(function (v) { var on = S.speed === v; return { l: v + '×', fw: on ? 600 : 400, bg: on ? rgba(0.1) : 'transparent', fg: on ? accent : t.ink, pick: function () { self._setSpeed(v); } }; })
+    };
+    var chips = R.chapters.map(function (c, ci) {
+      var on = ci === cur.ch;
+      return { n: c.n || '·', name: c.short || c.name, bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, fw: on ? 600 : 400, pick: function () { self._go(F.chStart[ci]); } };
+    });
+    var sc = S.scale || 1;
+    return { t: t, accent: accent, accSoft: rgba(0.1), tf: (1 / Math.max(1, S.speed)).toFixed(3), pid: this.pid(), meta: R.meta, chips: chips, scenes: scenes, pl: pl,
+      scale: sc.toFixed(4), stW: Math.round(1280 * sc), stH: Math.round(720 * sc) };
+  }
+  _offset(ci, k) {
+    var s = this.chScenes(this.report().chapters[ci], ci), n = 0;
+    for (var i = 0; i < k; i++) n += s[i].beats.length;
+    return n;
+  }
+}
+
+mountFilm(Component, "film-tpl", "film", {});
+</script>
+</body>
+</html>
