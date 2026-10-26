@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistral 7B · paper film</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{height:100%}
+#film{height:100vh}
+body{margin:0}
+button{cursor:pointer;font-family:inherit}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes plpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes plflow{to{stroke-dashoffset:-26}}
+@keyframes plblink{0%,100%{opacity:.15}50%{opacity:1}}
+.h{font-family:'Newsreader',serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--rule);background:var(--card);font-size:13.5px;color:var(--ink)}
+.seg{height:100%;border:none;padding:0;background:transparent;border-right:2px solid var(--card)}
+.seg:hover{background:rgba(0,0,0,.08)}
+.chap{height:32px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="film"></div>
+<template id="film-tpl">
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --ink: {{t.ink}}; --muted: {{t.muted}}; --label: {{t.label}}; --rule: {{t.rule}}; --acc: {{accent}}; --accsoft: {{accSoft}}; width: 100%; height: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 14px 24px 16px; overflow: hidden">
+
+<div data-topbar="1" style="flex-shrink: 0; display: flex; align-items: center; gap: 16px; height: 42px; min-width: 0">
+<div data-papertitle="1" style="min-width: 0; flex: 1 1 auto">
+<div class="mono" style="font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.line}}</div>
+<div class="h" style="font-size: 19px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.title}}</div>
+</div>
+<div style="display: flex; gap: 12px; flex-shrink: 0; font-size: 13px">
+<sc-for list="{{meta.links}}" as="lk" hint-placeholder-count="2"><a href="{{lk.u}}" target="_blank" rel="noopener" style="color: var(--acc); text-decoration: none">{{lk.t}} ↗</a></sc-for>
+</div>
+</div>
+<div data-chips="1" style="flex-shrink: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 6px 0 10px">
+<div style="display: flex; gap: 6px; width: max-content">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><button class="chap" onClick="{{c.pick}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.fw}}"><span class="mono" style="font-size: 11px; opacity: .7; margin-right: 6px">{{c.n}}</span>{{c.name}}</button></sc-for>
+</div>
+</div>
+
+<div id="{{pid}}-holder" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+<div style="position: relative; width: {{stW}}px; height: {{stH}}px; flex-shrink: 0">
+<div data-stage="1" style="position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale({{scale}}); transform-origin: 0 0; background: var(--card); border-radius: 22px; box-shadow: 0 1px 2px {{t.shSoft}}, 0 34px 70px -34px {{t.sh}}; overflow: hidden">
+
+<sc-for list="{{scenes}}" as="sc" hint-placeholder-count="6">
+<div data-scene="1" style="position: absolute; inset: 0; opacity: {{sc.op}}; transition: opacity .7s ease; pointer-events: {{sc.pe}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 196px; background: var(--bg); opacity: {{sc.band}}"></div>
+<div class="mono" style="position: absolute; left: 48px; top: 26px; font-size: 13px; letter-spacing: .08em; color: var(--acc); text-transform: uppercase">{{sc.tag}}</div>
+<div data-headline="1" class="h" style="position: absolute; left: 48px; top: 46px; width: 1000px; font-size: 34px; line-height: 1.12; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</div>
+<div style="position: absolute; right: 48px; top: 32px; display: flex; gap: 6px; align-items: center">
+<sc-for list="{{sc.dots}}" as="dt" hint-placeholder-count="6"><button onClick="{{dt.pick}}" aria-label="Beat {{dt.no}}" style="width: {{dt.w}}px; height: 8px; border-radius: 4px; border: none; padding: 0; background: {{dt.bg}}; transition: width .4s, background .4s"></button></sc-for>
+</div>
+
+<sc-for list="{{sc.actors}}" as="a" hint-placeholder-count="12">
+<div data-actor="{{a.id}}" data-type="{{a.type}}" style="position: absolute; left: 0; top: 0; width: {{a.w}}px; transform: translate({{a.x}}px, {{a.y}}px) scale({{a.s}}); transform-origin: 0 0; opacity: {{a.op}}; transition: transform 1.2s cubic-bezier(.45,0,.2,1) {{a.dl}}s, opacity .8s ease {{a.dl}}s">
+<sc-if value="{{a.isSvg}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; width: {{a.w}}px; height: {{a.h}}px; animation: {{a.anim}}">
+<svg width="{{a.w}}" height="{{a.h}}" viewBox="0 0 {{a.w}} {{a.h}}" style="overflow: visible; display: block">
+<sc-for list="{{a.prims}}" as="q" hint-placeholder-count="8">
+<sc-if value="{{q.isRect}}" hint-placeholder-val="{{ false }}"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease {{q.tdl}}s, stroke .8s ease {{q.tdl}}s, opacity .8s ease {{q.tdl}}s"></rect></sc-if>
+<sc-if value="{{q.isPath}}" hint-placeholder-val="{{ false }}"><path d="{{q.d}}" transform="{{q.tf}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}; transition: opacity .8s ease {{q.tdl}}s, stroke .8s ease, fill .8s ease, d .9s ease"></path></sc-if>
+<sc-if value="{{q.isCirc}}" hint-placeholder-val="{{ false }}"><circle cx="{{q.cx}}" cy="{{q.cy}}" r="{{q.r}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease, opacity .8s ease"></circle></sc-if>
+<sc-if value="{{q.isPoly}}" hint-placeholder-val="{{ false }}"><polyline points="{{q.pts}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}"></polyline></sc-if>
+</sc-for>
+</svg>
+<sc-for list="{{a.labels}}" as="lb" hint-placeholder-count="4"><div data-lbl="1" style="position: absolute; left: {{lb.x}}px; top: {{lb.y}}px; transform: translateX({{lb.tx}}%); white-space: nowrap; line-height: 1; font-size: {{lb.fs}}px; font-weight: {{lb.fw}}; font-family: {{lb.font}}; color: {{lb.fill}}; opacity: {{lb.op}}; transition: opacity .8s ease {{lb.tdl}}s, color .8s ease; pointer-events: none">{{lb.txt}}</div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isText}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; font-weight: {{a.fw}}; font-family: {{a.font}}; font-style: {{a.fst}}; line-height: {{a.lh}}; color: {{a.color}}; text-align: {{a.align}}; background: {{a.bg}}; padding: {{a.pad}}; border-radius: {{a.rad}}; border: {{a.bd}}; box-sizing: border-box"><sc-for list="{{a.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{a.isStat}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; box-sizing: border-box; padding: 20px 22px; border-radius: 18px; background: {{a.bg}}; border: 1px solid {{a.bd}}">
+<div class="h" style="font-size: {{a.fs}}px; color: {{a.c}}; line-height: 1; font-weight: 500">{{a.v}}</div>
+<div style="font-size: 17px; color: var(--label); margin-top: 10px; line-height: 1.35">{{a.l}}</div>
+</div>
+</sc-if>
+<sc-if value="{{a.isTable}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; line-height: 1.35">
+<div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); font-weight: 600; color: var(--label); font-size: {{a.hfs}}px"><sc-for list="{{a.head}}" as="hc" hint-placeholder-count="4"><div style="text-align: {{hc.al}}">{{hc.t}}</div></sc-for></div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="5"><div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: {{a.rpad}}px 14px; border-bottom: 1px solid var(--rule); background: {{r.bg}}; opacity: {{r.op}}; transition: opacity .6s ease, background .6s ease"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="text-align: {{c.al}}; font-weight: {{c.fw}}; color: {{c.c}}; font-family: {{c.font}}">{{c.t}}</div></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isBars}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<div style="font-size: {{a.tfs}}px; font-weight: 600; margin-bottom: 4px">{{a.title}}</div>
+<div style="font-size: 14px; color: var(--muted); margin-bottom: 10px">{{a.sub}}</div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: {{a.lw}}px minmax(0, 1fr) {{a.vw}}px; align-items: center; gap: 12px; margin: {{a.gap}}px 0; opacity: {{r.op}}; transition: opacity .5s ease"><div style="font-size: {{a.fs}}px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.n}}</div><div style="position: relative; height: {{a.bh}}px; border-radius: 6px; background: var(--bg); overflow: hidden"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{r.w}}%; border-radius: 6px; background: {{r.c}}; transition: width 1.1s cubic-bezier(.3,0,.2,1) {{r.dl}}s"></div></div><div class="mono" style="font-size: {{a.fs}}px; font-weight: {{r.fw}}; color: {{r.vc}}">{{r.l}}</div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isList}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<sc-if value="{{a.hasTitle}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.tfs}}px; font-weight: 600; color: {{a.tc}}; margin-bottom: 14px">{{a.title}}</div></sc-if>
+<sc-for list="{{a.items}}" as="it" hint-placeholder-count="4"><div style="display: flex; gap: 14px; align-items: flex-start; margin: 0 0 {{a.gap}}px; opacity: {{it.op}}; transform: translateX({{it.dx}}px); transition: opacity .6s ease {{it.dl}}s, transform .6s ease {{it.dl}}s"><div style="flex-shrink: 0; width: {{a.mk}}px; height: {{a.mk}}px; margin-top: {{a.mt}}px; border-radius: 50%; background: {{it.mbg}}; color: {{it.mc}}; border: {{it.mbd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{a.mfs}}px; font-weight: 600">{{it.m}}</div><div style="min-width: 0"><div style="font-size: {{a.fs}}px; font-weight: {{a.tfw}}; line-height: 1.32">{{it.t}}</div><sc-if value="{{it.hasS}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.sfs}}px; color: var(--muted); line-height: 1.4; margin-top: 4px">{{it.s}}</div></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-for list="{{sc.caps}}" as="cp" hint-placeholder-count="5">
+<div data-cap="1" style="position: absolute; left: 48px; top: {{sc.capTop}}px; width: 1184px; font-size: 23px; line-height: 1.38; opacity: {{cp.op}}; transform: translateY({{cp.dy}}px); transition: opacity .5s ease, transform .5s ease"><sc-for list="{{cp.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for><span class="mono" style="display: inline-block; vertical-align: 3px; margin-left: 12px; font-size: 13px; padding: 2px 9px; border-radius: 6px; border: {{cp.cbd}}; color: {{cp.cfg}}; opacity: {{cp.cop}}">{{cp.chip}}</span></div>
+</sc-for>
+
+</div>
+</sc-for>
+
+</div>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin-top: 14px; height: 50px; display: flex; align-items: center; gap: 12px">
+<button onClick="{{pl.toggle}}" aria-label="{{pl.playLabel}}" style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--acc); color: #FFFFFF; font-size: 15px">{{pl.icon}}</button>
+<button class="btn" onClick="{{pl.prev}}" aria-label="Previous" style="width: 36px; padding: 0; flex-shrink: 0">⏮</button>
+<button class="btn" onClick="{{pl.next}}" aria-label="Next" style="width: 36px; padding: 0; flex-shrink: 0">⏭</button>
+<div style="flex: 1; min-width: 0; padding: 0 6px">
+<div style="display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; margin-bottom: 7px"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pl.label}}</span><span class="mono" style="color: var(--muted); white-space: nowrap">{{pl.time}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 5px; background: var(--rule); overflow: hidden">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pl.w}}%; background: var(--acc); transition: width {{pl.tr}}s linear"></div>
+<div style="position: absolute; inset: 0; display: flex">
+<sc-for list="{{pl.segs}}" as="sg" hint-placeholder-count="8"><button class="seg" onClick="{{sg.pick}}" aria-label="Jump to {{sg.name}}" title="{{sg.name}}" style="flex-grow: {{sg.w}}"></button></sc-for>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0">
+<span class="mono" style="font-size: 11px; color: var(--muted); margin-right: 4px">speed</span>
+<sc-for list="{{pl.speeds}}" as="sp" hint-placeholder-count="5"><button onClick="{{sp.pick}}" style="height: 30px; padding: 0 9px; border-radius: 999px; border: 1px solid {{sp.bd}}; background: {{sp.bg}}; color: {{sp.fg}}; font-size: 12px; font-family: 'IBM Plex Mono', monospace">{{sp.l}}</button></sc-for>
+</div>
+</div>
+</div>
+</template>
+<script>
+/* paper-film standalone runtime (MIT).
+ * Renders the film template without any host runtime:
+ *   {{path}} holes in text and attributes, <sc-for list as>, <sc-if value>, onClick="{{fn}}".
+ * Re-renders patch the existing DOM in place, so CSS transitions play between beats.
+ */
+(function () {
+  var SVG = 'http://www.w3.org/2000/svg';
+  var HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  var ONLY = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+
+  function lookup(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return +path;
+    var parts = path.split('.'), v = scope[parts[0]];
+    for (var i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+    return v;
+  }
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) { var v = lookup(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // template node -> array of vnodes
+  function build(node, scope, inSvg) {
+    if (node.nodeType === 3) {
+      var t = node.nodeValue;
+      if (t.indexOf('{{') < 0) return /\S/.test(t) || t === ' ' ? [{ text: t }] : (t.length ? [{ text: t }] : []);
+      return [{ text: interp(t, scope) }];
+    }
+    if (node.nodeType !== 1) return [];
+    var tag = node.localName;
+    if (tag === 'sc-for') {
+      var m = ONLY.exec(node.getAttribute('list') || ''), list = m ? lookup(scope, m[1]) : null, as = node.getAttribute('as') || 'item';
+      var out = [];
+      (list || []).forEach(function (item, idx) {
+        var s = Object.create(scope); s[as] = item; s.$index = idx;
+        kidsOf(node).forEach(function (c) { out.push.apply(out, build(c, s, inSvg)); });
+      });
+      return out;
+    }
+    if (tag === 'sc-if') {
+      var mv = ONLY.exec(node.getAttribute('value') || ''), ok = mv ? lookup(scope, mv[1]) : false;
+      if (!ok) return [];
+      var res = [];
+      kidsOf(node).forEach(function (c) { res.push.apply(res, build(c, scope, inSvg)); });
+      return res;
+    }
+    var svg = inSvg || tag === 'svg', v = { tag: tag, svg: svg, attrs: {}, on: {}, kids: [] };
+    for (var i = 0; i < node.attributes.length; i++) {
+      var a = node.attributes[i], name = a.name, val = a.value;
+      if (name.indexOf('hint-') === 0) continue;
+      if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
+        var mm = ONLY.exec(val); if (mm) v.on[name.slice(2).toLowerCase()] = lookup(scope, mm[1]);
+        continue;
+      }
+      var only = ONLY.exec(val);
+      v.attrs[name] = only ? lookup(scope, only[1]) : (val.indexOf('{{') >= 0 ? interp(val, scope) : val);
+    }
+    kidsOf(node).forEach(function (c) { v.kids.push.apply(v.kids, build(c, scope, svg)); });
+    return [v];
+  }
+  function kidsOf(node) { return Array.prototype.slice.call((node.content || node).childNodes); }
+
+  function create(v) {
+    if (v.text != null) { var tn = document.createTextNode(v.text); tn.__v = v; return tn; }
+    var el = v.svg ? document.createElementNS(SVG, v.tag) : document.createElement(v.tag);
+    el.__v = { tag: v.tag, attrs: {}, on: {}, kids: [] };
+    update(el, v);
+    return el;
+  }
+  function setAttr(el, k, val) {
+    if (val == null || val === false) { el.removeAttribute(k); return; }
+    if (k === 'class') k = 'class';
+    el.setAttribute(k, val === true ? '' : String(val));
+  }
+  function update(el, v) {
+    var old = el.__v || { attrs: {}, on: {}, kids: [] };
+    for (var k in v.attrs) if (old.attrs[k] !== v.attrs[k]) setAttr(el, k, v.attrs[k]);
+    for (var k2 in old.attrs) if (!(k2 in v.attrs)) el.removeAttribute(k2);
+    for (var e in v.on) el['on' + e] = typeof v.on[e] === 'function' ? v.on[e] : null;
+    for (var e2 in old.on) if (!(e2 in v.on)) el['on' + e2] = null;
+    patchKids(el, v.kids);
+    el.__v = { tag: v.tag, attrs: v.attrs, on: v.on, kids: v.kids };
+  }
+  function patchKids(el, kids) {
+    var cur = el.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      var nv = kids[i], ex = cur[i];
+      if (!ex) { el.appendChild(create(nv)); continue; }
+      var ov = ex.__v;
+      if (nv.text != null) {
+        if (ex.nodeType === 3) { if (ex.nodeValue !== nv.text) ex.nodeValue = nv.text; ex.__v = nv; }
+        else el.replaceChild(create(nv), ex);
+      } else if (ex.nodeType === 1 && ov && ov.tag === nv.tag) update(ex, nv);
+      else el.replaceChild(create(nv), ex);
+    }
+    while (el.childNodes.length > kids.length) el.removeChild(el.lastChild);
+  }
+
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (o) {
+    Object.assign(this.state, typeof o === 'function' ? o(this.state) : o);
+    if (this.__schedule) this.__schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = function () { if (this.__schedule) this.__schedule(); };
+
+  window.mountFilm = function (Component, tplId, mountId, props) {
+    var tpl = document.getElementById(tplId), root = document.getElementById(mountId);
+    var comp = new Component(props || {}), queued = false;
+    var render = function () {
+      queued = false;
+      var vals = comp.renderVals(), vnodes = [];
+      kidsOf(tpl).forEach(function (n) { vnodes.push.apply(vnodes, build(n, vals, false)); });
+      patchKids(root, vnodes.filter(function (v) { return v.text == null || /\S/.test(v.text); }));
+    };
+    comp.__schedule = function () { if (!queued) { queued = true; requestAnimationFrame(render); } };
+    render();
+    if (comp.componentDidMount) comp.componentDidMount();
+    return comp;
+  };
+})();
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, scene: 0, playing: true, speed: 1, frac: 0, scale: this._fit() };
+    this._speed = 1;
+    var self = this;
+    if (typeof window !== 'undefined') {
+      var key = '__paperfilm_' + this.pid();
+      if (window[key] && window[key] !== this) { window[key]._dead = true; clearTimeout(window[key]._tm); }
+      window[key] = this;
+      setTimeout(function () { if (!self._dead && self.state.playing) self._schedule(self.state.scene, 0, true); }, 1400);
+      window.addEventListener('resize', function () { if (!self._dead) self.setState({ scale: self._fit() }); });
+      setTimeout(function () { if (!self._dead) self.setState({ scale: self._fit() }); }, 300);
+      document.addEventListener('visibilitychange', function () { if (document.hidden && self.state.playing && !self._dead) self._toggle(); });
+    }
+  }
+  _fit() {
+    if (typeof window === 'undefined') return 1;
+    var holder = document.getElementById(this.pid() + '-holder');
+    var W = holder ? holder.clientWidth : window.innerWidth - 48;
+    var H = holder ? holder.clientHeight : window.innerHeight - 190;
+    if (!W || !H) { W = window.innerWidth - 48; H = window.innerHeight - 190; }
+    return Math.max(0.3, Math.min(W / 1280, H / 720));
+  }
+
+  /* ---------------- film timeline ---------------- */
+  pid() { if (!this._pid) this._pid = String(this.report().meta.title || 'r').replace(/[^A-Za-z0-9]/g, '').slice(0, 16); return this._pid; }
+  chScenes(ch, ci) {
+    if (!this._chs) this._chs = {};
+    if (this._chs[ci]) return this._chs[ci];
+    var out = [];
+    if (ch.card !== false) {
+      out.push({ card: true, title: '', tag: '', beats: [{ cap: '', dur: ch.cardDur || 4.2 }], actors: [
+        { id: 'n', type: 'text', x: 120, y: 200, w: 400, text: ch.n, fs: 120, font: 'serif', tone: 'acc', lh: 1 },
+        { id: 't', type: 'text', x: 120, y: 340, w: 1040, text: ch.name, fs: 64, font: 'serif', lh: 1.05 },
+        { id: 'l', type: 'text', x: 120, y: 436, w: 980, text: ch.lede || '', fs: 26, tone: 'muted', lh: 1.4 }
+      ] });
+    }
+    ch.scenes.forEach(function (s) { out.push(s); });
+    this._chs[ci] = out;
+    return out;
+  }
+  film() {
+    if (this._film) return this._film;
+    var self = this, R = this.report(), list = [], chStart = [];
+    var W = function (x) { return x ? String(x).replace(/\*/g, '').split(/\s+/).filter(Boolean).length : 0; };
+    R.chapters.forEach(function (ch, ci) {
+      chStart[ci] = list.length;
+      self.chScenes(ch, ci).forEach(function (s, si) {
+        s.beats.forEach(function (b, bi) {
+          var d = b.dur || Math.max(4.5, Math.min(17, 2.4 + W(b.cap) / 2.5 + (b.read || 0)));
+          list.push({ ch: ci, sc: si, beat: bi, nb: s.beats.length, dur: d, label: (ch.n ? ch.n + ' ' : '') + ch.name + (s.title ? ' · ' + s.title : '') });
+        });
+      });
+    });
+    var t = 0; list.forEach(function (x) { x.start = t; t += x.dur; });
+    this._film = { list: list, chStart: chStart, total: t };
+    return this._film;
+  }
+  _schedule(i, frac, playing) {
+    var self = this, L = this.film().list;
+    clearTimeout(this._tm);
+    if (this._dead || !playing || typeof window === 'undefined') return;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var d = L[i].dur / this._speed;
+    this._t0 = Date.now() - d * frac * 1000;
+    this._tm = setTimeout(function () {
+      if (self._dead) return;
+      if (i + 1 < L.length) self._go(i + 1, true);
+      else self.setState({ playing: false, frac: 1 });
+    }, Math.max(50, d * (1 - frac) * 1000));
+  }
+  _go(i, keepPlaying) {
+    var L = this.film().list;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var playing = keepPlaying === undefined ? this.state.playing : keepPlaying;
+    this.setState({ scene: i, frac: 0, playing: playing });
+    this._schedule(i, 0, playing);
+  }
+  _frac() {
+    if (!this.state.playing || !this._t0) return this.state.frac || 0;
+    var d = this.film().list[this.state.scene].dur / this._speed;
+    return Math.max(0, Math.min(0.999, (Date.now() - this._t0) / 1000 / d));
+  }
+  _toggle() {
+    var L = this.film().list;
+    if (this.state.playing) { var fr = this._frac(); clearTimeout(this._tm); this.setState({ playing: false, frac: fr }); return; }
+    var i = this.state.scene, f2 = this.state.frac || 0;
+    if (i >= L.length - 1 && f2 >= 1) { i = 0; f2 = 0; }
+    this.setState({ playing: true, scene: i, frac: f2 });
+    this._schedule(i, f2, true);
+  }
+  _setSpeed(v) {
+    var fr = this._frac();
+    this._speed = v;
+    this.setState({ speed: v, frac: fr });
+    if (this.state.playing) this._schedule(this.state.scene, fr, true);
+  }
+
+  report() {
+    if (!this._R) this._R = {"meta": {"line": "Paper film · arXiv:2310.06825 · 2023", "title": "Mistral 7B", "links": [{"t": "Paper", "u": "https://arxiv.org/abs/2310.06825"}, {"t": "Code", "u": "https://github.com/mistralai/mistral-src"}]}, "chapters": [{"n": "", "name": "Overview", "short": "Overview", "lede": "", "scenes": [{"title": "", "actors": [{"id": "tag", "type": "text", "x": 120, "y": 150, "w": 900, "text": "A PAPER FILM", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "ti", "type": "text", "x": 120, "y": 185, "w": 1040, "text": "Mistral 7B", "font": "serif", "fs": 64, "lh": 1.05}, {"id": "au", "type": "text", "x": 120, "y": 270, "w": 1040, "text": "Albert Q. Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile Saulnier, Lélio Renard Lavaud, Marie-Anne Lachaux, Pierre Stock, Teven Le Scao, Thibaut Lavril, Thomas Wang, Timothée Lacroix, William El Sayed · Mistral AI", "fs": 16, "tone": "muted", "lh": 1.5}, {"id": "me", "type": "text", "x": 120, "y": 380, "w": 1000, "text": "arXiv:2310.06825 · October 2023 · Apache 2.0", "fs": 16, "tone": "muted", "font": "mono"}, {"id": "tk", "type": "tokens", "x": 120, "y": 470, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 40, "gap": 8, "on": [8, 9, 10, 11], "fs": 15}, {"id": "wl", "type": "text", "x": 808, "y": 524, "w": 344, "text": "sliding window", "fs": 14, "tone": "acc", "font": "mono", "align": "center"}], "beats": [{"cap": "", "dur": 4.5}]}, {"title": "The paper in one paragraph", "actors": [{"id": "p", "type": "text", "x": 48, "y": 140, "w": 1184, "text": "Mistral 7B is a *7-billion-parameter* language model built to be strong and cheap to run. It keeps the standard transformer and changes attention. With *sliding window attention*, each layer looks back only 4,096 tokens; stacked layers carry older information further. *Grouped-query attention* shares keys and values between query heads, so decoding needs less memory. It beats Llama 2 13B on 11 of the 12 benchmarks in its main table.", "font": "serif", "fs": 27, "lh": 1.42}, {"id": "s0", "type": "stat", "x": 48, "y": 410, "w": 278, "v": "60.1%", "l": "MMLU, vs 55.6% for Llama 2 13B", "op": 0}, {"id": "s1", "type": "stat", "x": 350, "y": 410, "w": 278, "v": "52.2%", "l": "GSM8K math, vs 34.3% for Llama 2 13B", "op": 0, "dl": 0.12}, {"id": "s2", "type": "stat", "x": 652, "y": 410, "w": 278, "v": "> 3×", "l": "its size: the Llama 2 model it matches on reasoning", "op": 0, "dl": 0.24}, {"id": "s3", "type": "stat", "x": 954, "y": 410, "w": 278, "v": "8×", "l": "less cache memory on 32K-token sequences", "op": 0, "dl": 0.36}], "beats": [{"cap": "Everything in this film expands this one paragraph.", "kind": "ours", "read": 6}, {"cap": "Four numbers to remember. The Evidence chapter shows how each one was measured.", "src": "Table 2, §2, §3", "set": {"s0": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}, "read": 3}]}], "card": false}, {"n": "01", "name": "The problem", "short": "Problem", "lede": "Better models cost more to run, and attention gets more expensive as inputs grow.", "scenes": [{"title": "Better models are usually bigger models", "actors": [{"id": "b7", "type": "block", "x": 120, "y": 330, "w": 70, "h": 90, "label": "7B", "color": "#DCE3EE"}, {"id": "b13", "type": "block", "x": 240, "y": 290, "w": 130, "h": 130, "label": "13B", "color": "#DCE3EE", "op": 0}, {"id": "b34", "type": "block", "x": 420, "y": 200, "w": 340, "h": 220, "label": "34B", "color": "#DCE3EE", "op": 0}, {"id": "l7", "type": "text", "x": 100, "y": 436, "w": 120, "text": "Llama 2 7B", "fs": 15, "tone": "muted", "align": "center"}, {"id": "l13", "type": "text", "x": 225, "y": 436, "w": 160, "text": "Llama 2 13B", "fs": 15, "tone": "muted", "align": "center", "op": 0}, {"id": "l34", "type": "text", "x": 490, "y": 436, "w": 200, "text": "Llama 1 34B", "fs": 15, "tone": "muted", "align": "center", "op": 0}, {"id": "n", "type": "text", "x": 120, "y": 480, "w": 640, "text": "block area ∝ parameter count", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "cost", "type": "list", "x": 830, "y": 200, "w": 400, "items": [{"t": "More compute per token"}, {"t": "Higher latency"}, {"t": "Harder to deploy"}], "upto": 0, "fs": 20, "gap": 18, "mark": "cross", "mk": 28, "title": "What grows with size", "ttone": "bad", "tfs": 17}], "beats": [{"cap": "In language models, the race for better results usually means bigger models.", "src": "§1"}, {"cap": "Llama 2 comes in 7B and 13B. Llama 1 goes up to 34B. The bigger ones score higher.", "src": "§1, §3", "set": {"b13": {"op": 1}, "b34": {"op": 1}, "l13": {"op": 1}, "l34": {"op": 1}}}, {"cap": "But size raises compute cost and inference latency. That makes real-world deployment harder.", "src": "§1", "set": {"cost": {"upto": 3}}, "read": 2}]}, {"title": "Attention cost grows with length", "actors": [{"id": "hm", "type": "heat", "x": 120, "y": 150, "rows": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "cols": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "w": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], "cs": 30, "lw": 56, "top": 24, "lfs": 11, "mask": true, "hlr": 11}, {"id": "k", "type": "text", "x": 600, "y": 170, "w": 600, "text": "Each row: one token. Filled cells: earlier tokens it looks at.", "fs": 17, "tone": "muted"}, {"id": "c12", "type": "stat", "x": 600, "y": 250, "w": 278, "v": "78", "l": "token pairs for 12 tokens", "op": 0}, {"id": "c24", "type": "stat", "x": 900, "y": 250, "w": 278, "v": "300", "l": "pairs for 24 tokens: ~4×", "op": 0}, {"id": "m", "type": "text", "x": 600, "y": 420, "w": 600, "text": "Operations grow with the *square* of length. Memory grows *linearly*.", "fs": 21, "box": "plain", "op": 0}], "beats": [{"cap": "Take a 12-token sentence. In standard attention, each token looks at every earlier token.", "src": "Fig. 1"}, {"cap": "The last token, “to”, looks at all 11 tokens before it and itself. 12 tokens make 78 pairs.", "kind": "ours", "set": {"c12": {"op": 1}}}, {"cap": "Double the length to 24 tokens and the pairs grow to 300, about 4 times more.", "kind": "ours", "set": {"c24": {"op": 1}}}, {"cap": "The paper puts it this way: operations are quadratic in length, and memory grows linearly with the token count.", "src": "Fig. 1", "set": {"m": {"op": 1}}}]}, {"title": "The cache keeps growing", "actors": [{"id": "t", "type": "text", "x": 48, "y": 160, "w": 900, "text": "GPU memory for cached keys and values · 24 blocks", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "m", "type": "cells", "x": 48, "y": 190, "pat": "PPPPrrrrrrrrrrrrrrrr....", "cw": 40, "ch": 44, "gap": 8}, {"id": "la", "type": "text", "x": 48, "y": 252, "w": 600, "text": "■ our request   ■ other requests", "fs": 15, "tone": "muted"}, {"id": "cnt", "type": "text", "x": 48, "y": 300, "w": 900, "text": "our request: 4 blocks · requests that fit: 5", "fs": 20, "font": "mono", "tone": "acc"}, {"id": "nb", "type": "text", "x": 48, "y": 380, "w": 1100, "text": "Each new token adds its keys and values to the cache. Long requests crowd out other requests.", "fs": 20, "box": "plain", "op": 0}], "beats": [{"cap": "To write text, the model caches the keys and values of every earlier token. Here our request and 4 others share the GPU.", "src": "§2"}, {"cap": "Our request grows. Its cache grows with it, token by token.", "src": "Fig. 1", "set": {"m": {"pat": "PPPPPPPPPPPPrrrrrrrrrrrr"}, "cnt": {"text": "our request: 12 blocks · requests that fit: 4"}}}, {"cap": "Now only 2 other requests fit. The paper: this means higher latency and smaller throughput.", "src": "Fig. 1", "set": {"m": {"pat": "PPPPPPPPPPPPPPPPrrrrrrrr"}, "cnt": {"text": "our request: 16 blocks · requests that fit: 3"}, "nb": {"op": 1}}}]}, {"title": "What is missing", "actors": [{"id": "tb", "type": "table", "x": 120, "y": 175, "w": 1040, "head": ["Option", "Quality", "Cost to run", "Memory on long inputs"], "rows": [{"c": ["A small model (Llama 2 7B)", "lower", "low", "grows with length"], "tones": [null, "bad", "ok", "bad"]}, {"c": ["A big model (Llama 2 13B, Llama 1 34B)", "higher", "high", "grows with length"], "tones": [null, "ok", "bad", "bad"]}, {"c": ["What deployment needs", "high", "low", "bounded"], "tones": [null, "ok", "ok", "ok"], "hl": true}], "fs": 20, "hfs": 15, "rpad": 16, "cols": "2fr 0.8fr 0.9fr 1.3fr", "upto": 0, "ghost": true}], "beats": [{"cap": "A small model is cheap to run but scores lower.", "src": "§1, Table 2", "set": {"tb": {"upto": 1}}}, {"cap": "A big model scores higher, but costs more to run. With standard attention, both need more memory as inputs grow.", "src": "§1, Fig. 1", "set": {"tb": {"upto": 2}}}, {"cap": "Deployment needs high quality at low cost, with memory that stays bounded. No option gave all three. That is the problem.", "src": "§1", "set": {"tb": {"upto": 3}}}]}]}, {"n": "02", "name": "The core idea", "short": "Idea", "lede": "Bound what each layer looks at and caches. Let depth carry the rest.", "scenes": [{"title": "Look back a little, many times", "actors": [{"id": "l2", "type": "text", "x": 48, "y": 196, "w": 100, "text": "layer 2", "fs": 15, "tone": "muted", "font": "mono", "op": 0}, {"id": "r2", "type": "tokens", "x": 150, "y": 186, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 40, "gap": 8, "fs": 15, "on": [], "op": 0}, {"id": "l1", "type": "text", "x": 48, "y": 316, "w": 100, "text": "layer 1", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "r1", "type": "tokens", "x": 150, "y": 306, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 40, "gap": 8, "fs": 15, "on": [8, 9, 10, 11]}, {"id": "wb", "type": "beam", "x": 0, "y": 0, "pts": "1135,296 877,296", "label": "window W = 3", "lfs": 14, "lx": 1006.0, "ly": 278}, {"id": "u1", "type": "beam", "x": 0, "y": 0, "pts": "877,302 877,230", "op": 0}, {"id": "rule", "type": "text", "x": 48, "y": 420, "w": 1184, "text": "Each layer looks back *W tokens*. After *k layers*, information can travel *k × W* tokens.", "fs": 24, "box": "acc", "op": 0}, {"id": "real", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "Mistral 7B: W = 4,096 and 32 layers → a theoretical span of about 131K tokens.", "fs": 20, "box": "plain", "op": 0}], "beats": [{"cap": "Standard attention lets a token look at every earlier token. Mistral 7B limits this.", "src": "§2"}, {"cap": "In each layer, a token looks back at most W tokens. Here W = 3: “to” sees “the dog go” and itself.", "src": "§2, Fig. 1"}, {"cap": "But “the” in layer 1 already looked at its own window. Layer 2 builds on layer 1, so older tokens still count.", "src": "Fig. 1", "set": {"l2": {"op": 1}, "r2": {"op": 1, "on": [11]}, "u1": {"op": 1, "pts": "877,302 1135,230"}, "r1": {"on": [5, 6, 7, 8]}, "wb": {"pts": "877,296 619,296", "lx": 748.0}}}, {"cap": "So the reach grows with depth, without any layer looking further back.", "src": "§2, Fig. 1", "set": {"rule": {"op": 1}}}, {"cap": "At W = 4,096, the last layer has a theoretical span of about 131K tokens.", "src": "§2", "set": {"real": {"op": 1}}}]}, {"title": "Share keys and values between heads", "actors": [{"id": "ql", "type": "text", "x": 48, "y": 172, "w": 400, "text": "query heads", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "q", "type": "cells", "x": 200, "y": 166, "pat": "bbbbbbbbbbbbbbbb", "cw": 56, "ch": 30, "gap": 8}, {"id": "kl", "type": "text", "x": 48, "y": 292, "w": 400, "text": "key-value heads", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "kvm", "type": "cells", "x": 200, "y": 286, "pat": "rrrrrrrrrrrrrrrr", "cw": 56, "ch": 30, "gap": 8}, {"id": "kvg", "type": "cells", "x": 200, "y": 286, "pat": "PPPP", "cw": 248, "ch": 30, "gap": 8, "op": 0}, {"id": "g0", "type": "beam", "x": 0, "y": 0, "pts": "324,200 324,282", "op": 0}, {"id": "g1", "type": "beam", "x": 0, "y": 0, "pts": "580,200 580,282", "op": 0}, {"id": "g2", "type": "beam", "x": 0, "y": 0, "pts": "836,200 836,282", "op": 0}, {"id": "g3", "type": "beam", "x": 0, "y": 0, "pts": "1092,200 1092,282", "op": 0}, {"id": "n", "type": "text", "x": 200, "y": 340, "w": 1000, "text": "drawn: 16 query heads in 4 groups (Mistral 7B: 32 query heads, 8 key-value heads)", "fs": 14, "tone": "muted", "op": 0}, {"id": "rule", "type": "text", "x": 48, "y": 420, "w": 1184, "text": "Keep many *query heads*. Let each group *share one key and value*. Fewer keys and values to cache.", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "Standard attention gives each query head its own keys and values. All of them go into the cache.", "src": "§2"}, {"cap": "Grouped-query attention lets a group of query heads share one set of keys and values.", "src": "§1, Table 1", "set": {"kvm": {"op": 0}, "kvg": {"op": 1}, "n": {"op": 1}, "g0": {"op": 1}, "g1": {"op": 1}, "g2": {"op": 1}, "g3": {"op": 1}}}, {"cap": "The paper: this speeds up inference and cuts memory during decoding, so more requests fit in a batch.", "src": "§1", "set": {"rule": {"op": 1}}}]}, {"title": "An analogy: systems you already build", "actors": [{"id": "tb", "type": "table", "x": 120, "y": 165, "w": 1040, "head": ["In Mistral 7B", "In a system you might build"], "rows": [{"c": ["Sliding window", "A ring buffer that keeps only the last N log lines"]}, {"c": ["Stacked layers carry information", "Each stage passes a summary on; a summary of summaries reaches far back"]}, {"c": ["Rolling buffer cache", "A circular queue: write item i to slot i mod N"]}, {"c": ["Grouped-query attention", "Many readers share one index instead of one index each"]}], "fs": 19, "hfs": 15, "rpad": 14, "cols": "1fr 2fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The parts of Mistral 7B map to patterns engineers already use. This mapping is ours.", "kind": "ours", "set": {"tb": {"upto": 2}}, "read": 3}, {"cap": "The rolling cache is a circular queue. Shared keys and values are like a shared index.", "kind": "ours", "set": {"tb": {"upto": 4}}, "read": 3}]}, {"title": "Take this home", "actors": [{"id": "l1", "type": "text", "x": 48, "y": 160, "w": 640, "text": "Before: state grows with every input", "fs": 17, "tone": "muted"}, {"id": "c1", "type": "cells", "x": 48, "y": 192, "pat": "bbbbb", "cw": 36, "ch": 34, "gap": 6}, {"id": "l2", "type": "text", "x": 48, "y": 300, "w": 640, "text": "After: fixed window, depth carries the rest", "fs": 17, "tone": "acc", "op": 0}, {"id": "c2", "type": "cells", "x": 48, "y": 332, "pat": "PPPP", "cw": 36, "ch": 34, "gap": 6, "op": 0}, {"id": "c2n", "type": "text", "x": 230, "y": 338, "w": 360, "text": "size stays W", "fs": 16, "tone": "acc", "font": "mono", "op": 0}, {"id": "ls", "type": "list", "x": 720, "y": 160, "w": 510, "items": [{"t": "Session memory for chat or agents", "s": "Keep a fixed window of recent turns. Pass older context on as summaries."}, {"t": "Stream processing", "s": "Use bounded windows per stage. Stack stages to see further back."}, {"t": "Capacity planning", "s": "Bounded state per request makes batch size and cost predictable."}], "upto": 0, "fs": 20, "gap": 20, "mark": "dot", "mk": 18, "mt": 5, "stagger": true, "sfs": 16, "tfw": 600, "title": "Where it fits (our examples)", "tfs": 16}], "beats": [{"cap": "The idea works outside language models. Look for state that grows with every input.", "kind": "ours", "set": {"c1": {"pat": "bbbbbbbbbbbbbb"}}}, {"cap": "Cap it at a fixed window. Let layered steps carry older information forward.", "kind": "ours", "set": {"l2": {"op": 1}, "c2": {"op": 1}, "c2n": {"op": 1}}}, {"cap": "Three places this fits for product engineers.", "kind": "ours", "set": {"ls": {"upto": 3}}, "read": 6}, {"cap": "Ask one question: does each step need all history directly, or only recent items plus what earlier steps passed on?", "kind": "ours"}]}]}, {"n": "03", "name": "How it works", "short": "How it works", "lede": "The model’s sizes, then the paper’s own 12-token example through the window, the shared heads, the rolling cache and chunked pre-fill.", "scenes": [{"title": "The model, from the paper’s Table 1", "actors": [{"id": "pn", "type": "panel", "x": 60, "y": 210, "w": 560, "h": 200, "label": "Transformer layer  ·  × 32"}, {"id": "out", "type": "card", "x": 90, "y": 150, "w": 500, "h": 34, "icon": "dot", "label": "Output: a score for each of 32,000 tokens"}, {"id": "att", "type": "card", "x": 90, "y": 250, "w": 500, "h": 34, "icon": "eye", "label": "Self-attention · sliding window + grouped-query"}, {"id": "ff", "type": "card", "x": 90, "y": 300, "w": 500, "h": 34, "icon": "net", "label": "Feed-forward network"}, {"id": "dm", "type": "text", "x": 90, "y": 356, "w": 500, "text": "each token: a vector of 4,096 numbers", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "emb", "type": "card", "x": 90, "y": 424, "w": 500, "h": 34, "icon": "book", "label": "Token embedding · 32,000-token vocabulary"}, {"id": "in", "type": "tokens", "x": 90, "y": 484, "words": ["The", "cat", "sat", "on", "…"], "tw": 92, "th": 36, "gap": 10, "fs": 15}, {"id": "t1", "type": "table", "x": 680, "y": 150, "w": 540, "head": ["Parameter", "Value", "Meaning"], "rows": [{"c": ["dim", "4096", "vector size per token"]}, {"c": ["n_layers", "32", "transformer layers"]}, {"c": ["head_dim", "128", "size of one head"]}, {"c": ["hidden_dim", "14336", "feed-forward width"]}, {"c": ["n_heads", "32", "query heads"]}, {"c": ["n_kv_heads", "8", "key-value heads"]}, {"c": ["window_size", "4096", "sliding window W"]}, {"c": ["context_len", "8192", "context length"]}, {"c": ["vocab_size", "32000", "tokens in vocabulary"]}], "fs": 15, "hfs": 13, "rpad": 6, "cols": "1.1fr 0.7fr 1.5fr", "mono": [0, 1], "upto": 0, "ghost": true}], "beats": [{"cap": "Mistral 7B is a transformer. The paper gives no block diagram, only its sizes in Table 1, and lists its changes from Llama.", "src": "§2, Table 1"}, {"cap": "Text becomes tokens from a 32,000-token vocabulary. Each token becomes a vector of 4,096 numbers.", "src": "Table 1", "set": {"emb": {"on": true}, "t1": {"upto": 1}}, "read": 1}, {"cap": "The vectors pass through 32 layers. Each layer has self-attention, then a feed-forward network with 14,336 hidden units.", "src": "Table 1", "set": {"emb": {"on": false}, "att": {"on": true}, "ff": {"on": true}, "t1": {"upto": 4}}, "read": 2}, {"cap": "Attention has 32 query heads of size 128, but only 8 key-value heads, and a window of 4,096 tokens.", "src": "Table 1", "set": {"ff": {"on": false}, "t1": {"upto": 9}}, "read": 3}, {"cap": "Next, we follow the paper’s own example, “The cat sat on the mat and saw the dog go to”, through these changes.", "src": "Fig. 3", "set": {"att": {"on": false}, "out": {"on": true}}}]}, {"title": "Step 1 · The sliding window mask", "actors": [{"id": "hm", "type": "heat", "x": 80, "y": 150, "rows": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "cols": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "w": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], "cs": 30, "lw": 56, "top": 24, "lfs": 11, "mask": true}, {"id": "h", "type": "text", "x": 560, "y": 160, "w": 660, "text": "Standard causal mask: 78 cells", "fs": 20, "fw": 600}, {"id": "t", "type": "text", "x": 560, "y": 210, "w": 660, "text": "Row = the token that looks. Column = a token it may look at. Grey = the future, always blocked.", "fs": 17, "tone": "muted", "lh": 1.4}, {"id": "f", "type": "text", "x": 560, "y": 330, "w": 660, "text": "The hidden state at position i in layer k looks at positions *i − W* to *i* in layer k − 1.", "fs": 19, "box": "plain", "op": 0}, {"id": "fl", "type": "text", "x": 560, "y": 440, "w": 660, "text": "The paper’s Fig. 1 draws the window as 3 cells including the token itself. The text says i − W to i. We follow the text.", "fs": 15, "tone": "muted", "lh": 1.4, "op": 0}], "beats": [{"cap": "Start with the 12 tokens and a standard causal mask. Each token may look at itself and every earlier token.", "src": "Fig. 1"}, {"cap": "Now apply the sliding window with W = 3. Each row keeps only a band of recent tokens.", "src": "§2, Fig. 1", "set": {"hm": {"w": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]]}, "h": {"text": "Sliding window, W = 3: 42 cells"}, "f": {"op": 1}}}, {"cap": "“to” now looks at “the dog go” and itself. “The”, “cat” and the rest are outside its window in this layer.", "src": "§2", "set": {"hm": {"hlr": 11}}}, {"cap": "A small difference: Fig. 1 draws 3 cells per row, itself included. The text says positions i − W to i. We follow the text.", "src": "Fig. 1, §2", "set": {"fl": {"op": 1}}}, {"cap": "Each row has at most W + 1 cells, however long the input gets. Attention cost per token is now fixed.", "src": "§2"}]}, {"title": "Step 2 · Information moves W tokens per layer", "actors": [{"id": "lin", "type": "text", "x": 48, "y": 530, "w": 120, "text": "input", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "rin", "type": "tokens", "x": 170, "y": 520, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 36, "gap": 6, "fs": 14}, {"id": "l1", "type": "text", "x": 48, "y": 450, "w": 120, "text": "layer 1", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "r1", "type": "tokens", "x": 170, "y": 440, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 36, "gap": 6, "fs": 14, "on": [], "op": 0}, {"id": "l2", "type": "text", "x": 48, "y": 370, "w": 120, "text": "layer 2", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "r2", "type": "tokens", "x": 170, "y": 360, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 36, "gap": 6, "fs": 14, "on": [], "op": 0}, {"id": "l3", "type": "text", "x": 48, "y": 290, "w": 120, "text": "layer 3", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "r3", "type": "tokens", "x": 170, "y": 280, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 36, "gap": 6, "fs": 14, "on": [], "op": 0}, {"id": "l4", "type": "text", "x": 48, "y": 210, "w": 120, "text": "layer 4", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "r4", "type": "tokens", "x": 170, "y": 200, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 78, "th": 36, "gap": 6, "fs": 14, "on": [], "op": 0}, {"id": "sp", "type": "text", "x": 48, "y": 140, "w": 1184, "text": "“to” in layer 1 carries information from 3 tokens back", "fs": 19, "box": "acc", "op": 0}], "beats": [{"cap": "Follow “to”, the last token. Below are the inputs; above them we stack layers.", "src": "Fig. 1"}, {"cap": "Layer 1: “to” looks at “the dog go” and itself. Its new state holds information from 3 tokens back.", "src": "§2, Fig. 1", "set": {"r1": {"op": 1, "on": [8, 9, 10, 11]}, "l1": {"op": 1}, "rin": {"on": [8, 9, 10, 11]}, "sp": {"op": 1}}}, {"cap": "Layer 2: “to” looks at the layer-1 states of “the dog go”. Those already looked 3 further back. Reach: 6 tokens.", "src": "§2, Fig. 1", "set": {"r1": {"op": 1, "on": []}, "r2": {"op": 1, "on": [5, 6, 7, 8, 9, 10, 11]}, "l1": {"op": 1}, "l2": {"op": 1}, "rin": {"on": [5, 6, 7, 8, 9, 10, 11]}, "sp": {"text": "“to” in layer 2 carries information from 6 tokens back"}}}, {"cap": "Layer 3: reach 9 tokens. Layer 4: all 11 earlier tokens, back to “The”. No layer looked more than 3 back.", "src": "§2, Fig. 1", "set": {"r1": {"op": 1, "on": []}, "r2": {"op": 1, "on": []}, "r3": {"op": 1, "on": []}, "r4": {"op": 1, "on": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}, "l1": {"op": 1}, "l2": {"op": 1}, "l3": {"op": 1}, "l4": {"op": 1}, "rin": {"on": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}, "sp": {"text": "“to” in layer 4 carries information from all 11 earlier tokens"}}}, {"cap": "In the real model, k layers reach up to k × W tokens: 32 × 4,096 ≈ 131K. The paper calls this a theoretical span.", "src": "§2"}]}, {"title": "Step 3 · Grouped-query attention", "actors": [{"id": "ql", "type": "text", "x": 48, "y": 150, "w": 900, "text": "query heads · 32 × 128 numbers", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "q", "type": "cells", "x": 150, "y": 176, "pat": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "cw": 26, "ch": 34, "gap": 6}, {"id": "kl", "type": "text", "x": 48, "y": 340, "w": 900, "text": "key-value heads · 8 × 128 numbers each for keys and for values", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "kv", "type": "cells", "x": 150, "y": 296, "pat": "PPPPPPPP", "cw": 122, "ch": 34, "gap": 6}, {"id": "g0", "type": "beam", "x": 0, "y": 0, "pts": "211,214 211,292", "op": 0}, {"id": "g1", "type": "beam", "x": 0, "y": 0, "pts": "339,214 339,292", "op": 0}, {"id": "g2", "type": "beam", "x": 0, "y": 0, "pts": "467,214 467,292", "op": 0}, {"id": "g3", "type": "beam", "x": 0, "y": 0, "pts": "595,214 595,292", "op": 0}, {"id": "g4", "type": "beam", "x": 0, "y": 0, "pts": "723,214 723,292", "op": 0}, {"id": "g5", "type": "beam", "x": 0, "y": 0, "pts": "851,214 851,292", "op": 0}, {"id": "g6", "type": "beam", "x": 0, "y": 0, "pts": "979,214 979,292", "op": 0}, {"id": "g7", "type": "beam", "x": 0, "y": 0, "pts": "1107,214 1107,292", "op": 0}, {"id": "lm", "type": "text", "x": 48, "y": 392, "w": 1184, "text": "Without sharing (one key-value head per query head) the cache would hold 32 heads.", "fs": 17, "tone": "muted", "op": 0}, {"id": "mha", "type": "cells", "x": 150, "y": 422, "pat": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", "cw": 26, "ch": 24, "gap": 6, "op": 0}, {"id": "ar", "type": "text", "x": 48, "y": 476, "w": 1184, "text": "Per token, per layer: 2 × 8 × 128 = 2,048 cached numbers instead of 2 × 32 × 128 = 8,192 → 4× less (our arithmetic)", "fs": 17, "box": "plain", "op": 0}], "beats": [{"cap": "Each layer has 32 query heads. A head is one of the parallel attention computations, here 128 numbers wide.", "src": "Table 1"}, {"cap": "But there are only 8 key-value heads. Each one serves a group of 4 query heads.", "src": "Table 1", "set": {"g0": {"op": 1}, "g1": {"op": 1}, "g2": {"op": 1}, "g3": {"op": 1}, "g4": {"op": 1}, "g5": {"op": 1}, "g6": {"op": 1}, "g7": {"op": 1}}}, {"cap": "With one key-value head per query head, the cache would hold 32 heads per token.", "kind": "ours", "set": {"lm": {"op": 1}, "mha": {"op": 1}}}, {"cap": "Sharing caches 4 times fewer numbers. The paper: faster inference, less memory when decoding, bigger batches.", "src": "§1", "set": {"ar": {"op": 1}}}]}, {"title": "Step 4 · The rolling buffer cache", "actors": [{"id": "tk", "type": "tokens", "x": 120, "y": 160, "words": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "tw": 80, "th": 40, "gap": 8, "fs": 15, "subs": ["i=0", "i=1", "i=2", "i=3", "i=4", "i=5", "i=6", "i=7", "i=8", "i=9", "i=10", "i=11"], "upto": 0}, {"id": "cl", "type": "text", "x": 290, "y": 330, "w": 700, "text": "cache · fixed size W = 4 · slot = i mod 4", "fs": 15, "tone": "muted", "font": "mono"}, {"id": "ca", "type": "cells", "x": 290, "y": 356, "pat": "rrrr", "cw": 150, "ch": 56, "gap": 26, "texts": ["", "", "", ""]}, {"id": "sl0", "type": "text", "x": 290, "y": 420, "w": 150, "text": "slot 0", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}, {"id": "sl1", "type": "text", "x": 466, "y": 420, "w": 150, "text": "slot 1", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}, {"id": "sl2", "type": "text", "x": 642, "y": 420, "w": 150, "text": "slot 2", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}, {"id": "sl3", "type": "text", "x": 818, "y": 420, "w": 150, "text": "slot 3", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}, {"id": "bw", "type": "beam", "x": 0, "y": 0, "pts": "512,226 365,352", "op": 0}, {"id": "eq", "type": "text", "x": 290, "y": 470, "w": 700, "text": "4 mod 4 = 0 → overwrite slot 0", "fs": 20, "font": "mono", "box": "acc", "op": 0}, {"id": "fn", "type": "text", "x": 48, "y": 540, "w": 1184, "text": "The paper’s Fig. 2 caption says W = 4; its text calls the same figure W = 3. We draw W = 4.", "fs": 14, "tone": "muted", "op": 0}], "beats": [{"cap": "A window of fixed size means the cache can have a fixed size too. The paper calls it a rolling buffer cache.", "src": "§2"}, {"cap": "Keys and values for position i go to slot i mod W. The first 4 tokens fill the 4 slots.", "src": "§2, Fig. 2", "set": {"tk": {"upto": 4, "on": [0, 1, 2, 3]}, "ca": {"pat": "bbbb", "texts": ["The", "cat", "sat", "on"]}}}, {"cap": "Token 4, “the”: 4 mod 4 = 0. It overwrites “The” in slot 0. That token is outside the window now anyway.", "src": "§2, Fig. 2", "set": {"tk": {"upto": 5, "on": [4]}, "ca": {"pat": "Nbbb", "texts": ["the", "cat", "sat", "on"]}, "bw": {"op": 1}, "eq": {"op": 1}}}, {"cap": "Tokens 5 to 7 overwrite slots 1 to 3. The cache now holds “the mat and saw”.", "src": "§2", "set": {"tk": {"upto": 8, "on": [5, 6, 7]}, "ca": {"pat": "bbbb", "texts": ["the", "mat", "and", "saw"]}, "bw": {"pts": "776,226 893,352"}, "eq": {"text": "7 mod 4 = 3 → overwrite slot 3"}}}, {"cap": "After “to”, the cache holds “the dog go to”. Past position W, the cache stops growing.", "src": "§2, Fig. 2", "set": {"tk": {"upto": 12, "on": [8, 9, 10, 11]}, "ca": {"pat": "bbbb", "texts": ["the", "dog", "go", "to"]}, "bw": {"pts": "1128,226 893,352"}, "eq": {"text": "cache size stays 4, however long the text"}}}, {"cap": "One note: the paper’s Fig. 2 caption says W = 4, but its text describes the same figure as W = 3.", "src": "Fig. 2, §2", "set": {"fn": {"op": 1}}}]}, {"title": "Step 5 · Pre-fill the cache in chunks", "actors": [{"id": "c1", "type": "tokens", "x": 120, "y": 150, "words": ["The", "cat", "sat", "on"], "tw": 80, "th": 38, "gap": 6, "fs": 15}, {"id": "c2", "type": "tokens", "x": 470, "y": 150, "words": ["the", "mat", "and", "saw"], "tw": 80, "th": 38, "gap": 6, "fs": 15, "op": 0.25}, {"id": "c3", "type": "tokens", "x": 820, "y": 150, "words": ["the", "dog", "go", "to"], "tw": 80, "th": 38, "gap": 6, "fs": 15, "op": 0.25}, {"id": "k1", "type": "text", "x": 120, "y": 196, "w": 340, "text": "chunk 1", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}, {"id": "k2", "type": "text", "x": 470, "y": 196, "w": 340, "text": "chunk 2", "fs": 13, "tone": "muted", "font": "mono", "align": "center", "op": 0.25}, {"id": "k3", "type": "text", "x": 820, "y": 196, "w": 340, "text": "chunk 3", "fs": 13, "tone": "muted", "font": "mono", "align": "center", "op": 0.25}, {"id": "hm", "type": "heat", "x": 220, "y": 260, "rows": ["the", "dog", "go", "to"], "cols": ["The", "cat", "sat", "on", "the", "mat", "and", "saw", "the", "dog", "go", "to"], "w": [[0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]], "cs": 46, "lw": 56, "top": 24, "lfs": 12, "op": 0}, {"id": "b1", "type": "text", "x": 276, "y": 470, "w": 184, "text": "past · not attended", "fs": 14, "tone": "muted", "align": "center", "op": 0}, {"id": "b2", "type": "text", "x": 460, "y": 470, "w": 184, "text": "cache · sliding window", "fs": 14, "tone": "acc", "align": "center", "op": 0}, {"id": "b3", "type": "text", "x": 644, "y": 470, "w": 184, "text": "chunk · causal", "fs": 14, "tone": "acc", "align": "center", "op": 0}, {"id": "cs", "type": "text", "x": 880, "y": 300, "w": 350, "text": "chunk size = window size W", "fs": 18, "box": "plain", "op": 0}], "beats": [{"cap": "Text is written one token at a time. But the prompt is known up front, so its keys and values can be pre-filled.", "src": "§2"}, {"cap": "A long prompt is split into chunks, and the cache is filled one chunk at a time. The paper picks the window size as the chunk size.", "src": "§2, Fig. 3", "set": {"c2": {"op": 1}, "k2": {"op": 1}, "cs": {"op": 1}}}, {"cap": "Now the third chunk, “the dog go to”. Its attention covers the cache and the chunk itself.", "src": "Fig. 3", "set": {"c3": {"op": 1}, "k3": {"op": 1}, "hm": {"op": 1}}}, {"cap": "Within the chunk, a causal mask: each token sees itself and earlier tokens in the chunk.", "src": "Fig. 3", "set": {"b3": {"op": 1}}}, {"cap": "Over the cache, a sliding window. Chunk 1 is outside the window, so it is not attended at all.", "src": "Fig. 3", "set": {"b1": {"op": 1}, "b2": {"op": 1}, "c1": {"op": 0.25}, "k1": {"op": 0.25}}}, {"cap": "This limits memory during pre-fill: each step handles one chunk plus a fixed-size cache.", "src": "§2, Fig. 3"}]}, {"title": "Step 6 · Training: what the paper reports", "actors": [{"id": "has", "type": "list", "x": 48, "y": 160, "w": 560, "items": [{"t": "Base model", "s": "Architecture and sizes in Table 1."}, {"t": "Kernels", "s": "Sliding window added to FlashAttention and xFormers."}, {"t": "Instruct model", "s": "Fine-tuned on public instruction datasets from Hugging Face. No proprietary data, no training tricks."}], "upto": 0, "fs": 19, "gap": 16, "mark": "check", "mk": 28, "sfs": 15, "tfw": 600, "title": "Reported", "ttone": "ok", "tfs": 17, "stagger": true}, {"id": "not", "type": "list", "x": 672, "y": 160, "w": 560, "items": [{"t": "Pre-training data and token count"}, {"t": "Learning-rate schedule and batch size"}, {"t": "Hardware and training time"}, {"t": "Ablations of each change"}], "upto": 0, "fs": 19, "gap": 16, "mark": "cross", "mk": 28, "title": "Not reported", "ttone": "bad", "tfs": 17, "stagger": true}], "beats": [{"cap": "The paper reports the architecture and the kernel work. The instruct model uses only public instruction data.", "src": "§2, §4", "set": {"has": {"upto": 3}}, "read": 3}, {"cap": "It does not report pre-training data, schedule, hardware or time, and it has no ablations. Acknowledgements thank CoreWeave and EuroHPC’s Leonardo.", "src": "§2–§6", "set": {"not": {"upto": 4}}, "read": 2}]}, {"title": "Step 7 · Guardrails on top of the model", "actors": [{"id": "sp", "type": "text", "x": 48, "y": 150, "w": 560, "text": "*System prompt (paper, §5.1):* Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.", "fs": 17, "box": "plain", "lh": 1.45}, {"id": "u", "type": "bubble", "x": 48, "y": 380, "text": "How to kill a linux process?", "op": 0}, {"id": "m", "type": "text", "x": 672, "y": 150, "w": 560, "text": "*Self-reflection prompt:* labels a prompt or answer as", "fs": 18, "op": 0}, {"id": "mc", "type": "list", "x": 672, "y": 196, "w": 560, "items": [{"t": "Acceptable"}, {"t": "Illegal activities"}, {"t": "Hateful, harassing or violent content"}, {"t": "Unqualified legal, medical or financial advice"}], "upto": 0, "fs": 18, "gap": 10, "mark": "dot", "mk": 16}, {"id": "cn", "type": "text", "x": 672, "y": 380, "w": 560, "text": "Users choose which categories to filter for their use case.", "fs": 17, "tone": "muted", "op": 0}], "beats": [{"cap": "Section 5 adds guardrails without retraining. First, a system prompt placed before the user’s question.", "src": "§5.1"}, {"cap": "It moves the model along a trade-off between usefulness and guardrails. A real question, like killing a Linux process, should still get an answer.", "src": "§5.1, Table 5", "set": {"u": {"op": 1}}}, {"cap": "Second, a self-reflection prompt makes Mistral 7B a content moderator. It labels a prompt or answer as acceptable or one of 3 categories.", "src": "§5.2", "set": {"m": {"op": 1}, "mc": {"upto": 4}}}, {"cap": "Categories: illegal activities, hateful or violent content, and unqualified legal, medical or financial advice.", "src": "§5.2", "set": {"cn": {"op": 1}}}]}]}, {"n": "04", "name": "Evidence", "short": "Evidence", "lede": "Five tests: benchmarks, equivalent size, chat, guardrails and efficiency.", "scenes": [{"title": "How they tested it", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Test", "Question", "How they measured", "Result"], "rows": [{"c": ["Base benchmarks", "Better than bigger Llamas?", "12+ benchmarks, re-run on one pipeline", "beats Llama 2 13B on 11 of 12"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Equivalent size", "How big a Llama 2 does it match?", "Compared with Llama 2 7B/13B/70B", "> 3× (knowledge: 1.9×)"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Chat model", "Is the Instruct model good?", "MT-Bench, Chatbot Arena, human votes", "6.84 MT-Bench; 5,020 vs 4,143 votes"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Guardrails", "Safe, and still useful?", "MT-Bench with prompts; 175 unsafe prompts", "100% declined; 99.4% precision"], "tones": [null, null, null, "acc"], "bold": [3]}, {"c": ["Efficiency", "Is the window cheaper?", "Speed at 16K, cache memory at 32K", "2× faster; 8× less memory"], "tones": [null, null, null, "acc"], "bold": [3]}], "fs": 16, "hfs": 14, "rpad": 11, "cols": "1fr 1.3fr 1.7fr 1.5fr", "upto": 0, "ghost": true}], "beats": [{"cap": "Five tests. First, standard benchmarks against Llama, all re-run by the authors on one pipeline.", "src": "§3", "set": {"tb": {"upto": 1}}, "read": 3}, {"cap": "Second, how big a Llama 2 model would need to be to match it.", "src": "§3, Fig. 5", "set": {"tb": {"upto": 2}}, "read": 2}, {"cap": "Third, the fine-tuned chat model. Fourth, guardrails and moderation.", "src": "§4, §5", "set": {"tb": {"upto": 4}}, "read": 3}, {"cap": "Fifth, the cost claims for the sliding window and rolling cache.", "src": "§2", "set": {"tb": {"upto": 5}}, "read": 2}]}, {"title": "Base model: Table 2 in full", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 140, "w": 760, "head": ["Benchmark (accuracy %)", "Llama 2 7B", "Llama 2 13B", "Code-Llama 7B", "Mistral 7B"], "rows": [{"c": ["MMLU", "44.4", "55.6", "36.9", "60.1"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["HellaSwag", "77.1", "80.7", "62.9", "81.3"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["WinoGrande", "69.5", "72.9", "62.3", "75.3"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["PIQA", "77.9", "80.8", "72.8", "83.0"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["ARC-e", "68.7", "75.2", "59.4", "80.0"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["ARC-c", "43.2", "48.8", "34.5", "55.5"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["NaturalQuestions", "24.7", "29.0", "11.0", "28.8"], "tones": [null, null, "bad", null, "acc"], "bold": [2], "hl": true}, {"c": ["TriviaQA", "63.8", "69.6", "34.9", "69.9"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["HumanEval", "11.6", "18.9", "31.1", "30.5"], "tones": [null, null, null, null, "acc"], "bold": [3], "hl": false}, {"c": ["MBPP", "26.1", "35.4", "52.5", "47.5"], "tones": [null, null, null, null, "acc"], "bold": [3], "hl": false}, {"c": ["MATH", "3.9", "6.0", "5.2", "13.1"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}, {"c": ["GSM8K", "16.0", "34.3", "20.8", "52.2"], "tones": [null, null, null, null, "acc"], "bold": [4], "hl": false}], "fs": 14.5, "hfs": 12.5, "rpad": 4, "cols": "1.7fr 1fr 1fr 1.1fr 1fr", "mono": [1, 2, 3, 4], "align": ["left", "right", "right", "right", "right"], "upto": 0, "ghost": true}, {"id": "k", "type": "text", "x": 840, "y": 150, "w": 390, "text": "Higher is better. Bold = best in the row. All models re-run on the authors’ pipeline.", "fs": 16, "tone": "muted", "lh": 1.4}, {"id": "nq", "type": "text", "x": 840, "y": 290, "w": 390, "text": "NaturalQuestions: 28.8 vs 29.0. The paper says Mistral 7B beats Llama 2 13B “on all metrics”; its own table shows one exception.", "fs": 16, "box": "bad", "lh": 1.4, "op": 0}, {"id": "ev", "type": "text", "x": 840, "y": 460, "w": 390, "text": "Protocol differences from the Llama 2 paper: MBPP uses the hand-verified subset; TriviaQA has no Wikipedia context.", "fs": 14, "tone": "muted", "lh": 1.4, "op": 0}], "beats": [{"cap": "Table 2 compares Mistral 7B with Llama 2 7B and 13B, and with Code-Llama 7B, on 12 benchmarks.", "src": "Table 2", "set": {"tb": {"upto": 8}}, "read": 4}, {"cap": "On code and math, Mistral 7B beats both Llama 2 models by wide margins and nears Code-Llama 7B on code.", "src": "Table 2", "set": {"tb": {"upto": 12}}, "read": 3}, {"cap": "One contradiction: the text says it beats Llama 2 13B on all metrics. On NaturalQuestions, the table shows 28.8 vs 29.0.", "src": "Table 2, §3", "set": {"nq": {"op": 1}}}, {"cap": "The authors note their protocol differs from the Llama 2 paper on MBPP and TriviaQA.", "src": "§3", "set": {"ev": {"op": 1}}}]}, {"title": "Code and math: the biggest gains", "actors": [{"id": "m1", "type": "bars", "x": 48, "y": 150, "w": 560, "title": "GSM8K, 8-shot, maj@8 (%)", "sub": "", "max": 60, "upto": 0, "lw": 130, "vw": 50, "fs": 14, "bh": 14, "gap": 5, "rows": [{"n": "Llama 2 7B", "v": 16.0, "l": "16.0", "hl": false}, {"n": "Llama 2 13B", "v": 34.3, "l": "34.3", "hl": false}, {"n": "Code-Llama 7B", "v": 20.8, "l": "20.8", "hl": false}, {"n": "Mistral 7B", "v": 52.2, "l": "52.2", "hl": true}], "tfs": 16}, {"id": "m2", "type": "bars", "x": 672, "y": 150, "w": 560, "title": "MATH, 4-shot, maj@4 (%)", "sub": "", "max": 60, "upto": 0, "lw": 130, "vw": 50, "fs": 14, "bh": 14, "gap": 5, "rows": [{"n": "Llama 2 7B", "v": 3.9, "l": "3.9", "hl": false}, {"n": "Llama 2 13B", "v": 6.0, "l": "6.0", "hl": false}, {"n": "Code-Llama 7B", "v": 5.2, "l": "5.2", "hl": false}, {"n": "Mistral 7B", "v": 13.1, "l": "13.1", "hl": true}], "tfs": 16}, {"id": "c1", "type": "bars", "x": 48, "y": 360, "w": 560, "title": "HumanEval, 0-shot (%)", "sub": "", "max": 60, "upto": 0, "lw": 130, "vw": 50, "fs": 14, "bh": 14, "gap": 5, "rows": [{"n": "Llama 2 7B", "v": 11.6, "l": "11.6", "hl": false}, {"n": "Llama 2 13B", "v": 18.9, "l": "18.9", "hl": false}, {"n": "Code-Llama 7B", "v": 31.1, "l": "31.1", "hl": false}, {"n": "Mistral 7B", "v": 30.5, "l": "30.5", "hl": true}], "tfs": 16}, {"id": "c2", "type": "bars", "x": 672, "y": 360, "w": 560, "title": "MBPP, 3-shot (%)", "sub": "", "max": 60, "upto": 0, "lw": 130, "vw": 50, "fs": 14, "bh": 14, "gap": 5, "rows": [{"n": "Llama 2 7B", "v": 26.1, "l": "26.1", "hl": false}, {"n": "Llama 2 13B", "v": 35.4, "l": "35.4", "hl": false}, {"n": "Code-Llama 7B", "v": 52.5, "l": "52.5", "hl": false}, {"n": "Mistral 7B", "v": 47.5, "l": "47.5", "hl": true}], "tfs": 16}, {"id": "n", "type": "text", "x": 48, "y": 556, "w": 900, "text": "accuracy · higher is better · same 0–60 scale on all four", "fs": 14, "tone": "muted", "font": "mono"}], "beats": [{"cap": "Math: on GSM8K, Mistral 7B scores 52.2%, against 34.3% for Llama 2 13B. On MATH, 13.1% against 6.0%.", "src": "Table 2", "set": {"m1": {"upto": 4}, "m2": {"upto": 4}}, "read": 2}, {"cap": "Code: Code-Llama 7B, a code-tuned model, stays slightly ahead. Mistral 7B comes close without losing other skills.", "src": "Table 2, §1", "set": {"c1": {"upto": 4}, "c2": {"upto": 4}}, "read": 2}]}, {"title": "How big a Llama 2 would it need to be?", "actors": [{"id": "a", "type": "stat", "x": 48, "y": 160, "w": 360, "v": "> 3×", "l": "reasoning, comprehension and MMLU: matches a Llama 2 over 3× its size", "on": true, "op": 0}, {"id": "b", "type": "stat", "x": 440, "y": 160, "w": 360, "v": "1.9×", "l": "knowledge benchmarks: a lower “compression rate”", "op": 0}, {"id": "why", "type": "text", "x": 840, "y": 160, "w": 390, "text": "The paper’s guess: 7B parameters limit how much knowledge the model can store.", "fs": 18, "box": "plain", "lh": 1.4, "op": 0}, {"id": "l34", "type": "text", "x": 48, "y": 380, "w": 1184, "text": "Against Llama 1 34B (Llama 2 34B was not released): better on most benchmarks, especially math, code and reasoning. Per-benchmark values are only in Fig. 4, which is an image; we do not quote numbers from it.", "fs": 18, "tone": "muted", "lh": 1.45, "op": 0}], "beats": [{"cap": "The authors compute an “equivalent model size”: how big a Llama 2 model scores the same. They compare with Llama 2 7B, 13B and 70B.", "src": "§3, Fig. 5"}, {"cap": "On reasoning, comprehension and MMLU, it performs like a Llama 2 model more than 3 times its size.", "src": "§3, Fig. 5", "set": {"a": {"op": 1}}}, {"cap": "On knowledge tests, the factor is only 1.9. The paper’s explanation: fewer parameters store less knowledge.", "src": "§3, Fig. 5", "set": {"b": {"op": 1}, "why": {"op": 1}}}, {"cap": "Against Llama 1 34B, it wins on most benchmarks. The detailed numbers appear only in a chart.", "src": "§3, Fig. 4", "set": {"l34": {"op": 1}}}]}, {"title": "The chat model", "actors": [{"id": "mt", "type": "bars", "x": 48, "y": 150, "w": 560, "title": "MT-Bench score", "sub": "higher is better · ±0.07 for Mistral", "max": 8, "upto": 0, "lw": 170, "vw": 50, "fs": 14, "bh": 15, "gap": 6, "rows": [{"n": "WizardLM 13B v1.2", "v": 7.2, "l": "7.20", "hl": false}, {"n": "Mistral 7B Instruct", "v": 6.84, "l": "6.84", "hl": true}, {"n": "Llama 2 13B Chat", "v": 6.65, "l": "6.65", "hl": false}, {"n": "Vicuna 13B", "v": 6.57, "l": "6.57", "hl": false}, {"n": "Llama 2 7B Chat", "v": 6.27, "l": "6.27", "hl": false}, {"n": "Vicuna 7B", "v": 6.17, "l": "6.17", "hl": false}, {"n": "Alpaca 13B", "v": 4.53, "l": "4.53", "hl": false}]}, {"id": "el", "type": "bars", "x": 672, "y": 150, "w": 560, "title": "Chatbot Arena ELO", "sub": "higher is better · bars start at 900", "max": 160, "upto": 0, "lw": 170, "vw": 50, "fs": 14, "bh": 15, "gap": 6, "rows": [{"n": "WizardLM 13B v1.2", "v": 147, "l": "1047", "hl": false}, {"n": "Vicuna 13B", "v": 141, "l": "1041", "hl": false}, {"n": "Mistral 7B Instruct", "v": 131, "l": "1031", "hl": true}, {"n": "Llama 2 13B Chat", "v": 112, "l": "1012", "hl": false}, {"n": "Vicuna 7B", "v": 97, "l": "997", "hl": false}, {"n": "Llama 2 7B Chat", "v": 85, "l": "985", "hl": false}, {"n": "Alpaca 13B", "v": 14, "l": "914", "hl": false}], "op": 0.25}, {"id": "hv", "type": "text", "x": 48, "y": 470, "w": 1184, "text": "Human evaluation on llmboxing.com (as of Oct 6, 2023): Mistral 7B Instruct preferred *5,020* times, Llama 2 13B Chat *4,143* times.", "fs": 19, "box": "plain", "op": 0}], "beats": [{"cap": "On MT-Bench, Mistral 7B Instruct scores 6.84, above every 7B chat model and above Llama 2 13B Chat.", "src": "Table 3", "set": {"mt": {"upto": 7}}, "read": 3}, {"cap": "On Chatbot Arena ELO, it ranks below WizardLM 13B and Vicuna 13B. The paper calls it comparable to 13B chat models.", "src": "Table 3, §4", "set": {"el": {"op": 1, "upto": 7}}, "read": 3}, {"cap": "In blind pairwise votes, people preferred its answers 5,020 times, against 4,143 for Llama 2 13B Chat.", "src": "§4, Fig. 6", "set": {"hv": {"op": 1}}}]}, {"title": "Guardrails and moderation", "actors": [{"id": "sp", "type": "bars", "x": 48, "y": 150, "w": 560, "title": "MT-Bench by system prompt", "sub": "mean of 10 runs · higher is better", "max": 8, "upto": 0, "lw": 170, "vw": 50, "fs": 15, "bh": 18, "gap": 8, "rows": [{"n": "No system prompt", "v": 6.84, "l": "6.84", "hl": false}, {"n": "Mistral prompt", "v": 6.58, "l": "6.58", "hl": true}, {"n": "Llama 2 prompt", "v": 6.38, "l": "6.38", "hl": false}]}, {"id": "u", "type": "stat", "x": 48, "y": 330, "w": 270, "v": "100%", "l": "of 175 unsafe prompts declined, with the Mistral system prompt", "op": 0}, {"id": "p", "type": "stat", "x": 340, "y": 330, "w": 270, "v": "99.4%", "l": "precision of self-reflection moderation", "op": 0}, {"id": "r", "type": "stat", "x": 340, "y": 470, "w": 270, "v": "95.6%", "l": "recall (acceptable prompts counted as positives)", "op": 0}, {"id": "ex", "type": "table", "x": 672, "y": 150, "w": 560, "head": ["Model + its system prompt", "“How to kill a linux process”"], "rows": [{"c": ["Mistral 7B Instruct", "Explains the kill command with a PID"], "tones": [null, "ok"]}, {"c": ["Llama 2 13B Chat", "Declines to answer"], "tones": [null, "bad"]}], "fs": 16, "hfs": 15, "rpad": 10, "cols": "1fr 1.3fr", "op": 0}, {"id": "exn", "type": "text", "x": 672, "y": 300, "w": 560, "text": "Without system prompts, both models answer correctly.", "fs": 15, "tone": "muted", "op": 0}], "beats": [{"cap": "A system prompt costs some quality. MT-Bench falls from 6.84 to 6.58 with Mistral’s prompt, and to 6.38 with Llama 2’s.", "src": "Table 4", "set": {"sp": {"upto": 3}}, "read": 2}, {"cap": "With the Mistral prompt, the model declines all 175 unsafe test prompts.", "src": "§5.1", "set": {"u": {"op": 1}}}, {"cap": "It still answers a harmless question that sounds dangerous. Llama 2 13B Chat, with its own prompt, refuses.", "src": "Table 5", "set": {"ex": {"op": 1}, "exn": {"op": 1}}}, {"cap": "As a moderator, self-reflection reaches 99.4% precision at 95.6% recall, on the authors’ own balanced dataset.", "src": "§5.2", "set": {"p": {"op": 1}, "r": {"op": 1}}}]}, {"title": "Efficiency claims", "actors": [{"id": "a", "type": "stat", "x": 48, "y": 160, "w": 360, "v": "2×", "l": "speed over a vanilla attention baseline, at 16K tokens with W = 4,096", "on": true}, {"id": "b", "type": "stat", "x": 440, "y": 160, "w": 360, "v": "8×", "l": "less cache memory at 32K tokens, without hurting quality", "op": 0}, {"id": "c", "type": "stat", "x": 832, "y": 160, "w": 360, "v": "131K", "l": "theoretical attention span at the last layer", "op": 0}, {"id": "n", "type": "text", "x": 48, "y": 380, "w": 1184, "text": "8× matches 32K ÷ 4,096 = 8 (our arithmetic). The paper gives these as statements in §2. It shows no table, timing setup or long-context quality test.", "fs": 18, "tone": "muted", "lh": 1.45, "op": 0}], "beats": [{"cap": "With their changes to FlashAttention and xFormers, the sliding window runs 2 times faster than vanilla attention at 16K tokens.", "src": "§2"}, {"cap": "On 32K-token sequences, the rolling cache uses 8 times less memory, with no loss in quality.", "src": "§2", "set": {"b": {"op": 1}}}, {"cap": "The window plus 32 layers gives a theoretical span of about 131K tokens.", "src": "§2", "set": {"c": {"op": 1}}}, {"cap": "These are short statements. The paper gives no timing table and no test of recall over long contexts.", "kind": "ours", "set": {"n": {"op": 1}}}]}]}, {"n": "05", "name": "Using it", "short": "Using it", "lede": "Is it for you? Three ways to use it, the settings, and what breaks.", "scenes": [{"title": "Is it for you?", "actors": [{"id": "use", "type": "list", "x": 48, "y": 165, "w": 560, "items": [{"t": "You need strong reasoning, math or code from a model small enough to serve cheaply."}, {"t": "You serve many requests and cache memory limits your batch size."}, {"t": "You want an Apache 2.0 base model to fine-tune on your own data."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "check", "mk": 30, "title": "Use it when", "ttone": "ok", "tfs": 18}, {"id": "skip", "type": "list", "x": 672, "y": 165, "w": 560, "items": [{"t": "Your task is mostly recall of facts. Knowledge gains are smaller (1.9×)."}, {"t": "You need proven recall over very long inputs. The paper does not test it."}, {"t": "You need a safety layer you can audit. Moderation was tested only on the authors’ data."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "cross", "mk": 30, "title": "Skip it, or adapt it, when", "ttone": "bad", "tfs": 18}], "beats": [{"cap": "Use it when quality per parameter and serving cost both matter.", "src": "§1, §3", "set": {"use": {"upto": 3}}, "read": 3}, {"cap": "Adapt or skip it when facts, long-range recall or audited safety matter most.", "src": "§3, §5", "set": {"skip": {"upto": 3}}, "read": 3}]}, {"title": "Three ways to use it", "actors": [{"id": "c0t", "type": "text", "x": 48, "y": 162, "w": 380, "text": "Adopt the model", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c0w", "type": "text", "x": 48, "y": 196, "w": 380, "text": "You need a capable open model to serve.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c0", "type": "list", "x": 48, "y": 250, "w": 380, "items": [{"t": "Get the weights (Apache 2.0) from Hugging Face."}, {"t": "Serve with vLLM; deploy with SkyPilot or a cloud."}, {"t": "Add the system prompt if users see the output."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c1t", "type": "text", "x": 450, "y": 162, "w": 380, "text": "Fine-tune it", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c1w", "type": "text", "x": 450, "y": 196, "w": 380, "text": "You have task data and want a specialist.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c1", "type": "list", "x": 450, "y": 250, "w": 380, "items": [{"t": "Start from the base model."}, {"t": "Fine-tune on instruction data, as the paper did."}, {"t": "Re-run your own evals on one pipeline."}, {"t": "Check guardrail behaviour after tuning."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c2t", "type": "text", "x": 852, "y": 162, "w": 380, "text": "Borrow the ideas", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c2w", "type": "text", "x": 852, "y": 196, "w": 380, "text": "You build models or serving systems.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c2", "type": "list", "x": 852, "y": 250, "w": 380, "items": [{"t": "Bound attention with a window W."}, {"t": "Store keys and values in a ring buffer: slot i mod W."}, {"t": "Share key-value heads across query heads."}, {"t": "Pre-fill long prompts in chunks of size W."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}], "beats": [{"cap": "Path 1: adopt the model. The paper points to vLLM, SkyPilot and Hugging Face.", "src": "§1", "set": {"c0t": {"op": 1}, "c0w": {"op": 1}, "c0": {"upto": 3}}, "read": 3}, {"cap": "Path 2: fine-tune it. The paper’s Instruct model used only public data.", "src": "§4", "set": {"c1t": {"op": 1}, "c1w": {"op": 1}, "c1": {"upto": 4}}, "read": 3}, {"cap": "Path 3: borrow the ideas for your own model or serving stack.", "src": "§2", "set": {"c2t": {"op": 1}, "c2w": {"op": 1}, "c2": {"upto": 4}}, "read": 3}]}, {"title": "Settings that matter", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Setting", "Paper value", "What it controls", "Source"], "rows": [{"c": ["Window size W", "4,096", "Look-back per layer, cache size, chunk size", "Table 1, §2"]}, {"c": ["Layers", "32", "Reach: layers × W ≈ 131K tokens", "Table 1, §2"]}, {"c": ["Query / key-value heads", "32 / 8", "Cache size per token; 4 query heads per group", "Table 1"]}, {"c": ["Context length", "8,192", "Listed in Table 1; not discussed further", "Table 1"]}, {"c": ["System prompt", "Mistral prompt", "MT-Bench 6.84 → 6.58; 100% of unsafe prompts declined", "Table 4, §5.1"]}, {"c": ["Moderation categories", "user’s choice", "Pick which of the 3 categories to filter", "§5.2"]}], "fs": 17, "hfs": 14, "rpad": 10, "cols": "1.3fr 1fr 2.4fr 0.9fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The paper has no ablations, so these are its values and what each one controls, not measured trade-offs.", "src": "Table 1, §2", "set": {"tb": {"upto": 4}}, "read": 4}, {"cap": "The guardrail settings have measured costs: the system prompt trades a little MT-Bench score for safety.", "src": "Table 4, §5", "set": {"tb": {"upto": 6}}, "read": 3}]}, {"title": "What breaks, and what to do", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Problem", "Why", "What to do"], "rows": [{"c": ["Facts from far back get lost", "Old tokens reach later ones only through layers (Fig. 1); long-context recall is not tested", "Test retrieval at your real input lengths"]}, {"c": ["Weak on facts", "Few parameters store less knowledge: only 1.9× (§3)", "Add retrieval, or use a bigger model"]}, {"c": ["Over-refusal", "Llama 2’s prompt refused a harmless question (Table 5)", "Test benign but scary-sounding prompts"]}, {"c": ["Safety prompt costs quality", "MT-Bench 6.84 → 6.58 (Table 4)", "Use it only where users see the output"]}, {"c": ["Long prompts use memory", "Pre-fill grows with the prompt (§2)", "Pre-fill in chunks of size W"]}, {"c": ["Scores do not transfer", "Own pipeline; MBPP and TriviaQA protocols differ (§3)", "Re-run baselines on your own evals"]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "1.2fr 2.2fr 1.6fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The first two problems come from the model itself: the window and the small parameter count.", "src": "Fig. 1, §3", "set": {"tb": {"upto": 2}}, "read": 4}, {"cap": "The others come from guardrails, long prompts and how scores were measured. Each has a practical fix.", "src": "§2, §3, §5", "set": {"tb": {"upto": 6}}, "read": 4}]}, {"title": "", "actors": [{"id": "q", "type": "text", "x": 140, "y": 220, "w": 1000, "text": "“Bound what each step keeps. Let depth carry the rest.”", "font": "serif", "fs": 50, "italic": true, "lh": 1.15, "align": "center"}, {"id": "s", "type": "text", "x": 200, "y": 420, "w": 880, "text": "Mistral 7B caps attention at 4,096 tokens and lets 32 layers relay older information.", "fs": 24, "tone": "muted", "align": "center"}], "beats": [{"cap": "The one idea to take from this paper.", "kind": "ours", "dur": 6}]}]}, {"n": "06", "name": "How the authors got there", "short": "Their thinking", "lede": "Six thinking moves behind the design. You can reuse them on your own problems.", "scenes": [{"title": "Six moves from cost to design", "actors": [{"id": "trail", "type": "beam", "x": 0, "y": 0, "pts": "146,210 1134,210", "tone": "muted"}, {"id": "n0", "type": "node", "x": 120, "y": 184, "text": "1"}, {"id": "n1", "type": "node", "x": 318, "y": 184, "text": "2"}, {"id": "n2", "type": "node", "x": 515, "y": 184, "text": "3"}, {"id": "n3", "type": "node", "x": 713, "y": 184, "text": "4"}, {"id": "n4", "type": "node", "x": 910, "y": 184, "text": "5"}, {"id": "n5", "type": "node", "x": 1108, "y": 184, "text": "6"}, {"id": "lab", "type": "text", "x": 120, "y": 340, "w": 600, "text": "IN THIS PAPER", "font": "mono", "fs": 14, "tone": "muted", "op": 0}, {"id": "t0", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Count the cost users pay", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p0", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Scaling raises compute and latency, which blocks deployment.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y0", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* List the costs your users pay at run time, not only at build time.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t1", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Bound the part that grows", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p1", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "Each layer looks back at most W = 4,096 tokens.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y1", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Cap any per-request state that grows with input length.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t2", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Let depth recover the reach", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p2", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "k stacked layers reach up to k × W tokens.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y2", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* When you cut direct access, check if layered summaries bring it back.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t3", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Turn the bound into memory", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p3", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "A fixed window allows a fixed cache: slot i mod W.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y3", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Once a size is fixed, replace growing lists with ring buffers.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t4", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Make the stack support it", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p4", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "They changed FlashAttention, xFormers and vLLM support.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y4", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Budget for the serving work. An idea saves nothing until the stack runs it.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "t5", "type": "text", "x": 120, "y": 268, "w": 1040, "text": "Re-run every baseline yourself", "font": "serif", "fs": 40, "op": 0, "lh": 1.1}, {"id": "p5", "type": "text", "x": 120, "y": 368, "w": 1040, "text": "All Llama models were re-evaluated on the authors’ own pipeline.", "fs": 24, "lh": 1.4, "op": 0}, {"id": "y5", "type": "text", "x": 120, "y": 470, "w": 1040, "text": "*Try it:* Do not copy numbers from papers. Run baselines on your own evals.", "fs": 22, "lh": 1.4, "box": "acc", "op": 0}, {"id": "sum", "type": "list", "x": 120, "y": 272, "w": 1040, "items": [{"t": "Count the cost users pay"}, {"t": "Bound the part that grows"}, {"t": "Let depth recover the reach"}, {"t": "Turn the bound into memory"}, {"t": "Make the stack support it"}, {"t": "Re-run every baseline yourself"}], "upto": 6, "fs": 22, "gap": 10, "op": 0, "mk": 30}], "beats": [{"cap": "The paper does not tell the story of the project. It does give its reasoning in order. Here it is as moves you can reuse.", "kind": "ours"}, {"cap": "Move 1. Count the cost users pay.", "src": "§1", "set": {"n0": {"on": true}, "t0": {"op": 1}, "p0": {"op": 1}, "y0": {"op": 1}, "lab": {"op": 1}}, "read": 9}, {"cap": "Move 2. Bound the part that grows.", "src": "§2", "set": {"n1": {"on": true}, "t1": {"op": 1}, "p1": {"op": 1}, "y1": {"op": 1}, "lab": {"op": 1}, "n0": {"on": false, "done": true}, "t0": {"op": 0}, "p0": {"op": 0}, "y0": {"op": 0}}, "read": 9}, {"cap": "Move 3. Let depth recover the reach.", "src": "§2, Fig. 1", "set": {"n2": {"on": true}, "t2": {"op": 1}, "p2": {"op": 1}, "y2": {"op": 1}, "lab": {"op": 1}, "n1": {"on": false, "done": true}, "t1": {"op": 0}, "p1": {"op": 0}, "y1": {"op": 0}}, "read": 9}, {"cap": "Move 4. Turn the bound into memory.", "src": "§2, Fig. 2", "set": {"n3": {"on": true}, "t3": {"op": 1}, "p3": {"op": 1}, "y3": {"op": 1}, "lab": {"op": 1}, "n2": {"on": false, "done": true}, "t2": {"op": 0}, "p2": {"op": 0}, "y2": {"op": 0}}, "read": 9}, {"cap": "Move 5. Make the stack support it.", "src": "§1, §2", "set": {"n4": {"on": true}, "t4": {"op": 1}, "p4": {"op": 1}, "y4": {"op": 1}, "lab": {"op": 1}, "n3": {"on": false, "done": true}, "t3": {"op": 0}, "p3": {"op": 0}, "y3": {"op": 0}}, "read": 9}, {"cap": "Move 6. Re-run every baseline yourself.", "src": "§3", "set": {"n5": {"on": true}, "t5": {"op": 1}, "p5": {"op": 1}, "y5": {"op": 1}, "lab": {"op": 1}, "n4": {"on": false, "done": true}, "t4": {"op": 0}, "p4": {"op": 0}, "y4": {"op": 0}}, "read": 9}, {"cap": "This is our reading of the paper’s order, not its history.", "kind": "ours", "read": 4, "set": {"n5": {"on": false, "done": true}, "t5": {"op": 0}, "p5": {"op": 0}, "y5": {"op": 0}, "lab": {"op": 0}, "sum": {"op": 1}}}]}]}, {"n": "07", "name": "Glossary", "short": "Glossary", "lede": "The terms used in this film, in one place.", "scenes": [{"title": "Glossary", "actors": [{"id": "a", "type": "table", "x": 48, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Token", "A piece of text the model reads; Mistral 7B knows 32,000 of them."]}, {"c": ["Attention", "Each token builds its new state as a weighted mix of other tokens."]}, {"c": ["Sliding window attention", "Each layer looks back at most W tokens."]}, {"c": ["Window size W", "How far back one layer looks; 4,096 in Mistral 7B."]}, {"c": ["Head", "One of several parallel attention computations, 128 numbers wide."]}, {"c": ["Grouped-query attention", "Groups of query heads share one key-value head."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}, {"id": "b", "type": "table", "x": 652, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["KV cache", "Stored keys and values of earlier tokens, reused for each new token."]}, {"c": ["Rolling buffer cache", "A fixed-size cache: position i goes to slot i mod W."]}, {"c": ["Pre-fill", "Computing the cache for the known prompt before writing starts."]}, {"c": ["Chunking", "Splitting a long prompt into pieces of size W for pre-fill."]}, {"c": ["MT-Bench", "A benchmark that scores chat answers; higher is better."]}, {"c": ["Self-reflection", "A prompt that makes the model classify a prompt or answer."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}], "beats": [{"cap": "Paper: arxiv.org/abs/2310.06825 · Code: github.com/mistralai/mistral-src", "kind": "none", "dur": 14}]}]}]};
+    return this._R;
+  }
+
+
+  sceneKit(type, p, T) {
+    var P = [];
+    var base = function (o) {
+      var d = { isRect: false, isPath: false, isCirc: false, isText: false, isPoly: false, x: 0, y: 0, w: 0, h: 0, rx: 0, d: '', cx: 0, cy: 0, r: 0, pts: '', fill: 'none', stroke: 'none', sw: 0, dash: 'none', op: 1, anim: 'none', fs: 12, fw: 400, anchor: 'start', txt: '', font: T.body, tf: '', tdl: 0 };
+      for (var k in o) { if (o[k] !== undefined) d[k] = o[k]; }
+      P.push(d); return d;
+    };
+    var rect = function (x, y, w, h, o) { o = o || {}; o.isRect = true; o.x = x; o.y = y; o.w = Math.max(0, w); o.h = Math.max(0, h); return base(o); };
+    var path = function (d, o) { o = o || {}; o.isPath = true; o.d = d; return base(o); };
+    var circ = function (cx, cy, r, o) { o = o || {}; o.isCirc = true; o.cx = cx; o.cy = cy; o.r = r; return base(o); };
+    var text = function (x, y, t2, o) { o = o || {}; o.isText = true; o.x = x; o.y = y; o.txt = t2 == null ? '' : String(t2); if (o.fill === undefined) o.fill = T.ink; return base(o); };
+    var poly = function (pts, o) { o = o || {}; o.isPoly = true; o.pts = pts; return base(o); };
+    var I = {
+      gear: 'M12 8a4 4 0 1 0 .01 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1',
+      net: 'M5 4a2 2 0 1 0 .01 0 M5 16a2 2 0 1 0 .01 0 M19 10a2 2 0 1 0 .01 0 M12 4a2 2 0 1 0 .01 0 M12 16a2 2 0 1 0 .01 0 M7 6h3 M7 18h3 M14 7l3 4 M14 17l3-4 M7 7l3 9',
+      photo: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 8a1.5 1.5 0 1 0 .01 0',
+      depth: 'M4 5h16 M4 9h16 M4 13h16 M4 17h16',
+      code: 'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16',
+      task: 'M6 3h12v18H6z M9 8h6 M9 12h6 M9 16h4',
+      mask: 'M12 3a4 4 0 1 0 .01 0 M5 21c0-4 3-7 7-7s7 3 7 7z',
+      box3d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5',
+      mesh: 'M3 20L12 4l9 16z M7.5 12h9 M7.5 12L12 20l4.5-8',
+      camera: 'M3 8h4l2-3h6l2 3h4v11H3z M12 10a3.5 3.5 0 1 0 .01 0',
+      clock: 'M12 3a9 9 0 1 0 .01 0 M12 7v5l3 2',
+      book: 'M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z',
+      page: 'M6 3h9l4 4v14H6z M15 3v4h4 M9 12h7 M9 16h5',
+      eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 .01 0',
+      eyeoff: 'M3 3l18 18 M10.6 6.1A10 10 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.4 4 M6.6 6.6C3.9 8.4 2 12 2 12s4 6 10 6a9 9 0 0 0 4.4-1.1',
+      gpu: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+      film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+      brush: 'M14 4l6 6-8 8-6-6z M6 12l-3 8 8-3',
+      check: 'M5 12l5 5 9-10', cross: 'M6 6l12 12 M18 6L6 18', pause: 'M9 5v14 M15 5v14', dot: 'M12 11a1 1 0 1 0 .01 0'
+    };
+    var icon = function (name, x, y, k, col, op) { path(I[name] || I.dot, { tf: 'translate(' + x + ' ' + y + ') scale(' + k + ')', stroke: col || T.ink, sw: 1.7 / k, op: op == null ? 1 : op }); };
+    var toneCol = function (tn) { return tn === 'ok' ? T.ok : (tn === 'bad' ? T.bad : (tn === 'acc' ? T.acc : (tn === 'muted' ? T.muted : T.ink))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? T.accSoft : T.card)); };
+    var look = p.look || 'paint', wo = look === 'wire' ? 1 : 0, po = 1 - wo, w, h;
+    if (type === 'robot') {
+      var ex = p.lookdir === 'l' ? -3 : (p.lookdir === 'r' ? 3 : 0), th = !!p.think;
+      rect(20, 82, 10, 10, { rx: 2, fill: T.ink }); rect(40, 82, 10, 10, { rx: 2, fill: T.ink });
+      path('M10 52 L0 67', { stroke: T.ink, sw: 2.6 }); path('M60 52 L70 65', { stroke: T.ink, sw: 2.6 });
+      rect(10, 40, 50, 44, { rx: 12, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(35, 61, 6, { fill: th ? T.acc : T.rule, anim: th ? 'plpulse 1s ease-in-out infinite' : 'none' });
+      rect(15, 8, 40, 32, { rx: 10, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(28 + ex, 24, 3.6, { fill: T.ink }); circ(42 + ex, 24, 3.6, { fill: T.ink });
+      path('M35 8 V0', { stroke: T.ink, sw: 2 }); circ(35, -1, 3.2, { fill: p.col || T.acc });
+      circ(62, -6, 3, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out infinite' : 'none' });
+      circ(70, -15, 4, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .2s infinite' : 'none' });
+      circ(80, -26, 5, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .4s infinite' : 'none' });
+      if (p.label) text(35, 108, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+      w = 70; h = 92;
+    } else if (type === 'ground') {
+      w = p.w || 300; h = 24;
+      path('M0 1 H' + w, { stroke: T.acc, sw: 1.6, dash: '6 5', op: wo });
+      for (var gi = 12; gi < w; gi += 28) path('M' + gi + ' 2 l-9 11', { stroke: T.acc, sw: 1, op: wo * 0.6 });
+      rect(0, 0, w, h, { fill: T.grass, op: po }); rect(0, 0, w, 5, { fill: T.grassTop, op: po });
+    } else if (type === 'crate') {
+      w = h = p.w || 56;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      path('M0 0 L' + w + ' ' + h + ' M' + w + ' 0 L0 ' + h, { stroke: T.acc, sw: 1, dash: '4 4', op: wo });
+      rect(0, 0, w, h, { rx: 3, fill: T.crate, stroke: T.crateEdge, sw: 2, op: po });
+      path('M0 ' + (h / 3) + ' H' + w + ' M0 ' + (2 * h / 3) + ' H' + w + ' M4 4 L' + (w - 4) + ' ' + (h - 4), { stroke: T.crateEdge, sw: 1.3, op: po });
+    } else if (type === 'wall') {
+      w = p.w || 22; h = p.h || 120;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 2, fill: T.wall, stroke: T.wallEdge, sw: 1.5, op: po });
+      var bl = ''; for (var wy = 15; wy < h; wy += 15) bl += 'M0 ' + wy + ' H' + w + ' ';
+      if (bl) path(bl, { stroke: T.wallEdge, sw: 1, op: po * 0.7 });
+    } else if (type === 'block') {
+      w = p.w || 80; h = p.h || 40;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 4, fill: p.color || '#E9D7B9', stroke: '#A88B5E', sw: 1.5, op: po });
+      if (p.label) text(w / 2, h / 2 + 4, p.label, { anchor: 'middle', fs: 11, fill: wo ? T.acc : '#6E5634' });
+    } else if (type === 'card') {
+      w = p.w || 150; h = p.h || 96;
+      var small = h < 70;
+      if (p.on) rect(-5, -5, w + 10, h + 10, { rx: 16, stroke: T.acc, sw: 2, anim: 'plpulse 1.4s ease-in-out infinite' });
+      rect(0, 0, w, h, { rx: 12, fill: T.card, stroke: p.on ? T.acc : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 12, small ? (h - 20) / 2 : 10, 0.85, p.on ? T.acc : T.ink);
+      text(38, small ? h / 2 - (p.sub ? 1 : -5) : 26, p.label, { fs: 13.5, fw: 600 });
+      if (p.sub) text(38, small ? h / 2 + 14 : h - 12, p.sub, { fs: 11, fill: T.muted });
+      if (!small && p.fill) {
+        var bx = 10, by = 38, bw = w - 20, bh = h - (p.sub ? 62 : 48);
+        if (p.fill === 'depth') { for (var di = 0; di < 6; di++) rect(bx, by + di * bh / 6, bw, bh / 6 + 0.6, { fill: T.depth[di] }); }
+        else if (p.fill === 'paint') { rect(bx, by, bw, bh, { rx: 4, fill: T.sky }); circ(bx + bw - 18, by + 14, 8, { fill: T.sun }); rect(bx, by + bh * 0.72, bw, bh * 0.28, { fill: T.grass }); }
+        else if (p.fill === 'code' || p.fill === 'list') {
+          (p.lines || []).forEach(function (ln, li) {
+            if (li === p.hl) rect(bx - 3, by + li * 18 - 2, bw + 6, 18, { rx: 3, fill: T.accSoft });
+            text(bx, by + 11 + li * 18, ln, { fs: 11.5, font: p.fill === 'code' ? T.mono : T.body, fill: li === p.hl ? T.acc : T.ink });
+          });
+        }
+      }
+    } else if (type === 'icon') {
+      w = 48; h = 48;
+      rect(0, 0, 48, 48, { rx: 12, fill: T.card, stroke: p.tone ? toneCol(p.tone) : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 9, 9, 1.25, p.tone ? toneCol(p.tone) : T.ink);
+      if (p.label) text(24, 66, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+    } else if (type === 'badge') {
+      var bt = String(p.text || ''); w = Math.round(bt.length * 7.3 + 30); h = 32;
+      rect(0, 0, w, h, { rx: 16, fill: toneBg(p.tone), stroke: toneCol(p.tone), sw: 1.5 });
+      text(w / 2, 21, bt, { anchor: 'middle', fs: 13, fw: 600, fill: toneCol(p.tone) });
+    } else if (type === 'bubble') {
+      var bt2 = String(p.text || ''); w = Math.round(bt2.length * 7.4 + 26); h = 34;
+      path('M' + (w - 34) + ' 33 l10 12 l4 -12', { fill: T.card, stroke: T.ink, sw: 1.5 });
+      rect(0, 0, w, h, { rx: 10, fill: T.card, stroke: T.ink, sw: 1.5 });
+      text(13, 22, bt2, { fs: 12.5, font: T.mono });
+    } else if (type === 'label') {
+      var fs = p.fs || 13, lt = String(p.text || ''); w = Math.round(lt.length * fs * 0.56); h = fs + 6;
+      text(p.anchor === 'middle' ? w / 2 : 0, fs, lt, { fs: fs, fw: p.fw || 500, fill: toneCol(p.tone || 'muted'), anchor: p.anchor || 'start' });
+    } else if (type === 'panel') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 14, fill: T.card, stroke: T.ruleDark, sw: 1.2 });
+      text(16, 26, p.label, { fs: 13.5, fw: 600, fill: T.label });
+    } else if (type === 'curtain') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 10, fill: T.bg, op: 0.94 });
+      icon('eyeoff', w / 2 - 14, h / 2 - 34, 1.2, T.muted);
+      text(w / 2, h / 2 + 14, p.text || '', { anchor: 'middle', fs: 13, fill: T.muted });
+    } else if (type === 'cells') {
+      var pat = String(p.pat || ''), cw = p.cw || 26, ch = p.ch || 30, gap = p.gap == null ? 6 : p.gap, tx = p.texts || [];
+      w = Math.max(1, pat.length * (cw + gap) - gap); h = ch;
+      for (var ci = 0; ci < pat.length; ci++) {
+        var c = pat.charAt(ci), cx0 = ci * (cw + gap), st = { rx: 5, fill: T.rule, stroke: 'none', sw: 0, op: 1, anim: 'none', tdl: +(ci * 0.07).toFixed(2), dash: 'none' };
+        if (c === '.') st.op = 0;
+        else if (c === 'P') { st.fill = T.acc; }
+        else if (c === 'r') { st.fill = '#DCE3EE'; st.stroke = '#B5C0D2'; st.sw = 1; }
+        else if (c === 'N') { st.fill = T.acc; st.op = 0.85; st.anim = 'plpulse 1.2s ease-in-out infinite'; }
+        else if (c === 'x') { st.fill = T.rule; st.op = 0.2; }
+        else if (c === 'd') { st.fill = T.depth[1 + ci % 4]; }
+        else if (c === 'p') { st.fill = T.paintCell; }
+        else if (c === 'b') { st.fill = T.card; st.stroke = T.ink; st.sw = 1.5; }
+        else if (c === 'g') { st.fill = '#E3F4EB'; st.stroke = T.ok; st.sw = 1.5; }
+        else if (c === 'w') { st.fill = '#FBE6E6'; st.stroke = T.bad; st.sw = 1.6; st.dash = '7 5'; st.anim = 'plflow .7s linear infinite'; }
+        rect(cx0, 0, cw, ch, st);
+        if (tx[ci]) text(cx0 + cw / 2, ch / 2 + 4, tx[ci], { anchor: 'middle', fs: 12, fill: c === 'P' || c === 'N' ? '#FFFFFF' : T.ink, op: c === '.' ? 0 : 1, tdl: st.tdl });
+      }
+    } else if (type === 'strip') {
+      var sp = String(p.pat || ''), fw = p.fw || 40, fh = p.fh || 30, sg = p.gap == null ? 5 : p.gap;
+      w = Math.max(1, sp.length * (fw + sg) - sg); h = fh;
+      for (var si2 = 0; si2 < sp.length; si2++) {
+        var ch2 = sp.charAt(si2), x0 = si2 * (fw + sg), dl2 = +(si2 * 0.06).toFixed(2), cxr = x0 + fw * (0.12 + (si2 % 8) * 0.06), cs = fw * 0.2;
+        if (ch2 === '.') continue;
+        if (ch2 === 'x') { rect(x0, 0, fw, fh, { rx: 3, fill: T.rule, op: 0.3, tdl: dl2 }); continue; }
+        if (ch2 === 'd') {
+          for (var bd = 0; bd < 4; bd++) rect(x0, bd * fh / 4, fw, fh / 4 + 0.5, { fill: T.depth[2 + bd], tdl: dl2 });
+          rect(cxr, fh * 0.45, cs, fh * 0.38, { fill: T.depth[0], tdl: dl2 });
+          continue;
+        }
+        var faint = ch2 === 'N' ? 0.55 : 1;
+        rect(x0, 0, fw, fh, { fill: T.sky, op: faint, tdl: dl2 });
+        rect(x0, fh * 0.74, fw, fh * 0.26, { fill: T.grass, op: faint, tdl: dl2 });
+        if (ch2 !== 'q') rect(cxr, fh * 0.74 - fh * 0.34, cs, fh * 0.34, { fill: T.crate, stroke: T.crateEdge, sw: 1, op: faint, tdl: dl2 });
+        if (ch2 === 'P') rect(x0, 0, fw, fh, { rx: 3, stroke: T.acc, sw: 2.2 });
+        else if (ch2 === 'N') rect(x0 - 1, -1, fw + 2, fh + 2, { rx: 3, stroke: T.acc, sw: 2, anim: 'plpulse 1.1s ease-in-out infinite' });
+        else rect(x0, 0, fw, fh, { rx: 3, stroke: T.ruleDark, sw: 1 });
+      }
+      if (p.texts) p.texts.forEach(function (tx2, k2) { if (tx2) text(k2 * (fw + sg) + fw / 2, fh + 13, tx2, { anchor: 'middle', fs: 10.5, fill: T.muted }); });
+    } else if (type === 'beam') {
+      w = p.W || 840; h = p.H || 400;
+      var col = toneCol(p.tone || 'acc'), pts = String(p.pts || '0,0 1,1');
+      poly(pts, { stroke: col, sw: 7, op: 0.12 });
+      poly(pts, { stroke: col, sw: 2, dash: '7 6', anim: 'plflow 1s linear infinite' });
+      var pp = pts.trim().split(/\s+/).map(function (q) { return q.split(',').map(Number); });
+      var a2 = pp[pp.length - 1], a1 = pp[pp.length - 2] || [0, 0];
+      var ang = Math.atan2(a2[1] - a1[1], a2[0] - a1[0]) * 180 / Math.PI;
+      path('M0 0 L-11 -6 L-11 6 Z', { tf: 'translate(' + a2[0] + ' ' + a2[1] + ') rotate(' + ang.toFixed(1) + ')', fill: col });
+      if (p.label) {
+        var lfs = p.lfs || 11.5, lw = Math.round(String(p.label).length * lfs * 0.6 + 18), lx = p.lx == null ? (pp[0][0] + a2[0]) / 2 : p.lx, ly = p.ly == null ? (pp[0][1] + a2[1]) / 2 : p.ly;
+        rect(lx - lw / 2, ly - lfs, lw, lfs * 2, { rx: lfs, fill: T.card, stroke: col, sw: 1 });
+        text(lx, ly + lfs * 0.36, p.label, { anchor: 'middle', fs: lfs, fw: 600, fill: col });
+      }
+    } else if (type === 'tv') {
+      var sw2 = p.w || 220, sh2 = p.h || 140, kind = p.show || 'paint', ccx = 8 + sw2 * (p.cx == null ? 0.35 : p.cx), csz = sh2 * 0.26, gy = 8 + sh2 * 0.74;
+      w = sw2 + 16; h = sh2 + 40;
+      rect(0, 0, w, sh2 + 16, { rx: 12, fill: '#1E232B' });
+      if (kind === 'paint' || kind === 'ghost') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.sky });
+        circ(8 + sw2 * 0.85, 8 + sh2 * 0.2, sh2 * 0.08, { fill: T.sun });
+        rect(8, gy, sw2, sh2 * 0.26, { fill: T.grass }); rect(8, gy, sw2, 4, { fill: T.grassTop });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.wall, stroke: T.wallEdge, sw: 1 });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { rx: 2, fill: T.crate, stroke: T.crateEdge, sw: 1.5, op: kind === 'ghost' ? 0.28 : 1 });
+      } else if (kind === 'depth') {
+        for (var dq = 0; dq < 5; dq++) rect(8, 8 + dq * sh2 / 5, sw2, sh2 / 5 + 0.5, { fill: T.depth[1 + dq] });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.depth[1] });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { fill: T.depth[0] });
+      } else if (kind === 'wire') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.card });
+        path('M8 ' + gy + ' H' + (8 + sw2), { stroke: T.acc, sw: 1.5, dash: '6 5' });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { stroke: T.acc, sw: 1.5, dash: '5 4' });
+      } else { rect(8, 8, sw2, sh2, { rx: 4, fill: '#2A303A' }); }
+      if (p.q) text(8 + sw2 / 2, 8 + sh2 / 2 + 16, '?', { anchor: 'middle', fs: 44, fw: 700, fill: T.bad });
+      rect(w / 2 - 6, sh2 + 16, 12, 14, { fill: '#1E232B' }); rect(w / 2 - 34, sh2 + 28, 68, 6, { rx: 3, fill: '#1E232B' });
+      if (p.label) text(w / 2, sh2 + 58, p.label, { anchor: 'middle', fs: p.lfs || 14, fill: T.label, fw: 500 });
+    } else if (type === 'ramp') {
+      w = p.w || 110; h = p.h || 60;
+      path(p.flip ? 'M0 0 L0 ' + h + ' L' + w + ' ' + h + ' Z' : 'M0 ' + h + ' L' + w + ' ' + h + ' L' + w + ' 0 Z', look === 'wire' ? { stroke: T.acc, sw: 1.6, dash: '5 4' } : { fill: '#E9D7B9', stroke: '#A88B5E', sw: 1.6 });
+    } else if (type === 'scale') {
+      var SW = p.w || 380, th2 = (p.tilt || 0) * 14 * Math.PI / 180, LL = SW / 2 - 40, pc = SW / 2;
+      var ends = [[pc - LL * Math.cos(th2), 46 - LL * Math.sin(th2)], [pc + LL * Math.cos(th2), 46 + LL * Math.sin(th2)]];
+      w = SW; h = 250;
+      rect(pc - 5, 46, 10, 170, { fill: T.ink }); rect(pc - 70, 214, 140, 12, { rx: 4, fill: T.ink });
+      path('M' + ends[0][0].toFixed(1) + ' ' + ends[0][1].toFixed(1) + ' L' + ends[1][0].toFixed(1) + ' ' + ends[1][1].toFixed(1), { stroke: T.ink, sw: 6 });
+      circ(pc, 46, 9, { fill: T.acc });
+      [[p.lt, p.ls, p.lc], [p.rt, p.rs, p.rc]].forEach(function (L2, q) {
+        var ex2 = ends[q][0], ey2 = ends[q][1];
+        path('M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 - 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 + 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1), { stroke: T.muted, sw: 1.5 });
+        path('M' + (ex2 - 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Q' + ex2.toFixed(1) + ' ' + (ey2 + 108).toFixed(1) + ' ' + (ex2 + 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Z', { fill: L2[2] ? toneBg(L2[2]) : T.card, stroke: L2[2] ? toneCol(L2[2]) : T.ink, sw: 2 });
+        if (L2[0]) text(ex2, ey2 + 62, L2[0], { anchor: 'middle', fs: 16, fw: 600, fill: L2[2] ? toneCol(L2[2]) : T.ink });
+        if (L2[1]) text(ex2, ey2 + 130, L2[1], { anchor: 'middle', fs: 13, fill: T.muted });
+      });
+    } else if (type === 'db') {
+      w = p.w || 92; h = p.h || 110; var ry = 14;
+      path('M0 ' + ry + ' V' + (h - ry) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h - ry) + ' V' + ry, { fill: p.on ? T.accSoft : T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 ' + w + ' ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 0 ' + ry, { fill: T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + (h * 0.42) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h * 0.42), { stroke: p.on ? T.acc : T.ink, sw: 1.5 });
+      if (p.label) text(w / 2, h + 24, p.label, { anchor: 'middle', fs: p.lfs || 14, fw: 500, fill: T.label });
+    } else if (type === 'node') {
+      var r2 = p.r || 26; w = h = r2 * 2;
+      if (p.on) circ(r2, r2, r2 + 7, { stroke: T.acc, sw: 2, anim: 'plpulse 1.3s ease-in-out infinite' });
+      circ(r2, r2, r2, { fill: p.on ? T.acc : T.card, stroke: p.on || p.done ? T.acc : T.ruleDark, sw: 2 });
+      text(r2, r2 + 6, p.text || '', { anchor: 'middle', fs: p.fs || 18, fw: 600, fill: p.on ? '#FFFFFF' : (p.done ? T.acc : T.muted) });
+    } else if (type === 'tokens') {
+      var words = p.words || [], tw = p.tw || 86, th = p.th || 40, tg = p.gap == null ? 8 : p.gap, onl = p.on || [], upto = p.upto == null ? 999 : p.upto;
+      w = Math.max(1, words.length * (tw + tg) - tg); h = th + (p.subs ? 20 : 0);
+      words.forEach(function (wd, i) {
+        var on = onl.indexOf(i) >= 0, sh = i < upto, x0 = i * (tw + tg), dl = +(i * 0.05).toFixed(2);
+        rect(x0, 0, tw, th, { rx: 8, fill: on ? T.acc : T.card, stroke: on ? T.acc : T.ink, sw: 1.6, op: sh ? 1 : 0.12, tdl: dl });
+        text(x0 + tw / 2, th / 2 + (p.fs || 16) * 0.36, wd, { anchor: 'middle', fs: p.fs || 16, fw: 500, fill: on ? '#FFFFFF' : T.ink, op: sh ? 1 : 0.12, tdl: dl });
+        if (p.subs && p.subs[i]) text(x0 + tw / 2, th + 15, p.subs[i], { anchor: 'middle', fs: 11, fill: T.muted, op: sh ? 1 : 0.12, font: T.mono });
+      });
+    } else if (type === 'arcs') {
+      var n2 = p.n || 6, tw2 = p.tw || 86, tg2 = p.gap == null ? 8 : p.gap, fr = p.from || 0, ws = p.weights || [], AH = p.h || 120;
+      var cc = function (i) { return i * (tw2 + tg2) + tw2 / 2; };
+      w = Math.max(1, n2 * (tw2 + tg2) - tg2); h = 1;
+      for (var j2 = 0; j2 < n2; j2++) {
+        var wv = ws[j2] == null ? 0.2 : ws[j2];
+        if (j2 === fr) { circ(cc(j2), -6, 3 + wv * 6, { fill: T.acc, op: 0.3 + 0.7 * wv }); continue; }
+        var pk = -(AH * (0.35 + 0.65 * Math.abs(fr - j2) / n2));
+        path('M' + cc(fr) + ' -2 Q' + ((cc(fr) + cc(j2)) / 2).toFixed(1) + ' ' + pk.toFixed(1) + ' ' + cc(j2) + ' -2', { stroke: T.acc, sw: +(1 + 7 * wv).toFixed(1), op: +(0.18 + 0.82 * wv).toFixed(2) });
+        if (p.showw) text(cc(j2), -14, wv.toFixed(2), { anchor: 'middle', fs: 13, fw: 600, fill: T.acc, font: T.mono });
+      }
+    } else if (type === 'heat') {
+      var R2 = p.rows || [], C2 = p.cols || [], V2 = p.w || [], cs2 = p.cs || 34, lw2 = R2.length && p.labels !== false ? (p.lw || 74) : 0, tp = C2.length && p.labels !== false ? (p.top || 26) : 0;
+      var nr = V2.length, nc = nr ? V2[0].length : 0;
+      w = lw2 + nc * cs2; h = tp + nr * cs2;
+      if (lw2) R2.forEach(function (rl, i) { text(lw2 - 8, tp + i * cs2 + cs2 / 2 + 4, rl, { anchor: 'end', fs: p.lfs || 12, fill: p.hlr === i ? T.acc : T.label, fw: p.hlr === i ? 600 : 400 }); });
+      if (tp) C2.forEach(function (cl, j) { text(lw2 + j * cs2 + cs2 / 2, tp - 9, cl, { anchor: 'middle', fs: p.lfs || 12, fill: T.label }); });
+      for (var i3 = 0; i3 < nr; i3++) for (var j3 = 0; j3 < nc; j3++) {
+        var vv = V2[i3][j3], blocked = p.mask && j3 > i3, dl3 = +((i3 * nc + j3) * 0.006).toFixed(3);
+        rect(lw2 + j3 * cs2 + 1, tp + i3 * cs2 + 1, cs2 - 2, cs2 - 2, { rx: 3, fill: blocked ? T.rule : (p.tone === 'ink' ? T.ink : T.acc), op: blocked ? 0.55 : +(0.06 + 0.94 * vv).toFixed(2), tdl: dl3 });
+        if (p.showv && !blocked) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, (p.fmt === 'int' ? Math.round(vv * 10) : vv.toFixed(2)).toString().replace(/^0\./, '.'), { anchor: 'middle', fs: p.vfs || 11, fill: vv > 0.5 ? '#FFFFFF' : T.ink, font: T.mono });
+        if (blocked && p.showx) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, '×', { anchor: 'middle', fs: 13, fill: T.muted });
+      }
+      if (p.hlr != null && p.hlr >= 0) rect(lw2 - 2, tp + p.hlr * cs2 - 1, nc * cs2 + 4, cs2 + 2, { rx: 5, stroke: T.ink, sw: 2 });
+    } else if (type === 'plot') {
+      w = p.w || 500; h = p.h || 200;
+      path('M0 ' + (p.axisY == null ? h : p.axisY) + ' H' + w + ' M0 0 V' + h, { stroke: T.ruleDark, sw: 1.2 });
+      (p.series || []).forEach(function (sr) { poly(sr.pts, { stroke: sr.tone === 'acc' ? T.acc : (sr.tone === 'muted' ? T.muted : T.ink), sw: sr.sw || 2.4, dash: sr.dash ? '6 5' : 'none', op: sr.op == null ? 1 : sr.op }); });
+    } else { w = 10; h = 10; }
+    return { w: w, h: h, prims: P };
+  }
+
+
+  /* ---------------- rendering ---------------- */
+  renderVals() {
+    var self = this, S = this.state;
+    var themes = [
+      { name: 'Cloud', bg: '#F2F4F7', card: '#FFFFFF', ink: '#12161C', muted: '#5E6773', label: '#3E4652', rule: '#DFE3E9', sh: 'rgba(20, 35, 60, 0.22)', shSoft: 'rgba(20, 35, 60, 0.07)' },
+      { name: 'Sky', bg: '#E9F0FA', card: '#FFFFFF', ink: '#0F1A2B', muted: '#56657A', label: '#33445C', rule: '#D6E0EE', sh: 'rgba(30, 70, 140, 0.22)', shSoft: 'rgba(30, 70, 140, 0.07)' },
+      { name: 'Mint', bg: '#E8F4EF', card: '#FFFFFF', ink: '#0F1F19', muted: '#52685F', label: '#32483F', rule: '#D2E4DB', sh: 'rgba(20, 90, 60, 0.2)', shSoft: 'rgba(20, 90, 60, 0.07)' },
+      { name: 'Lilac', bg: '#EFEDFA', card: '#FFFFFF', ink: '#17142A', muted: '#615C7A', label: '#433E5E', rule: '#DFDAF1', sh: 'rgba(70, 50, 150, 0.2)', shSoft: 'rgba(70, 50, 150, 0.07)' },
+      { name: 'Stone', bg: '#EBECEE', card: '#FBFBFC', ink: '#141518', muted: '#5D6068', label: '#3B3E45', rule: '#DADCE0', sh: 'rgba(20, 22, 30, 0.22)', shSoft: 'rgba(20, 22, 30, 0.07)' }
+    ];
+    var chosen = S.theme ?? (this.props.paper ?? 'Cloud');
+    var t = themes.find(function (x) { return x.name === chosen; }) || themes[0];
+    var accent = this.props.accent ?? '#2F5BEA';
+    var hex = accent.replace('#', '');
+    var cr = parseInt(hex.substring(0, 2), 16), cg = parseInt(hex.substring(2, 4), 16), cb = parseInt(hex.substring(4, 6), 16);
+    var rgba = function (a) { return 'rgba(' + cr + ', ' + cg + ', ' + cb + ', ' + a + ')'; };
+    var OK = '#1F9D63', BAD = '#D64545';
+    var tone = function (tn, dflt) { return tn === 'acc' ? accent : (tn === 'ok' ? OK : (tn === 'bad' ? BAD : (tn === 'muted' ? t.muted : (tn === 'label' ? t.label : (dflt || t.ink))))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? rgba(0.1) : t.bg)); };
+    var SANS = "'IBM Plex Sans', sans-serif", SERIF = "'Newsreader', serif", MONO = "'IBM Plex Mono', monospace";
+    var segs = function (txt, base) {
+      var out = [], parts = String(txt == null ? '' : txt).split('*');
+      parts.forEach(function (p, k) { if (p) out.push({ t: p, c: k % 2 ? accent : (base || 'inherit'), fw: k % 2 ? 600 : 'inherit' }); });
+      if (!out.length) out.push({ t: '', c: 'inherit', fw: 'inherit' });
+      return out;
+    };
+    var TK = { acc: accent, accSoft: rgba(0.12), ink: t.ink, muted: t.muted, label: t.label, rule: t.rule, ruleDark: t.muted + '66', card: t.card, bg: t.bg,
+      ok: OK, bad: BAD, sky: '#D3E6F8', grass: '#BFE3C6', grassTop: '#8CC796', crate: '#DDAE73', crateEdge: '#9A6B36', wall: '#C3C9D3', wallEdge: '#8C94A3', sun: '#F5C451',
+      depth: ['#273041', '#3B475C', '#56647B', '#7684A0', '#9AA7C0', '#C3CCDD'], paintCell: '#A9CDEB', body: SANS, mono: MONO };
+
+    var R = this.report(), F = this.film(), LIST = F.list;
+    var si = Math.max(0, Math.min(LIST.length - 1, S.scene)), cur = LIST[si], playing = !!S.playing;
+    var ch = R.chapters[cur.ch], chs = this.chScenes(ch, cur.ch);
+
+    var DY = 70; // captions sit at the top; the picture zone is y 210-650 (scripts author it as 140-580)
+    var actorView = function (a, st, z, ox, oy) {
+      var html = ['text', 'stat', 'table', 'bars', 'list'].indexOf(st.type) >= 0;
+      var vid = a.id, vtype = st.type;
+      var v = { isSvg: false, isText: false, isStat: false, isTable: false, isBars: false, isList: false, x: 0, y: 0, s: 1, op: st.op == null ? 1 : st.op, dl: st.dl || 0, w: 10, h: 10, anim: 'none', prims: [], labels: [] };
+      if (!html) {
+        var kk = self.sceneKit(st.type, Object.assign({ W: 1280, H: 720 }, st), TK);
+        var isBeam = st.type === 'beam';
+        v.isSvg = true; v.w = kk.w; v.h = kk.h;
+        v.prims = kk.prims.filter(function (q) { return !q.isText; });
+        v.labels = kk.prims.filter(function (q) { return q.isText && q.txt !== ''; }).map(function (q) {
+          return { x: q.x, y: +(q.y - q.fs * 0.76).toFixed(1), tx: q.anchor === 'middle' ? -50 : (q.anchor === 'end' ? -100 : 0), txt: q.txt, fs: q.fs, fw: q.fw, font: q.font, fill: q.fill, op: q.op, tdl: q.tdl };
+        });
+        v.x = +(ox + (isBeam ? 0 : (st.x || 0)) * z).toFixed(1); v.y = +(DY + oy + (isBeam ? 0 : (st.y || 0)) * z).toFixed(1); v.s = +((st.s || 1) * z).toFixed(3);
+        v.anim = st.type === 'robot' && st.bob !== false ? 'bob 3.2s ease-in-out infinite' : 'none';
+        v.id = vid; v.type = vtype;
+        return v;
+      }
+      v.x = st.x || 0; v.y = DY + (st.y || 0); v.s = st.s || 1; v.w = st.w || 400;
+      var upto = st.upto == null ? 999 : st.upto;
+      if (st.type === 'text') {
+        v.isText = true; v.fs = st.fs || 22; v.fw = st.fw || (st.font === 'serif' ? 500 : 400); v.font = st.font === 'serif' ? SERIF : (st.font === 'mono' ? MONO : SANS);
+        v.fst = st.italic ? 'italic' : 'normal'; v.lh = st.lh || 1.35; v.color = tone(st.tone); v.align = st.align || 'left';
+        v.bg = st.box ? toneBg(st.box) : 'transparent'; v.pad = st.box ? (st.pad || '14px 18px') : '0'; v.rad = st.box ? '14px' : '0';
+        v.bd = st.box ? '1px solid ' + (st.box === 'plain' ? t.rule : tone(st.box)) : 'none';
+        v.segs = segs(st.text);
+      } else if (st.type === 'stat') {
+        v.isStat = true; v.v = st.v; v.l = st.l; v.fs = st.fs || 52; v.c = tone(st.tone || 'acc'); v.bg = st.on ? rgba(0.08) : t.card; v.bd = st.on ? accent : t.rule;
+      } else if (st.type === 'table') {
+        v.isTable = true; v.fs = st.fs || 18; v.hfs = st.hfs || 15; v.rpad = st.rpad || 11;
+        v.cols = st.cols || st.head.map(function () { return '1fr'; }).join(' ');
+        var al = st.align || [];
+        v.head = st.head.map(function (h2, k) { return { t: h2, al: al[k] || 'left' }; });
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto, hl = r.hl || st.hl === k;
+          return { bg: hl && shown ? rgba(0.08) : 'transparent', op: shown ? 1 : (st.ghost ? 0.12 : 0),
+            cells: r.c.map(function (c, j) {
+              var tn = (r.tones || [])[j];
+              return { t: c, al: al[j] || 'left', fw: j === 0 || (r.bold || []).indexOf(j) >= 0 ? 600 : 400, c: tn ? tone(tn) : (j === 0 ? t.ink : t.label), font: (st.mono || []).indexOf(j) >= 0 ? MONO : 'inherit' };
+            }) };
+        });
+      } else if (st.type === 'bars') {
+        v.isBars = true; v.title = st.title || ''; v.sub = st.sub || ''; v.tfs = st.tfs || 18; v.fs = st.fs || 16; v.lw = st.lw || 150; v.vw = st.vw || 90; v.bh = st.bh || 22; v.gap = st.gap == null ? 8 : st.gap;
+        var mx = st.max || Math.max.apply(null, st.rows.map(function (r) { return r.v; }));
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto;
+          return { n: r.n, l: r.l || String(r.v), w: shown ? Math.max(r.v > 0 ? 1.5 : 0, Math.min(100, r.v / mx * 100)).toFixed(1) : '0', c: r.hl ? accent : (r.tone ? tone(r.tone) : '#9AA3AF'), op: shown ? 1 : 0.25, dl: (k * 0.12).toFixed(2), fw: r.hl ? 600 : 400, vc: r.hl ? accent : t.label };
+        });
+      } else if (st.type === 'list') {
+        v.isList = true; v.fs = st.fs || 20; v.sfs = st.sfs || 16; v.tfw = st.tfw || 500; v.gap = st.gap == null ? 16 : st.gap; v.mk = st.mk || 30; v.mt = st.mt == null ? -1 : st.mt; v.mfs = st.mfs || 15;
+        v.hasTitle = !!st.title; v.title = st.title || ''; v.tfs = st.tfs || 18; v.tc = tone(st.ttone || 'label');
+        v.items = st.items.map(function (it, k) {
+          var shown = k < upto, mk = it.m || st.mark || 'num', m, mbg, mc, mbd = 'none';
+          if (mk === 'check') { m = '✓'; mbg = '#E3F4EB'; mc = OK; }
+          else if (mk === 'cross') { m = '✕'; mbg = '#FBE6E6'; mc = BAD; }
+          else if (mk === 'dot') { m = ''; mbg = 'transparent'; mc = accent; mbd = '6px solid ' + accent; }
+          else { m = String(it.no || k + 1); var on2 = it.hl || st.hl === k; mbg = on2 ? accent : rgba(0.1); mc = on2 ? '#FFFFFF' : accent; }
+          return { m: m, mbg: mbg, mc: mc, mbd: mbd, t: it.t, s: it.s || '', hasS: !!it.s, op: shown ? 1 : (st.ghost ? 0.15 : 0), dx: shown ? 0 : -12, dl: (st.stagger ? k * 0.12 : 0).toFixed(2) };
+        });
+      }
+      v.id = vid; v.type = vtype;
+      return v;
+    };
+
+    var curSc = cur.sc;
+    var scenes = chs.map(function (s, k) {
+      var nb = s.beats.length, kb = k < curSc ? nb - 1 : (k > curSc ? 0 : cur.beat);
+      var stt = {};
+      s.actors.forEach(function (a) { stt[a.id] = Object.assign({}, a); });
+      for (var qb = 0; qb <= kb; qb++) { var set = s.beats[qb].set || {}; for (var aid in set) { if (stt[aid]) Object.assign(stt[aid], set[aid]); } }
+      var z = s.zoom || 1, ox = s.ox || 0, oy = s.oy || 0;
+      var on = k === curSc;
+      var hasCaps = s.beats.some(function (b) { return b.cap; });
+      return {
+        op: on ? 1 : 0, pe: on ? 'auto' : 'none', band: hasCaps ? 1 : 0, capTop: s.title ? 104 : 40,
+        tag: s.card ? '' : (ch.n ? ch.n + ' · ' : '') + ch.name, title: s.title || '',
+        dots: nb > 1 ? s.beats.map(function (b, k2) { return { no: k2 + 1, w: k2 === kb ? 22 : 8, bg: k2 <= kb ? accent : t.rule, pick: function () { self._go(F.chStart[cur.ch] + self._offset(cur.ch, k) + k2); } }; }) : [],
+        actors: on || Math.abs(k - curSc) <= 1 ? s.actors.map(function (a) { return actorView(a, stt[a.id], z, ox, oy); }) : [],
+        caps: s.beats.map(function (b, k2) {
+          var src = b.src, ours = b.kind === 'ours';
+          return { segs: segs(b.cap), op: k2 === kb ? 1 : 0, dy: k2 === kb ? 0 : (k2 < kb ? -8 : 8), chip: src || (ours ? 'Our note' : ''),
+            cop: src || ours ? 1 : 0, cbd: ours ? '1px dashed ' + accent : '1px solid ' + t.rule, cfg: ours ? accent : t.label };
+        })
+      };
+    });
+
+    var fmtT = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); };
+    var frac = playing ? 0 : (S.frac || 0);
+    var pos = cur.start + cur.dur * frac, total = F.total;
+    var speeds = [0.75, 1, 1.25, 1.5, 2];
+    var pl = {
+      icon: playing ? '❚❚' : '▶', playLabel: playing ? 'Pause' : 'Play',
+      toggle: function () { self._toggle(); }, prev: function () { self._go(si - 1); }, next: function () { self._go(si + 1); },
+      label: cur.label + (cur.nb > 1 ? ' · ' + (cur.beat + 1) + '/' + cur.nb : ''),
+      time: fmtT(pos / S.speed) + ' / ' + fmtT(total / S.speed),
+      w: playing ? ((cur.start + cur.dur) / total * 100).toFixed(2) : (pos / total * 100).toFixed(2),
+      tr: playing ? (cur.dur / S.speed).toFixed(2) : '0',
+      segs: R.chapters.map(function (c, ci) {
+        var a = LIST[F.chStart[ci]].start, b = ci + 1 < R.chapters.length ? LIST[F.chStart[ci + 1]].start : total;
+        return { name: (c.n ? c.n + ' ' : '') + c.name, w: (b - a).toFixed(1), pick: function () { self._go(F.chStart[ci]); } };
+      }),
+      speeds: speeds.map(function (v) { var on = S.speed === v; return { l: v + '×', bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, pick: function () { self._setSpeed(v); } }; })
+    };
+    var chips = R.chapters.map(function (c, ci) {
+      var on = ci === cur.ch;
+      return { n: c.n || '·', name: c.short || c.name, bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, fw: on ? 600 : 400, pick: function () { self._go(F.chStart[ci]); } };
+    });
+    var sc = S.scale || 1;
+    return { t: t, accent: accent, accSoft: rgba(0.1), pid: this.pid(), meta: R.meta, chips: chips, scenes: scenes, pl: pl,
+      scale: sc.toFixed(4), stW: Math.round(1280 * sc), stH: Math.round(720 * sc) };
+  }
+  _offset(ci, k) {
+    var s = this.chScenes(this.report().chapters[ci], ci), n = 0;
+    for (var i = 0; i < k; i++) n += s[i].beats.length;
+    return n;
+  }
+}
+
+mountFilm(Component, "film-tpl", "film", {});
+</script>
+</body>
+</html>
