@@ -13,6 +13,7 @@ Each film is a single HTML page that plays on its own. It covers the problem, th
 | [AgentGarten: Code Worlds for Evolving Agents](https://dhanush-builds-ai.github.io/paper-films/agentgarten/) | arXiv 2610.12374 | 18 min |
 | [SelfSearch: Reward-Free Search for Self-Improving Agents](https://dhanush-builds-ai.github.io/paper-films/selfsearch/) | arXiv 2609.37968 | 19 min |
 | [Mistral 7B](https://dhanush-builds-ai.github.io/paper-films/mistral7b/) | arXiv 2310.06825 | 20 min |
+| [LLaMA: Open and Efficient Foundation Language Models](https://dhanush-builds-ai.github.io/paper-films/llama/) | arXiv 2302.13971 | 21 min |
 
 Every film has the same eight chapters: Overview, The problem, The core idea, How it works, Evidence, Using it, The authors' thinking and Glossary. You can pause, jump between chapters, or play at up to 4× speed.
 
