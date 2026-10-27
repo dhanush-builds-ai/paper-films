@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLaMA: Open and Efficient Foundation Language Models · paper film</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{height:100%}
+#film{height:100vh}
+body{margin:0}
+button{cursor:pointer;font-family:inherit}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes plpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes plflow{to{stroke-dashoffset:-26}}
+@keyframes plblink{0%,100%{opacity:.15}50%{opacity:1}}
+.h{font-family:'Newsreader',serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--rule);background:var(--card);font-size:13.5px;color:var(--ink)}
+.seg{height:100%;border:none;padding:0;background:transparent;border-right:2px solid var(--card)}
+.seg:hover{background:rgba(0,0,0,.08)}
+.chap{height:32px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="film"></div>
+<template id="film-tpl">
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --ink: {{t.ink}}; --muted: {{t.muted}}; --label: {{t.label}}; --rule: {{t.rule}}; --acc: {{accent}}; --accsoft: {{accSoft}}; width: 100%; height: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 14px 24px 16px; overflow: hidden">
+
+<div data-topbar="1" style="flex-shrink: 0; display: flex; align-items: center; gap: 16px; height: 42px; min-width: 0">
+<div data-papertitle="1" style="min-width: 0; flex: 1 1 auto">
+<div class="mono" style="font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.line}}</div>
+<div class="h" style="font-size: 19px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.title}}</div>
+</div>
+<div style="display: flex; gap: 12px; flex-shrink: 0; font-size: 13px">
+<sc-for list="{{meta.links}}" as="lk" hint-placeholder-count="2"><a href="{{lk.u}}" target="_blank" rel="noopener" style="color: var(--acc); text-decoration: none">{{lk.t}} ↗</a></sc-for>
+</div>
+</div>
+<div data-chips="1" style="flex-shrink: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 6px 0 10px">
+<div style="display: flex; gap: 6px; width: max-content">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><button class="chap" onClick="{{c.pick}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.fw}}"><span class="mono" style="font-size: 11px; opacity: .7; margin-right: 6px">{{c.n}}</span>{{c.name}}</button></sc-for>
+</div>
+</div>
+
+<div id="{{pid}}-holder" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+<div style="position: relative; width: {{stW}}px; height: {{stH}}px; flex-shrink: 0">
+<div data-stage="1" style="position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale({{scale}}); transform-origin: 0 0; background: var(--card); border-radius: 22px; box-shadow: 0 1px 2px {{t.shSoft}}, 0 34px 70px -34px {{t.sh}}; overflow: hidden">
+
+<sc-for list="{{scenes}}" as="sc" hint-placeholder-count="6">
+<div data-scene="1" style="position: absolute; inset: 0; opacity: {{sc.op}}; transition: opacity .7s ease; pointer-events: {{sc.pe}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 196px; background: var(--bg); opacity: {{sc.band}}"></div>
+<div class="mono" style="position: absolute; left: 48px; top: 26px; font-size: 13px; letter-spacing: .08em; color: var(--acc); text-transform: uppercase">{{sc.tag}}</div>
+<div data-headline="1" class="h" style="position: absolute; left: 48px; top: 46px; width: 1000px; font-size: 34px; line-height: 1.12; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</div>
+<div style="position: absolute; right: 48px; top: 32px; display: flex; gap: 6px; align-items: center">
+<sc-for list="{{sc.dots}}" as="dt" hint-placeholder-count="6"><button onClick="{{dt.pick}}" aria-label="Beat {{dt.no}}" style="width: {{dt.w}}px; height: 8px; border-radius: 4px; border: none; padding: 0; background: {{dt.bg}}; transition: width .4s, background .4s"></button></sc-for>
+</div>
+
+<sc-for list="{{sc.actors}}" as="a" hint-placeholder-count="12">
+<div data-actor="{{a.id}}" data-type="{{a.type}}" style="position: absolute; left: 0; top: 0; width: {{a.w}}px; transform: translate({{a.x}}px, {{a.y}}px) scale({{a.s}}); transform-origin: 0 0; opacity: {{a.op}}; transition: transform 1.2s cubic-bezier(.45,0,.2,1) {{a.dl}}s, opacity .8s ease {{a.dl}}s">
+<sc-if value="{{a.isSvg}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; width: {{a.w}}px; height: {{a.h}}px; animation: {{a.anim}}">
+<svg width="{{a.w}}" height="{{a.h}}" viewBox="0 0 {{a.w}} {{a.h}}" style="overflow: visible; display: block">
+<sc-for list="{{a.prims}}" as="q" hint-placeholder-count="8">
+<sc-if value="{{q.isRect}}" hint-placeholder-val="{{ false }}"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease {{q.tdl}}s, stroke .8s ease {{q.tdl}}s, opacity .8s ease {{q.tdl}}s"></rect></sc-if>
+<sc-if value="{{q.isPath}}" hint-placeholder-val="{{ false }}"><path d="{{q.d}}" transform="{{q.tf}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}; transition: opacity .8s ease {{q.tdl}}s, stroke .8s ease, fill .8s ease, d .9s ease"></path></sc-if>
+<sc-if value="{{q.isCirc}}" hint-placeholder-val="{{ false }}"><circle cx="{{q.cx}}" cy="{{q.cy}}" r="{{q.r}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease, opacity .8s ease"></circle></sc-if>
+<sc-if value="{{q.isPoly}}" hint-placeholder-val="{{ false }}"><polyline points="{{q.pts}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}"></polyline></sc-if>
+</sc-for>
+</svg>
+<sc-for list="{{a.labels}}" as="lb" hint-placeholder-count="4"><div data-lbl="1" style="position: absolute; left: {{lb.x}}px; top: {{lb.y}}px; transform: translateX({{lb.tx}}%); white-space: nowrap; line-height: 1; font-size: {{lb.fs}}px; font-weight: {{lb.fw}}; font-family: {{lb.font}}; color: {{lb.fill}}; opacity: {{lb.op}}; transition: opacity .8s ease {{lb.tdl}}s, color .8s ease; pointer-events: none">{{lb.txt}}</div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isText}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; font-weight: {{a.fw}}; font-family: {{a.font}}; font-style: {{a.fst}}; line-height: {{a.lh}}; color: {{a.color}}; text-align: {{a.align}}; background: {{a.bg}}; padding: {{a.pad}}; border-radius: {{a.rad}}; border: {{a.bd}}; box-sizing: border-box"><sc-for list="{{a.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{a.isStat}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; box-sizing: border-box; padding: 20px 22px; border-radius: 18px; background: {{a.bg}}; border: 1px solid {{a.bd}}">
+<div class="h" style="font-size: {{a.fs}}px; color: {{a.c}}; line-height: 1; font-weight: 500">{{a.v}}</div>
+<div style="font-size: 17px; color: var(--label); margin-top: 10px; line-height: 1.35">{{a.l}}</div>
+</div>
+</sc-if>
+<sc-if value="{{a.isTable}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; line-height: 1.35">
+<div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); font-weight: 600; color: var(--label); font-size: {{a.hfs}}px"><sc-for list="{{a.head}}" as="hc" hint-placeholder-count="4"><div style="text-align: {{hc.al}}">{{hc.t}}</div></sc-for></div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="5"><div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: {{a.rpad}}px 14px; border-bottom: 1px solid var(--rule); background: {{r.bg}}; opacity: {{r.op}}; transition: opacity .6s ease, background .6s ease"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="text-align: {{c.al}}; font-weight: {{c.fw}}; color: {{c.c}}; font-family: {{c.font}}">{{c.t}}</div></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isBars}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<div style="font-size: {{a.tfs}}px; font-weight: 600; margin-bottom: 4px">{{a.title}}</div>
+<div style="font-size: 14px; color: var(--muted); margin-bottom: 10px">{{a.sub}}</div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: {{a.lw}}px minmax(0, 1fr) {{a.vw}}px; align-items: center; gap: 12px; margin: {{a.gap}}px 0; opacity: {{r.op}}; transition: opacity .5s ease"><div style="font-size: {{a.fs}}px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.n}}</div><div style="position: relative; height: {{a.bh}}px; border-radius: 6px; background: var(--bg); overflow: hidden"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{r.w}}%; border-radius: 6px; background: {{r.c}}; transition: width 1.1s cubic-bezier(.3,0,.2,1) {{r.dl}}s"></div></div><div class="mono" style="font-size: {{a.fs}}px; font-weight: {{r.fw}}; color: {{r.vc}}">{{r.l}}</div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isList}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<sc-if value="{{a.hasTitle}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.tfs}}px; font-weight: 600; color: {{a.tc}}; margin-bottom: 14px">{{a.title}}</div></sc-if>
+<sc-for list="{{a.items}}" as="it" hint-placeholder-count="4"><div style="display: flex; gap: 14px; align-items: flex-start; margin: 0 0 {{a.gap}}px; opacity: {{it.op}}; transform: translateX({{it.dx}}px); transition: opacity .6s ease {{it.dl}}s, transform .6s ease {{it.dl}}s"><div style="flex-shrink: 0; width: {{a.mk}}px; height: {{a.mk}}px; margin-top: {{a.mt}}px; border-radius: 50%; background: {{it.mbg}}; color: {{it.mc}}; border: {{it.mbd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{a.mfs}}px; font-weight: 600">{{it.m}}</div><div style="min-width: 0"><div style="font-size: {{a.fs}}px; font-weight: {{a.tfw}}; line-height: 1.32">{{it.t}}</div><sc-if value="{{it.hasS}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.sfs}}px; color: var(--muted); line-height: 1.4; margin-top: 4px">{{it.s}}</div></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-for list="{{sc.caps}}" as="cp" hint-placeholder-count="5">
+<div data-cap="1" style="position: absolute; left: 48px; top: {{sc.capTop}}px; width: 1184px; font-size: 23px; line-height: 1.38; opacity: {{cp.op}}; transform: translateY({{cp.dy}}px); transition: opacity .5s ease, transform .5s ease"><sc-for list="{{cp.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for><span class="mono" style="display: inline-block; vertical-align: 3px; margin-left: 12px; font-size: 13px; padding: 2px 9px; border-radius: 6px; border: {{cp.cbd}}; color: {{cp.cfg}}; opacity: {{cp.cop}}">{{cp.chip}}</span></div>
+</sc-for>
+
+</div>
+</sc-for>
+
+</div>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin-top: 14px; height: 50px; display: flex; align-items: center; gap: 12px">
+<button onClick="{{pl.toggle}}" aria-label="{{pl.playLabel}}" style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--acc); color: #FFFFFF; font-size: 15px">{{pl.icon}}</button>
+<button class="btn" onClick="{{pl.prev}}" aria-label="Previous" style="width: 36px; padding: 0; flex-shrink: 0">⏮</button>
+<button class="btn" onClick="{{pl.next}}" aria-label="Next" style="width: 36px; padding: 0; flex-shrink: 0">⏭</button>
+<div style="flex: 1; min-width: 0; padding: 0 6px">
+<div style="display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; margin-bottom: 7px"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pl.label}}</span><span class="mono" style="color: var(--muted); white-space: nowrap">{{pl.time}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 5px; background: var(--rule); overflow: hidden">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pl.w}}%; background: var(--acc); transition: width {{pl.tr}}s linear"></div>
+<div style="position: absolute; inset: 0; display: flex">
+<sc-for list="{{pl.segs}}" as="sg" hint-placeholder-count="8"><button class="seg" onClick="{{sg.pick}}" aria-label="Jump to {{sg.name}}" title="{{sg.name}}" style="flex-grow: {{sg.w}}"></button></sc-for>
+</div>
+</div>
+</div>
+<div style="position: relative; flex-shrink: 0">
+<sc-if value="{{pl.menuOpen}}" hint-placeholder-val="{{ false }}">
+<div>
+<button onClick="{{pl.menu}}" aria-label="Close speed menu" style="position: fixed; inset: 0; border: none; background: transparent; cursor: default"></button>
+<div style="position: absolute; right: 0; bottom: 56px; width: 150px; padding: 8px; box-sizing: border-box; border-radius: 18px; border: 1px solid var(--rule); background: var(--card); box-shadow: 0 14px 34px -8px {{t.sh}}; z-index: 5">
+<sc-for list="{{pl.speeds}}" as="sp" hint-placeholder-count="7"><button onClick="{{sp.pick}}" style="display: block; width: 100%; height: 34px; padding: 0 14px; border: none; border-radius: 12px; text-align: left; background: {{sp.bg}}; color: {{sp.fg}}; font-weight: {{sp.fw}}; font-size: 16px; font-family: 'IBM Plex Mono', monospace">{{sp.l}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+<button onClick="{{pl.menu}}" aria-label="Playback speed" style="height: 46px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); font-size: 16px; font-family: 'IBM Plex Mono', monospace">{{pl.speedLabel}}<span style="font-size: 11px; margin-left: 8px">▾</span></button>
+</div>
+</div>
+</div>
+</template>
+<script>
+/* paper-film standalone runtime (MIT).
+ * Renders the film template without any host runtime:
+ *   {{path}} holes in text and attributes, <sc-for list as>, <sc-if value>, onClick="{{fn}}".
+ * Re-renders patch the existing DOM in place, so CSS transitions play between beats.
+ */
+(function () {
+  var SVG = 'http://www.w3.org/2000/svg';
+  var HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  var ONLY = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+
+  function lookup(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return +path;
+    var parts = path.split('.'), v = scope[parts[0]];
+    for (var i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+    return v;
+  }
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) { var v = lookup(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // template node -> array of vnodes
+  function build(node, scope, inSvg) {
+    if (node.nodeType === 3) {
+      var t = node.nodeValue;
+      if (t.indexOf('{{') < 0) return /\S/.test(t) || t === ' ' ? [{ text: t }] : (t.length ? [{ text: t }] : []);
+      return [{ text: interp(t, scope) }];
+    }
+    if (node.nodeType !== 1) return [];
+    var tag = node.localName;
+    if (tag === 'sc-for') {
+      var m = ONLY.exec(node.getAttribute('list') || ''), list = m ? lookup(scope, m[1]) : null, as = node.getAttribute('as') || 'item';
+      var out = [];
+      (list || []).forEach(function (item, idx) {
+        var s = Object.create(scope); s[as] = item; s.$index = idx;
+        kidsOf(node).forEach(function (c) { out.push.apply(out, build(c, s, inSvg)); });
+      });
+      return out;
+    }
+    if (tag === 'sc-if') {
+      var mv = ONLY.exec(node.getAttribute('value') || ''), ok = mv ? lookup(scope, mv[1]) : false;
+      if (!ok) return [];
+      var res = [];
+      kidsOf(node).forEach(function (c) { res.push.apply(res, build(c, scope, inSvg)); });
+      return res;
+    }
+    var svg = inSvg || tag === 'svg', v = { tag: tag, svg: svg, attrs: {}, on: {}, kids: [] };
+    for (var i = 0; i < node.attributes.length; i++) {
+      var a = node.attributes[i], name = a.name, val = a.value;
+      if (name.indexOf('hint-') === 0) continue;
+      if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
+        var mm = ONLY.exec(val); if (mm) v.on[name.slice(2).toLowerCase()] = lookup(scope, mm[1]);
+        continue;
+      }
+      var only = ONLY.exec(val);
+      v.attrs[name] = only ? lookup(scope, only[1]) : (val.indexOf('{{') >= 0 ? interp(val, scope) : val);
+    }
+    kidsOf(node).forEach(function (c) { v.kids.push.apply(v.kids, build(c, scope, svg)); });
+    return [v];
+  }
+  function kidsOf(node) { return Array.prototype.slice.call((node.content || node).childNodes); }
+
+  function create(v) {
+    if (v.text != null) { var tn = document.createTextNode(v.text); tn.__v = v; return tn; }
+    var el = v.svg ? document.createElementNS(SVG, v.tag) : document.createElement(v.tag);
+    el.__v = { tag: v.tag, attrs: {}, on: {}, kids: [] };
+    update(el, v);
+    return el;
+  }
+  function setAttr(el, k, val) {
+    if (val == null || val === false) { el.removeAttribute(k); return; }
+    if (k === 'class') k = 'class';
+    el.setAttribute(k, val === true ? '' : String(val));
+  }
+  function update(el, v) {
+    var old = el.__v || { attrs: {}, on: {}, kids: [] };
+    for (var k in v.attrs) if (old.attrs[k] !== v.attrs[k]) setAttr(el, k, v.attrs[k]);
+    for (var k2 in old.attrs) if (!(k2 in v.attrs)) el.removeAttribute(k2);
+    for (var e in v.on) el['on' + e] = typeof v.on[e] === 'function' ? v.on[e] : null;
+    for (var e2 in old.on) if (!(e2 in v.on)) el['on' + e2] = null;
+    patchKids(el, v.kids);
+    el.__v = { tag: v.tag, attrs: v.attrs, on: v.on, kids: v.kids };
+  }
+  function patchKids(el, kids) {
+    var cur = el.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      var nv = kids[i], ex = cur[i];
+      if (!ex) { el.appendChild(create(nv)); continue; }
+      var ov = ex.__v;
+      if (nv.text != null) {
+        if (ex.nodeType === 3) { if (ex.nodeValue !== nv.text) ex.nodeValue = nv.text; ex.__v = nv; }
+        else el.replaceChild(create(nv), ex);
+      } else if (ex.nodeType === 1 && ov && ov.tag === nv.tag) update(ex, nv);
+      else el.replaceChild(create(nv), ex);
+    }
+    while (el.childNodes.length > kids.length) el.removeChild(el.lastChild);
+  }
+
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (o) {
+    Object.assign(this.state, typeof o === 'function' ? o(this.state) : o);
+    if (this.__schedule) this.__schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = function () { if (this.__schedule) this.__schedule(); };
+
+  window.mountFilm = function (Component, tplId, mountId, props) {
+    var tpl = document.getElementById(tplId), root = document.getElementById(mountId);
+    var comp = new Component(props || {}), queued = false;
+    var render = function () {
+      queued = false;
+      var vals = comp.renderVals(), vnodes = [];
+      kidsOf(tpl).forEach(function (n) { vnodes.push.apply(vnodes, build(n, vals, false)); });
+      patchKids(root, vnodes.filter(function (v) { return v.text == null || /\S/.test(v.text); }));
+    };
+    comp.__schedule = function () { if (!queued) { queued = true; requestAnimationFrame(render); } };
+    render();
+    if (comp.componentDidMount) comp.componentDidMount();
+    return comp;
+  };
+})();
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, scene: 0, playing: true, speed: 1, menu: false, frac: 0, scale: this._fit() };
+    this._speed = 1;
+    var self = this;
+    if (typeof window !== 'undefined') {
+      var key = '__paperfilm_' + this.pid();
+      if (window[key] && window[key] !== this) { window[key]._dead = true; clearTimeout(window[key]._tm); }
+      window[key] = this;
+      setTimeout(function () { if (!self._dead && self.state.playing) self._schedule(self.state.scene, 0, true); }, 1400);
+      window.addEventListener('resize', function () { if (!self._dead) self.setState({ scale: self._fit() }); });
+      setTimeout(function () { if (!self._dead) self.setState({ scale: self._fit() }); }, 300);
+      document.addEventListener('visibilitychange', function () { if (document.hidden && self.state.playing && !self._dead) self._toggle(); });
+    }
+  }
+  _fit() {
+    if (typeof window === 'undefined') return 1;
+    var holder = document.getElementById(this.pid() + '-holder');
+    var W = holder ? holder.clientWidth : window.innerWidth - 48;
+    var H = holder ? holder.clientHeight : window.innerHeight - 190;
+    if (!W || !H) { W = window.innerWidth - 48; H = window.innerHeight - 190; }
+    return Math.max(0.3, Math.min(W / 1280, H / 720));
+  }
+
+  /* ---------------- film timeline ---------------- */
+  pid() { if (!this._pid) this._pid = String(this.report().meta.title || 'r').replace(/[^A-Za-z0-9]/g, '').slice(0, 16); return this._pid; }
+  chScenes(ch, ci) {
+    if (!this._chs) this._chs = {};
+    if (this._chs[ci]) return this._chs[ci];
+    var out = [];
+    if (ch.card !== false) {
+      out.push({ card: true, title: '', tag: '', beats: [{ cap: '', dur: ch.cardDur || 4.2 }], actors: [
+        { id: 'n', type: 'text', x: 120, y: 200, w: 400, text: ch.n, fs: 120, font: 'serif', tone: 'acc', lh: 1 },
+        { id: 't', type: 'text', x: 120, y: 340, w: 1040, text: ch.name, fs: 64, font: 'serif', lh: 1.05 },
+        { id: 'l', type: 'text', x: 120, y: 436, w: 980, text: ch.lede || '', fs: 26, tone: 'muted', lh: 1.4 }
+      ] });
+    }
+    ch.scenes.forEach(function (s) { out.push(s); });
+    this._chs[ci] = out;
+    return out;
+  }
+  film() {
+    if (this._film) return this._film;
+    var self = this, R = this.report(), list = [], chStart = [];
+    var W = function (x) { return x ? String(x).replace(/\*/g, '').split(/\s+/).filter(Boolean).length : 0; };
+    R.chapters.forEach(function (ch, ci) {
+      chStart[ci] = list.length;
+      self.chScenes(ch, ci).forEach(function (s, si) {
+        s.beats.forEach(function (b, bi) {
+          var d = b.dur || Math.max(4.5, Math.min(17, 2.4 + W(b.cap) / 2.5 + (b.read || 0)));
+          list.push({ ch: ci, sc: si, beat: bi, nb: s.beats.length, dur: d, label: (ch.n ? ch.n + ' ' : '') + ch.name + (s.title ? ' · ' + s.title : '') });
+        });
+      });
+    });
+    var t = 0; list.forEach(function (x) { x.start = t; t += x.dur; });
+    this._film = { list: list, chStart: chStart, total: t };
+    return this._film;
+  }
+  _schedule(i, frac, playing) {
+    var self = this, L = this.film().list;
+    clearTimeout(this._tm);
+    if (this._dead || !playing || typeof window === 'undefined') return;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var d = L[i].dur / this._speed;
+    this._t0 = Date.now() - d * frac * 1000;
+    this._tm = setTimeout(function () {
+      if (self._dead) return;
+      if (i + 1 < L.length) self._go(i + 1, true);
+      else self.setState({ playing: false, frac: 1 });
+    }, Math.max(50, d * (1 - frac) * 1000));
+  }
+  _go(i, keepPlaying) {
+    var L = this.film().list;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var playing = keepPlaying === undefined ? this.state.playing : keepPlaying;
+    this.setState({ scene: i, frac: 0, playing: playing });
+    this._schedule(i, 0, playing);
+  }
+  _frac() {
+    if (!this.state.playing || !this._t0) return this.state.frac || 0;
+    var d = this.film().list[this.state.scene].dur / this._speed;
+    return Math.max(0, Math.min(0.999, (Date.now() - this._t0) / 1000 / d));
+  }
+  _toggle() {
+    var L = this.film().list;
+    if (this.state.playing) { var fr = this._frac(); clearTimeout(this._tm); this.setState({ playing: false, frac: fr }); return; }
+    var i = this.state.scene, f2 = this.state.frac || 0;
+    if (i >= L.length - 1 && f2 >= 1) { i = 0; f2 = 0; }
+    this.setState({ playing: true, scene: i, frac: f2 });
+    this._schedule(i, f2, true);
+  }
+  _setSpeed(v) {
+    var fr = this._frac();
+    this._speed = v;
+    this.setState({ speed: v, frac: fr, menu: false });
+    if (this.state.playing) this._schedule(this.state.scene, fr, true);
+  }
+
+  report() {
+    if (!this._R) this._R = {"meta": {"line": "Paper film · arXiv:2302.13971 · 2023", "title": "LLaMA: Open and Efficient Foundation Language Models", "links": [{"t": "Paper", "u": "https://arxiv.org/abs/2302.13971"}, {"t": "Code", "u": "https://github.com/facebookresearch/llama"}]}, "chapters": [{"n": "", "name": "Overview", "short": "Overview", "lede": "", "scenes": [{"title": "", "actors": [{"id": "tag", "type": "text", "x": 120, "y": 170, "w": 900, "text": "A PAPER FILM", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "ti", "type": "text", "x": 120, "y": 205, "w": 1040, "text": "LLaMA: Open and Efficient Foundation Language Models", "font": "serif", "fs": 52, "lh": 1.06}, {"id": "au", "type": "text", "x": 120, "y": 330, "w": 1000, "text": "Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, Guillaume Lample · Meta AI", "fs": 18, "tone": "muted", "lh": 1.5}, {"id": "me", "type": "text", "x": 120, "y": 400, "w": 1000, "text": "arXiv:2302.13971 · February 2023", "fs": 16, "tone": "muted", "font": "mono"}, {"id": "tk", "type": "tokens", "x": 120, "y": 470, "words": ["The", "year", "2", "0", "2", "3", "was"], "tw": 96, "th": 40, "gap": 10, "on": [2, 3, 4, 5], "fs": 15}, {"id": "tkl", "type": "text", "x": 120, "y": 522, "w": 740, "text": "our running example · digits split one by one", "fs": 14, "tone": "muted", "font": "mono"}], "beats": [{"cap": "", "dur": 4.5}]}, {"title": "The paper in one paragraph", "actors": [{"id": "p", "type": "text", "x": 48, "y": 140, "w": 1184, "text": "LLaMA is a family of *open language models*, from 7B to 65B parameters. The authors pick model sizes that are cheap to run, then train them on *far more tokens* than usual: 1T to 1.4T. They use *only public data* and a standard transformer with three proven changes. LLaMA-13B beats GPT-3 (175B) on most benchmarks, and LLaMA-65B competes with Chinchilla-70B and PaLM-540B.", "font": "serif", "fs": 27, "lh": 1.42}, {"id": "s0", "type": "stat", "x": 48, "y": 410, "w": 278, "v": "10×", "l": "smaller than GPT-3, yet LLaMA-13B beats it on most tests", "op": 0}, {"id": "s1", "type": "stat", "x": 350, "y": 410, "w": 278, "v": "1.4T", "l": "training tokens, all from public data", "op": 0, "dl": 0.12}, {"id": "s2", "type": "stat", "x": 652, "y": 410, "w": 278, "v": "68.2", "l": "TriviaQA zero-shot, LLaMA-65B (exact match)", "op": 0, "dl": 0.24}, {"id": "s3", "type": "stat", "x": 954, "y": 410, "w": 278, "v": "21 days", "l": "to train 65B on 2,048 A100 GPUs", "op": 0, "dl": 0.36}], "beats": [{"cap": "Everything in this film expands this one paragraph.", "kind": "ours", "read": 6}, {"cap": "Four numbers to remember. The Evidence chapter shows how each one was measured.", "src": "§1, Table 5, §2.4", "set": {"s0": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}, "read": 3}]}], "card": false}, {"n": "01", "name": "The problem", "short": "Problem", "lede": "The best models were huge, sized for training cost alone, and trained on data no one else could use.", "scenes": [{"title": "Bigger models have meant better models", "actors": [{"id": "g3", "type": "block", "x": 100, "y": 351, "w": 119, "h": 119, "label": "175B", "color": "#DCE3EE"}, {"id": "go", "type": "block", "x": 260, "y": 319, "w": 151, "h": 151, "label": "280B", "color": "#DCE3EE", "op": 0}, {"id": "pa", "type": "block", "x": 450, "y": 261, "w": 209, "h": 209, "label": "540B", "color": "#DCE3EE", "op": 0}, {"id": "ch", "type": "block", "x": 720, "y": 395, "w": 75, "h": 75, "label": "70B", "color": "#DCE3EE", "op": 0}, {"id": "lg3", "type": "text", "x": 80, "y": 480, "w": 160, "text": "GPT-3", "fs": 15, "tone": "muted", "align": "center"}, {"id": "lgo", "type": "text", "x": 255, "y": 480, "w": 160, "text": "Gopher", "fs": 15, "tone": "muted", "align": "center", "op": 0}, {"id": "lpa", "type": "text", "x": 475, "y": 480, "w": 160, "text": "PaLM", "fs": 15, "tone": "muted", "align": "center", "op": 0}, {"id": "lch", "type": "text", "x": 680, "y": 480, "w": 160, "text": "Chinchilla", "fs": 15, "tone": "acc", "align": "center", "op": 0}, {"id": "n", "type": "text", "x": 100, "y": 530, "w": 640, "text": "block area ∝ parameter count", "fs": 13, "tone": "muted", "font": "mono"}, {"id": "cr", "type": "text", "x": 870, "y": 260, "w": 360, "text": "*Chinchilla rule:* for a fixed training budget, a smaller model on more data wins. For 10B parameters: about 200B tokens.", "fs": 19, "box": "plain", "op": 0}], "beats": [{"cap": "Large language models learn new tasks from a few examples. That skill appeared once models got big enough.", "src": "§1"}, {"cap": "So the field kept scaling: GPT-3 has 175B parameters, Gopher 280B, PaLM 540B. The bet: more parameters, better results.", "src": "§1, §3", "set": {"go": {"op": 1}, "pa": {"op": 1}, "lgo": {"op": 1}, "lpa": {"op": 1}}}, {"cap": "Then Chinchilla, with 70B parameters, showed a catch. For a fixed training budget, the biggest model is not the best.", "src": "§1", "set": {"ch": {"op": 1}, "lch": {"op": 1}}}, {"cap": "Its rule picks model and data size for one training budget. A 10B model should see about 200B tokens.", "src": "§1", "set": {"cr": {"op": 1}}, "read": 2}]}, {"title": "Training is paid once; serving is paid per query", "actors": [{"id": "th", "type": "text", "x": 48, "y": 150, "w": 560, "text": "Training", "fs": 22, "fw": 600}, {"id": "tr", "type": "block", "x": 48, "y": 200, "w": 300, "h": 80, "label": "one training run", "color": "#DCE3EE"}, {"id": "sh", "type": "text", "x": 672, "y": 150, "w": 560, "text": "Serving", "fs": 22, "fw": 600, "op": 0}, {"id": "q1", "type": "cells", "x": 672, "y": 200, "pat": "NNNNNNNNNNNN", "cw": 34, "ch": 34, "gap": 8, "op": 0}, {"id": "q2", "type": "cells", "x": 672, "y": 248, "pat": "NNNNNNNNNNNN", "cw": 34, "ch": 34, "gap": 8, "op": 0}, {"id": "q3", "type": "cells", "x": 672, "y": 296, "pat": "NNNNNNNNNNNN", "cw": 34, "ch": 34, "gap": 8, "op": 0}, {"id": "ql", "type": "text", "x": 672, "y": 346, "w": 560, "text": "each cell: one query that runs the full model · our sketch", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "ig", "type": "text", "x": 48, "y": 420, "w": 1184, "text": "*Chinchilla’s objective:* the training budget only.   *Left out:* the inference budget.", "fs": 21, "box": "bad", "op": 0}], "beats": [{"cap": "Chinchilla’s rule sets model and data size for one training budget. You pay that cost once.", "src": "§1"}, {"cap": "After training, the model serves users. Every query runs the whole model again.", "kind": "ours", "set": {"sh": {"op": 1}, "q1": {"op": 1}, "ql": {"op": 1}}}, {"cap": "At scale that is millions of queries. A bigger model costs more on every one of them.", "kind": "ours", "set": {"q2": {"op": 1}, "q3": {"op": 1}}}, {"cap": "The rule ignores this inference budget. The paper calls it critical when serving a model at scale.", "src": "§1", "set": {"ig": {"op": 1}}}]}, {"title": "The strongest models train on closed data", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Models", "Training data", "Competitive with PaLM-62B or Chinchilla?"], "rows": [{"c": ["GPT-3 · Chinchilla · PaLM", "not public, or undocumented", "yes: they set the bar"], "tones": [null, "bad", "ok"]}, {"c": ["OPT · GPT-NeoX · BLOOM · GLM", "public", "no"], "tones": [null, "ok", "bad"]}], "fs": 19, "hfs": 15, "rpad": 12, "cols": "1.2fr 1.2fr 1.4fr", "upto": 0, "ghost": true}, {"id": "d1", "type": "text", "x": 48, "y": 330, "w": 360, "text": "“Books – 2TB”", "fs": 22, "font": "mono", "box": "bad", "op": 0}, {"id": "d2", "type": "text", "x": 440, "y": 330, "w": 460, "text": "“Social media conversations”", "fs": 22, "font": "mono", "box": "bad", "op": 0}, {"id": "dl", "type": "text", "x": 48, "y": 400, "w": 900, "text": "dataset names from other papers: named, but not available", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "nd", "type": "text", "x": 48, "y": 460, "w": 1184, "text": "*Needed:* strong results · cheap to serve · built from public data. No model offered all three.", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "Most top models train on data nobody else can get. Some datasets are only named, like “Books – 2TB”.", "src": "§1", "set": {"d1": {"op": 1}, "d2": {"op": 1}, "dl": {"op": 1}, "tb": {"upto": 1}}, "read": 2}, {"cap": "Open models exist: OPT, GPT-NeoX, BLOOM and GLM. None competes with PaLM-62B or Chinchilla.", "src": "§1", "set": {"tb": {"upto": 2}}, "read": 2}, {"cap": "So no model was strong, cheap to serve and built from public data. That is the problem.", "src": "§1", "set": {"nd": {"op": 1}}}]}]}, {"n": "02", "name": "The core idea", "short": "Idea", "lede": "Choose the size by the serving bill, then spend extra training on it.", "scenes": [{"title": "Size for serving, then train longer", "actors": [{"id": "fx", "type": "text", "x": 48, "y": 150, "w": 560, "text": "*Step 1:* fix the model size by what you can afford to *run*.", "fs": 21, "box": "plain"}, {"id": "tok", "type": "bars", "x": 48, "y": 240, "w": 700, "title": "Training tokens", "sub": "billions of tokens · §1, Table 2", "max": 1400, "upto": 0, "lw": 200, "vw": 70, "fs": 16, "bh": 22, "gap": 12, "rows": [{"n": "Chinchilla rule, 10B", "v": 200, "l": "200B", "hl": false}, {"n": "LLaMA-7B", "v": 1000, "l": "1T", "hl": true}, {"n": "LLaMA-13B", "v": 1000, "l": "1T", "hl": true}, {"n": "LLaMA-65B", "v": 1400, "l": "1.4T", "hl": true}]}, {"id": "note", "type": "text", "x": 790, "y": 250, "w": 440, "text": "7B: still improving after 1T tokens.", "fs": 19, "box": "ok", "op": 0}, {"id": "pub", "type": "text", "x": 790, "y": 340, "w": 440, "text": "*And:* only public data, so anyone can rebuild it.", "fs": 19, "box": "plain", "op": 0}, {"id": "rule", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "Rule: when serving cost dominates, *train a smaller model past the compute-optimal point*.", "fs": 23, "box": "acc", "op": 0}], "beats": [{"cap": "Start from the serving budget. Pick a model size that is cheap to run.", "src": "§1"}, {"cap": "Chinchilla’s rule gives a 10B model about 200B tokens.", "src": "§1", "set": {"tok": {"upto": 1}}}, {"cap": "LLaMA trains a 7B model on 1T tokens, 5 times that. Its performance still improves after 1T.", "src": "§1, Table 2", "set": {"tok": {"upto": 2}, "note": {"op": 1}}}, {"cap": "13B also sees 1T tokens; 33B and 65B see 1.4T. Every size gets far more data than the rule suggests.", "src": "Table 2", "set": {"tok": {"upto": 4}}}, {"cap": "And every token comes from public data, so others can study and rebuild the models.", "src": "§1", "set": {"pub": {"op": 1}}}, {"cap": "Training costs more. Each query then costs less, at the same quality.", "src": "§1", "set": {"rule": {"op": 1}}}]}, {"title": "Our analogy: an optimizing compiler", "actors": [{"id": "an", "type": "table", "x": 48, "y": 160, "w": 1184, "head": ["LLaMA", "Optimizing compiler"], "rows": [{"c": ["Training run", "Build"]}, {"c": ["Inference on a query", "One run of the program"]}, {"c": ["Train longer on more tokens", "Run more optimization passes"]}, {"c": ["Smaller model, same quality", "Faster binary, same output"]}, {"c": ["Training paid once; saving on every query", "Build paid once; saving on every run"]}], "fs": 20, "hfs": 15, "rpad": 12, "cols": "1fr 1fr", "upto": 0, "ghost": true}], "beats": [{"cap": "An analogy engineers know: a compiler run with heavy optimization.", "kind": "ours", "set": {"an": {"upto": 2}}, "read": 2}, {"cap": "More build time buys a faster program. You pay once and save on every run.", "kind": "ours", "set": {"an": {"upto": 4}}, "read": 2}, {"cap": "It pays off only if the program runs often. A model pays off the same way.", "kind": "ours", "set": {"an": {"upto": 5}}, "read": 2}]}, {"title": "Take this home", "actors": [{"id": "bf", "type": "text", "x": 48, "y": 150, "w": 560, "text": "*Before:* pick the option that is cheapest to build.", "fs": 21, "box": "bad"}, {"id": "af", "type": "text", "x": 672, "y": 150, "w": 560, "text": "*After:* pick the option that is cheapest over its whole life.", "fs": 21, "box": "ok", "op": 0}, {"id": "ls", "type": "list", "x": 48, "y": 250, "w": 1184, "items": [{"t": "A high-traffic model endpoint", "s": "Serve a smaller model, and spend more on training or fine-tuning data."}, {"t": "A read-heavy database", "s": "Add the index: slower writes, faster reads on every query."}, {"t": "A busy web front end", "s": "Compress and bundle assets once at build time, not per request."}], "upto": 0, "fs": 20, "gap": 14, "mark": "num", "sfs": 16, "title": "Where it fits · our examples", "tfs": 17}, {"id": "q", "type": "text", "x": 48, "y": 500, "w": 1184, "text": "*Ask:* what do I pay for on every request that I could pay for once?", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "The usual habit: choose what is cheapest to build.", "kind": "ours"}, {"cap": "The idea: count the whole lifetime cost. Usage can outweigh the build many times over.", "kind": "ours", "set": {"af": {"op": 1}}}, {"cap": "Three places this fits for product engineers.", "kind": "ours", "set": {"ls": {"upto": 3}}, "read": 6}, {"cap": "One question to ask of your own system.", "kind": "ours", "set": {"q": {"op": 1}}, "read": 2}]}]}, {"n": "03", "name": "How it works", "short": "How it works", "lede": "The architecture, then one prompt through the tokenizer, the norm, attention and SwiGLU, then data and training.", "scenes": [{"title": "The model: a transformer with 3 changes", "actors": [{"id": "out", "type": "card", "x": 70, "y": 150, "w": 540, "h": 34, "icon": "dot", "label": "Output: a score for every possible next token"}, {"id": "pn", "type": "panel", "x": 60, "y": 196, "w": 560, "h": 248, "label": "Transformer layer  ·  × 32 (7B) to × 80 (65B)"}, {"id": "ff", "type": "card", "x": 90, "y": 232, "w": 500, "h": 34, "icon": "net", "label": "SwiGLU feed-forward network"}, {"id": "n2", "type": "card", "x": 90, "y": 276, "w": 500, "h": 34, "icon": "gear", "label": "RMSNorm on the sub-layer input"}, {"id": "at", "type": "card", "x": 90, "y": 330, "w": 500, "h": 34, "icon": "eye", "label": "Causal self-attention + rotary positions"}, {"id": "n1", "type": "card", "x": 90, "y": 374, "w": 500, "h": 34, "icon": "gear", "label": "RMSNorm on the sub-layer input"}, {"id": "emb", "type": "card", "x": 70, "y": 460, "w": 540, "h": 34, "icon": "book", "label": "Token embedding · 4,096 numbers per token (7B)"}, {"id": "in", "type": "tokens", "x": 70, "y": 512, "words": ["The", "year", "2", "0", "2", "3", "was"], "tw": 70, "th": 36, "gap": 8, "fs": 14}, {"id": "tb", "type": "table", "x": 670, "y": 150, "w": 562, "head": ["Params", "dim", "heads", "layers", "peak lr", "batch", "tokens"], "rows": [{"c": ["6.7B", "4096", "32", "32", "3.0e−4", "4M", "1.0T"]}, {"c": ["13.0B", "5120", "40", "40", "3.0e−4", "4M", "1.0T"]}, {"c": ["32.5B", "6656", "52", "60", "1.5e−4", "4M", "1.4T"]}, {"c": ["65.2B", "8192", "64", "80", "1.5e−4", "4M", "1.4T"]}], "fs": 15, "hfs": 13, "rpad": 6, "mono": [1, 2, 3, 4, 5, 6], "upto": 0, "ghost": true}, {"id": "tn", "type": "text", "x": 670, "y": 360, "w": 562, "text": "Table 2 · the 4 sizes. The film calls them 7B, 13B, 33B and 65B.", "fs": 14, "tone": "muted", "font": "mono", "op": 0}], "beats": [{"cap": "LLaMA is a standard transformer. The paper lists three changes, each borrowed from another model.", "src": "§2.2"}, {"cap": "Text becomes tokens. Each token becomes a vector: 4,096 numbers in the 7B model.", "src": "Table 2", "set": {"emb": {"on": true}, "tb": {"upto": 1}, "tn": {"op": 1}}}, {"cap": "Each layer first normalizes its input with RMSNorm, then runs attention with rotary positions.", "src": "§2.2", "set": {"emb": {"on": false}, "n1": {"on": true}, "at": {"on": true}}}, {"cap": "Then a second RMSNorm and a SwiGLU feed-forward network. 7B stacks 32 layers; 65B stacks 80.", "src": "§2.2, Table 2", "set": {"n1": {"on": false}, "at": {"on": false}, "n2": {"on": true}, "ff": {"on": true}, "tb": {"upto": 4}}, "read": 2}, {"cap": "Next, we follow one prompt, “The year 2023 was”, through each step.", "kind": "ours", "set": {"n2": {"on": false}, "ff": {"on": false}, "out": {"on": true}}}]}, {"title": "Step 1 · The tokenizer splits numbers into digits", "actors": [{"id": "raw", "type": "text", "x": 100, "y": 150, "w": 600, "text": "The year 2023 was 🦙", "fs": 26, "font": "mono", "box": "plain"}, {"id": "rl", "type": "text", "x": 740, "y": 165, "w": 490, "text": "raw text · 🦙 stands for a rare character", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "tk", "type": "tokens", "x": 100, "y": 300, "words": ["The", "year", "2", "0", "2", "3", "was", "<F0>", "<9F>", "<A6>", "<99>"], "tw": 90, "th": 44, "gap": 8, "fs": 15, "upto": 0, "on": [2, 3, 4, 5]}, {"id": "dg", "type": "text", "x": 296, "y": 360, "w": 384, "text": "digits: one token each", "fs": 14, "tone": "acc", "font": "mono", "align": "center", "op": 0}, {"id": "by", "type": "text", "x": 786, "y": 360, "w": 384, "text": "fallback: UTF-8 bytes", "fs": 14, "tone": "acc", "font": "mono", "align": "center", "op": 0}, {"id": "il", "type": "text", "x": 100, "y": 420, "w": 800, "text": "illustrative split, not LLaMA’s real vocabulary", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "tot", "type": "text", "x": 100, "y": 480, "w": 1130, "text": "The whole training set: *about 1.4T tokens*.", "fs": 22, "box": "plain", "op": 0}], "beats": [{"cap": "Text is cut into tokens with byte-pair encoding (BPE), using the SentencePiece library.", "src": "§2.1"}, {"cap": "Common words stay whole. Here “The” and “year” are one token each.", "kind": "ours", "set": {"tk": {"upto": 2}}}, {"cap": "Every number is split into single digits. “2023” becomes 2, 0, 2 and 3.", "src": "§2.1", "set": {"tk": {"upto": 7}, "dg": {"op": 1}}}, {"cap": "A character the tokenizer does not know falls back to its UTF-8 bytes. 🦙 becomes 4 byte tokens.", "src": "§2.1", "set": {"tk": {"upto": 11}, "by": {"op": 1}}}, {"cap": "Done this way, the whole training set holds about 1.4T tokens.", "src": "§2.1", "set": {"tot": {"op": 1}}}]}, {"title": "Step 2 · Normalize the input, not the output", "actors": [{"id": "ph", "type": "text", "x": 48, "y": 150, "w": 560, "text": "Where the norm sits", "fs": 20, "fw": 600}, {"id": "post", "type": "text", "x": 48, "y": 196, "w": 560, "text": "Original:  x → sub-layer → add → *norm*", "fs": 19, "font": "mono", "box": "plain", "op": 0}, {"id": "pre", "type": "text", "x": 48, "y": 270, "w": 560, "text": "LLaMA:  x → *RMSNorm* → sub-layer → add", "fs": 19, "font": "mono", "box": "ok", "op": 0}, {"id": "why", "type": "text", "x": 48, "y": 360, "w": 560, "text": "*Stated reason:* better training stability.", "fs": 20, "box": "plain", "op": 0}, {"id": "tl", "type": "text", "x": 672, "y": 150, "w": 560, "text": "toy vector: 4 numbers instead of 4,096", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "vx", "type": "tokens", "x": 672, "y": 180, "words": ["2", "−1", "3", "−2"], "tw": 96, "th": 42, "gap": 10, "fs": 17, "op": 0}, {"id": "calc", "type": "text", "x": 672, "y": 250, "w": 560, "text": "RMS = √((4 + 1 + 9 + 4) ÷ 4) = √4.5 ≈ 2.12", "fs": 18, "font": "mono", "box": "ours", "op": 0}, {"id": "vn", "type": "tokens", "x": 672, "y": 330, "words": ["0.94", "−0.47", "1.41", "−0.94"], "tw": 96, "th": 42, "gap": 10, "fs": 17, "on": [0, 1, 2, 3], "op": 0}, {"id": "vl", "type": "text", "x": 672, "y": 384, "w": 560, "text": "x ÷ RMS · same direction, steady scale", "fs": 14, "tone": "muted", "font": "mono", "op": 0}], "beats": [{"cap": "A sub-layer is attention or the feed-forward network. The original transformer normalizes its output.", "src": "§2.2", "set": {"post": {"op": 1}}}, {"cap": "LLaMA normalizes each sub-layer’s input instead, as GPT-3 did. The paper says this improves training stability.", "src": "§2.2", "set": {"pre": {"op": 1}, "why": {"op": 1}}}, {"cap": "The norm is RMSNorm. Take a toy vector of 4 numbers instead of 4,096.", "src": "§2.2", "set": {"tl": {"op": 1}, "vx": {"op": 1}}}, {"cap": "RMSNorm divides by the root mean square of the numbers. Here that is about 2.12.", "kind": "ours", "set": {"calc": {"op": 1}}}, {"cap": "Each number shrinks by the same factor. RMSNorm also learns one gain per number; we skip it here.", "kind": "ours", "set": {"vn": {"op": 1}, "vl": {"op": 1}}}]}, {"title": "Step 3 · Causal attention with rotary positions", "actors": [{"id": "ab", "type": "text", "x": 48, "y": 150, "w": 560, "text": "*Removed:* absolute position vectors at the input", "fs": 19, "box": "bad", "op": 0}, {"id": "ro", "type": "text", "x": 672, "y": 150, "w": 560, "text": "*Added:* rotary embeddings (RoPE) in every layer", "fs": 19, "box": "ok", "op": 0}, {"id": "rx", "type": "text", "x": 48, "y": 226, "w": 1184, "text": "Our note: RoPE turns each query and key by an angle set by its position. Their match then depends on distance.", "fs": 17, "box": "ours", "op": 0}, {"id": "tk", "type": "tokens", "x": 150, "y": 450, "words": ["The", "year", "2", "0", "2", "3", "was"], "tw": 110, "th": 42, "gap": 12, "fs": 16, "on": [6], "subs": ["pos 0", "pos 1", "pos 2", "pos 3", "pos 4", "pos 5", "pos 6"]}, {"id": "ar", "type": "arcs", "x": 150, "y": 450, "n": 7, "tw": 110, "gap": 12, "weights": [0.1, 0.15, 0.05, 0.1, 0.2, 0.3, 0.1], "h": 120, "showw": true, "op": 0, "from": 6}, {"id": "iw", "type": "text", "x": 1010, "y": 400, "w": 220, "text": "illustrative weights", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "hd", "type": "text", "x": 1010, "y": 450, "w": 220, "text": "7B: 32 heads · 65B: 64", "fs": 15, "tone": "acc", "font": "mono", "op": 0}], "beats": [{"cap": "Attention lets each token gather information from earlier tokens. It is causal: no token sees later ones.", "src": "§2.4"}, {"cap": "Here “was” looks back at all 6 earlier tokens and itself. The weights are made up for this sketch.", "kind": "ours", "set": {"ar": {"op": 1}, "iw": {"op": 1}}}, {"cap": "The original transformer adds a position vector once, at the input. LLaMA removes it.", "src": "§2.2", "set": {"ab": {"op": 1}}}, {"cap": "Instead it adds rotary positional embeddings, RoPE, at each layer, as GPT-Neo did.", "src": "§2.2", "set": {"ro": {"op": 1}}}, {"cap": "How RoPE works, from its own paper: queries and keys turn by position, so attention sees relative distance.", "kind": "ours", "set": {"rx": {"op": 1}}}, {"cap": "Many heads, parallel attention computations, run at once: 32 in 7B and 64 in 65B.", "src": "Table 2", "set": {"hd": {"op": 1}}}]}, {"title": "Step 4 · The SwiGLU feed-forward network", "actors": [{"id": "oh", "type": "text", "x": 48, "y": 150, "w": 560, "text": "Before: ReLU", "fs": 20, "fw": 600}, {"id": "of", "type": "text", "x": 48, "y": 186, "w": 560, "text": "out = ReLU(x·W₁)·W₂", "fs": 19, "font": "mono", "box": "plain"}, {"id": "os", "type": "text", "x": 48, "y": 240, "w": 560, "text": "hidden width 4d = 16,384 when d = 4,096", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "nh", "type": "text", "x": 672, "y": 150, "w": 560, "text": "LLaMA: SwiGLU", "fs": 20, "fw": 600, "op": 0}, {"id": "nf", "type": "text", "x": 672, "y": 186, "w": 560, "text": "out = (Swish(x·W) ⊙ x·V)·W₂", "fs": 19, "font": "mono", "box": "ok", "op": 0}, {"id": "ns", "type": "text", "x": 672, "y": 240, "w": 560, "text": "hidden width ⅔·4d ≈ 10,923 · our arithmetic", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "lg", "type": "text", "x": 48, "y": 312, "w": 260, "text": "gate · Swish(x·W)", "fs": 15, "font": "mono", "tone": "muted", "op": 0}, {"id": "g", "type": "tokens", "x": 320, "y": 304, "words": ["0.9", "0.1", "0.0", "0.7"], "tw": 80, "th": 38, "gap": 8, "fs": 15, "op": 0}, {"id": "lv", "type": "text", "x": 48, "y": 366, "w": 260, "text": "value · x·V", "fs": 15, "font": "mono", "tone": "muted", "op": 0}, {"id": "v", "type": "tokens", "x": 320, "y": 358, "words": ["2.0", "−1.5", "3.0", "0.5"], "tw": 80, "th": 38, "gap": 8, "fs": 15, "op": 0}, {"id": "lp", "type": "text", "x": 48, "y": 420, "w": 260, "text": "gate ⊙ value", "fs": 15, "font": "mono", "tone": "muted", "op": 0}, {"id": "pv", "type": "tokens", "x": 320, "y": 412, "words": ["1.8", "−0.15", "0.0", "0.35"], "tw": 80, "th": 38, "gap": 8, "fs": 15, "on": [0, 1, 2, 3], "op": 0}, {"id": "ty", "type": "text", "x": 48, "y": 470, "w": 640, "text": "toy numbers: 4 hidden units instead of 10,923", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "pm", "type": "table", "x": 720, "y": 310, "w": 512, "head": ["FFN", "Matrices", "Weights"], "rows": [{"c": ["ReLU, 4d", "2 of d × 4d", "8d²"]}, {"c": ["SwiGLU, ⅔·4d", "3 of d × ⅔·4d", "8d²"]}], "fs": 16, "hfs": 13, "rpad": 8, "mono": [1, 2], "op": 0}], "beats": [{"cap": "After attention, each token passes alone through a feed-forward network. PaLM gives it a hidden width of 4d.", "src": "§2.2"}, {"cap": "LLaMA replaces ReLU with SwiGLU, as PaLM did. The paper says it improves performance.", "src": "§2.2", "set": {"nh": {"op": 1}, "nf": {"op": 1}}}, {"cap": "SwiGLU has two branches. One passes through Swish and gates the other, number by number.", "kind": "ours", "set": {"lg": {"op": 1}, "g": {"op": 1}, "lv": {"op": 1}, "v": {"op": 1}, "lp": {"op": 1}, "pv": {"op": 1}, "ty": {"op": 1}}}, {"cap": "The hidden width shrinks to ⅔ of 4d. For d = 4,096 that is about 10,923.", "src": "§2.2", "set": {"ns": {"op": 1}}}, {"cap": "Our arithmetic: 3 matrices at ⅔·4d hold 8d² weights, like 2 at 4d. The paper does not give this reason.", "kind": "ours", "set": {"pm": {"op": 1}}, "read": 2}]}, {"title": "Training data: 7 public sources", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 640, "head": ["Dataset", "Sampling", "Epochs", "Disk"], "rows": [{"c": ["CommonCrawl", "67.0%", "1.10", "3.3 TB"]}, {"c": ["C4", "15.0%", "1.06", "783 GB"]}, {"c": ["GitHub", "4.5%", "0.64", "328 GB"]}, {"c": ["Wikipedia", "4.5%", "2.45", "83 GB"]}, {"c": ["Books", "4.5%", "2.23", "85 GB"]}, {"c": ["ArXiv", "2.5%", "1.06", "92 GB"]}, {"c": ["StackExchange", "2.0%", "1.03", "78 GB"]}], "fs": 16, "hfs": 13, "rpad": 6, "cols": "1.4fr 1fr 1fr 1fr", "mono": [1, 2, 3], "align": ["left", "right", "right", "right"], "upto": 0, "ghost": true}, {"id": "pp", "type": "list", "x": 730, "y": 150, "w": 500, "items": [{"t": "Remove duplicate lines"}, {"t": "Keep English pages (fastText)"}, {"t": "Drop low-quality text (n-gram model)"}, {"t": "Keep pages that look like Wikipedia references"}], "upto": 0, "fs": 18, "gap": 12, "mark": "check", "mk": 26, "title": "CommonCrawl filters (CCNet + 1)", "ttone": "ok", "tfs": 16}, {"id": "ep", "type": "text", "x": 730, "y": 430, "w": 500, "text": "Wikipedia and books: about *2 epochs*. Most other tokens: seen once.", "fs": 18, "box": "plain", "op": 0}], "beats": [{"cap": "All training data is public. 7 sources are mixed in fixed proportions.", "src": "§2.1, Table 1"}, {"cap": "English CommonCrawl is 67%. The CCNet pipeline removes duplicate lines, non-English pages and low-quality text.", "src": "§2.1", "set": {"tb": {"upto": 1}, "pp": {"upto": 3}}, "read": 2}, {"cap": "A linear classifier keeps only pages that look like the pages Wikipedia cites.", "src": "§2.1", "set": {"pp": {"upto": 4}}}, {"cap": "C4 adds 15%. GitHub adds 4.5%, only from Apache, BSD and MIT licensed projects.", "src": "§2.1", "set": {"tb": {"upto": 3}}}, {"cap": "Wikipedia in 20 languages, two book sets, arXiv and Stack Exchange fill the rest.", "src": "§2.1, Table 1", "set": {"tb": {"upto": 7}}, "read": 2}, {"cap": "Wikipedia and books are seen about twice. Most other data is seen once.", "src": "§2.1, Table 1", "set": {"ep": {"op": 1}}}]}, {"title": "Training recipe", "actors": [{"id": "a", "type": "stat", "x": 48, "y": 150, "w": 278, "v": "AdamW", "l": "β1 = 0.9 · β2 = 0.95"}, {"id": "wd", "type": "stat", "x": 350, "y": 150, "w": 278, "v": "0.1", "l": "weight decay", "op": 0}, {"id": "gc", "type": "stat", "x": 652, "y": 150, "w": 278, "v": "1.0", "l": "gradient clipping", "op": 0}, {"id": "bs", "type": "stat", "x": 954, "y": 150, "w": 278, "v": "4M", "l": "tokens per batch", "op": 0}, {"id": "lp", "type": "text", "x": 48, "y": 312, "w": 680, "text": "Learning rate over training · our sketch of §2.3", "fs": 16, "fw": 600, "op": 0}, {"id": "pl", "type": "plot", "x": 48, "y": 346, "w": 680, "h": 170, "series": [{"pts": "0,170 11,103 22,36 34,10 45,10 56,10 68,11 79,12 90,13 102,14 113,16 124,17 136,19 147,21 158,23 170,26 181,28 192,31 204,34 215,37 226,40 237,43 249,47 260,50 272,54 283,58 294,61 306,65 317,69 328,73 340,77 351,81 362,85 374,89 385,92 396,96 408,100 419,104 430,108 442,111 453,115 464,118 475,122 487,125 498,128 510,131 521,134 532,136 544,139 555,141 566,143 578,145 589,147 600,148 612,150 623,151 634,152 646,153 657,153 668,153 680,154", "tone": "acc"}], "op": 0}, {"id": "pk", "type": "text", "x": 80, "y": 520, "w": 330, "text": "warmup: 2,000 steps", "fs": 14, "tone": "acc", "font": "mono", "op": 0}, {"id": "en", "type": "text", "x": 560, "y": 520, "w": 170, "text": "10% of peak", "fs": 14, "tone": "acc", "font": "mono", "op": 0}, {"id": "lr", "type": "table", "x": 790, "y": 330, "w": 440, "head": ["Model", "Peak lr", "Tokens"], "rows": [{"c": ["7B", "3.0e−4", "1.0T"]}, {"c": ["13B", "3.0e−4", "1.0T"]}, {"c": ["33B", "1.5e−4", "1.4T"]}, {"c": ["65B", "1.5e−4", "1.4T"]}], "fs": 16, "hfs": 13, "rpad": 6, "mono": [1, 2], "upto": 0, "ghost": true}], "beats": [{"cap": "The optimizer is AdamW with β1 = 0.9 and β2 = 0.95.", "src": "§2.3"}, {"cap": "The learning rate warms up for 2,000 steps. Then it follows a cosine down to 10% of its peak.", "src": "§2.3", "set": {"lp": {"op": 1}, "pl": {"op": 1}, "pk": {"op": 1}, "en": {"op": 1}}}, {"cap": "The peak is 3.0e−4 for 7B and 13B, and 1.5e−4 for 33B and 65B.", "src": "Table 2", "set": {"lr": {"upto": 4}}, "read": 2}, {"cap": "Weight decay is 0.1, gradient clipping 1.0, and each batch holds 4M tokens.", "src": "§2.3, Table 2", "set": {"wd": {"op": 1}, "gc": {"op": 1}, "bs": {"op": 1}}}]}, {"title": "Making training fast", "actors": [{"id": "hm", "type": "heat", "x": 48, "y": 160, "rows": ["The", "year", "2", "0", "2", "3", "was"], "cols": ["The", "year", "2", "0", "2", "3", "was"], "w": [[1, 0, 0, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1]], "cs": 40, "lw": 56, "top": 24, "lfs": 11, "mask": true}, {"id": "hl", "type": "text", "x": 48, "y": 500, "w": 340, "text": "grey: masked scores, never computed", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "tr", "type": "list", "x": 440, "y": 150, "w": 790, "items": [{"t": "Efficient causal attention (xformers)", "s": "Skips masked scores; does not store attention weights."}, {"t": "Checkpointing by hand", "s": "Saves costly activations, like linear-layer outputs."}, {"t": "Model and sequence parallelism", "s": "Splits the model and the sequence across GPUs."}, {"t": "Overlap compute and communication", "s": "GPUs compute while all_reduce runs over the network."}], "upto": 0, "fs": 18, "gap": 10, "mark": "num", "sfs": 15, "mk": 26}, {"id": "t1", "type": "stat", "x": 440, "y": 420, "w": 250, "v": "380", "l": "tokens / s / GPU (65B)", "op": 0}, {"id": "t2", "type": "stat", "x": 710, "y": 420, "w": 250, "v": "2,048", "l": "A100 80GB GPUs", "op": 0}, {"id": "t3", "type": "stat", "x": 980, "y": 420, "w": 250, "v": "21 days", "l": "for 1.4T tokens", "op": 0}], "beats": [{"cap": "In causal attention, the scores above the diagonal are masked. The xformers kernel never computes them.", "src": "§2.4"}, {"cap": "It also does not store the attention weights. That saves memory and runtime.", "src": "§2.4", "set": {"tr": {"upto": 1}}}, {"cap": "Checkpointing keeps only costly activations, like linear-layer outputs. They wrote the backward pass by hand.", "src": "§2.4", "set": {"tr": {"upto": 2}}}, {"cap": "Model and sequence parallelism cut memory. GPU compute overlaps with network all_reduce.", "src": "§2.4", "set": {"tr": {"upto": 4}}, "read": 2}, {"cap": "For 65B: about 380 tokens per second per GPU on 2,048 GPUs. 1.4T tokens take about 21 days.", "src": "§2.4", "set": {"t1": {"op": 1}, "t2": {"op": 1}, "t3": {"op": 1}}}, {"cap": "Our check: 380 × 2,048 × 86,400 s × 21 days ≈ 1.41T tokens. The numbers agree.", "kind": "ours"}]}]}, {"n": "04", "name": "Evidence", "short": "Evidence", "lede": "20 benchmarks, plus bias, toxicity, truthfulness and carbon.", "scenes": [{"title": "How they tested it", "actors": [{"id": "t", "type": "table", "x": 48, "y": 146, "w": 1184, "head": ["Test", "Question", "How measured", "Result (LLaMA)"], "rows": [{"c": ["Common sense · 8 tests", "Everyday reasoning?", "zero-shot accuracy", "65B ahead of PaLM-540B on 6 of 8"]}, {"c": ["Closed-book QA · 2", "Facts without documents?", "exact match, 0–64 shots", "65B best on both"]}, {"c": ["Reading · RACE", "Exam questions on a text?", "zero-shot accuracy", "65B close to PaLM-540B"]}, {"c": ["Math · MATH, GSM8k", "Math word problems?", "accuracy, ± majority vote", "GSM8k: ≈ Minerva-62B"]}, {"c": ["Code · HumanEval, MBPP", "Working Python?", "pass@1", "13B+ beats LaMDA-137B"]}, {"c": ["MMLU · 57 subjects", "Broad exam knowledge?", "5-shot accuracy", "65B behind Chinchilla, PaLM"]}, {"c": ["Safety · 4 tests", "Toxic, biased, untrue?", "per-test scores", "mixed; toxicity grows with size"]}, {"c": ["Carbon", "Energy and emissions?", "MWh, tCO2eq", "1,015 tCO2eq in all"]}], "fs": 15, "hfs": 13, "rpad": 6, "cols": "1.25fr 1.3fr 1.15fr 1.5fr", "upto": 0, "ghost": true}], "beats": [{"cap": "Eight kinds of test. Most compare against GPT-3, Gopher, Chinchilla and PaLM, using numbers from their papers.", "src": "§3", "set": {"t": {"upto": 2}}, "read": 3}, {"cap": "Zero-shot means a task description and no worked examples. Few-shot adds 1 to 64 examples.", "src": "§3", "set": {"t": {"upto": 5}}, "read": 3}, {"cap": "The last tests look at harm and cost rather than skill.", "src": "§5, §6", "set": {"t": {"upto": 8}}, "read": 4}]}, {"title": "Common sense reasoning", "actors": [{"id": "t", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Model", "BoolQ", "PIQA", "SIQA", "HellaSw.", "WinoGr.", "ARC-e", "ARC-c", "OBQA"], "rows": [{"c": ["GPT-3 175B", "60.5", "81.0", "–", "78.9", "70.2", "68.8", "51.4", "57.6"]}, {"c": ["Chinchilla 70B", "83.7", "81.8", "51.3", "80.8", "74.9", "–", "–", "–"]}, {"c": ["PaLM 540B", "88.0", "82.3", "–", "83.4", "81.1", "76.6", "53.0", "53.4"]}, {"c": ["LLaMA 13B", "78.1", "80.1", "50.4", "79.2", "73.0", "74.8", "52.7", "56.4"], "hl": true}, {"c": ["LLaMA 65B", "85.3", "82.8", "52.3", "84.2", "77.0", "78.9", "56.0", "60.2"], "hl": true}], "fs": 16, "hfs": 13, "rpad": 7, "cols": "1.6fr repeat(8, 1fr)", "mono": [1, 2, 3, 4, 5, 6, 7, 8], "align": ["left", "right", "right", "right", "right", "right", "right", "right", "right"]}, {"id": "m", "type": "text", "x": 48, "y": 400, "w": 1184, "text": "zero-shot accuracy % · higher is better · Table 3 (selected rows)", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "fl", "type": "text", "x": 48, "y": 450, "w": 1184, "text": "*Inside the paper:* §3.1 says 65B beats Chinchilla “on all reported benchmarks but BoolQ”. Table 3 shows 65B ahead on BoolQ too: 85.3 vs 83.7.", "fs": 18, "box": "bad", "op": 0}], "beats": [{"cap": "Eight common sense tests, zero-shot. Higher accuracy is better.", "src": "§3.1, Table 3", "read": 3}, {"cap": "LLaMA-13B beats GPT-3 on 5 of the 7 tests GPT-3 reports, though it is over 10× smaller.", "src": "Table 3", "read": 2}, {"cap": "LLaMA-65B beats PaLM-540B on all tests but BoolQ and WinoGrande.", "src": "§3.1, Table 3", "read": 2}, {"cap": "One mismatch: the text says 65B loses to Chinchilla on BoolQ. The table says it wins.", "src": "§3.1, Table 3", "set": {"fl": {"op": 1}}, "read": 2}]}, {"title": "Closed-book question answering", "actors": [{"id": "tq", "type": "bars", "x": 48, "y": 160, "w": 560, "title": "TriviaQA · zero-shot", "sub": "exact match % · higher is better · Table 5", "max": 75, "upto": 0, "lw": 190, "vw": 64, "fs": 16, "bh": 22, "gap": 12, "rows": [{"n": "Gopher 280B", "v": 43.5, "l": "43.5", "hl": false}, {"n": "Chinchilla 70B", "v": 55.4, "l": "55.4", "hl": false}, {"n": "LLaMA 13B", "v": 56.6, "l": "56.6", "hl": true}, {"n": "LLaMA 65B", "v": 68.2, "l": "68.2", "hl": true}]}, {"id": "nq", "type": "bars", "x": 672, "y": 160, "w": 560, "title": "NaturalQuestions · 64-shot", "sub": "exact match % · higher is better · Table 4", "max": 45, "upto": 0, "lw": 190, "vw": 64, "fs": 16, "bh": 22, "gap": 12, "rows": [{"n": "GPT-3 175B", "v": 29.9, "l": "29.9", "hl": false}, {"n": "Chinchilla 70B", "v": 35.5, "l": "35.5", "hl": false}, {"n": "PaLM 540B", "v": 39.6, "l": "39.6", "hl": false}, {"n": "LLaMA 13B", "v": 31.9, "l": "31.9", "hl": true}, {"n": "LLaMA 65B", "v": 39.9, "l": "39.9", "hl": true}]}, {"id": "sg", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "LLaMA-13B runs on a *single V100 GPU* during inference.", "fs": 21, "box": "plain", "op": 0}], "beats": [{"cap": "Closed book: the model gets no documents. Its answer must match exactly. Higher is better.", "src": "§3.2"}, {"cap": "Zero-shot TriviaQA: LLaMA-65B scores 68.2, ahead of Chinchilla’s 55.4.", "src": "Table 5", "set": {"tq": {"upto": 4}}}, {"cap": "64-shot NaturalQuestions: LLaMA-65B scores 39.9, just ahead of PaLM-540B at 39.6.", "src": "Table 4", "set": {"nq": {"upto": 5}}}, {"cap": "LLaMA-13B is close to GPT-3 and Chinchilla here, and it runs on one V100 GPU.", "src": "§3.2", "set": {"sg": {"op": 1}}}]}, {"title": "Reading and math", "actors": [{"id": "rc", "type": "bars", "x": 48, "y": 160, "w": 560, "title": "RACE-high · zero-shot", "sub": "accuracy % · higher is better · Table 6", "max": 60, "upto": 0, "lw": 190, "vw": 64, "fs": 16, "bh": 22, "gap": 12, "rows": [{"n": "GPT-3 175B", "v": 45.5, "l": "45.5", "hl": false}, {"n": "PaLM 540B", "v": 49.1, "l": "49.1", "hl": false}, {"n": "LLaMA 13B", "v": 47.2, "l": "47.2", "hl": true}, {"n": "LLaMA 65B", "v": 51.6, "l": "51.6", "hl": true}]}, {"id": "mt", "type": "table", "x": 672, "y": 160, "w": 560, "head": ["Model", "MATH", "+maj1@k", "GSM8k", "+maj1@k"], "rows": [{"c": ["PaLM 540B", "8.8", "–", "56.5", "–"]}, {"c": ["Minerva 62B", "27.6", "43.4", "52.4", "68.5"]}, {"c": ["LLaMA 65B", "10.6", "20.5", "50.9", "69.7"], "hl": true}], "fs": 16, "hfs": 13, "rpad": 7, "cols": "1.5fr 1fr 1fr 1fr 1fr", "mono": [1, 2, 3, 4], "align": ["left", "right", "right", "right", "right"], "op": 0}, {"id": "mm", "type": "text", "x": 672, "y": 330, "w": 560, "text": "accuracy % · Table 7 · maj1@k: k answers, majority vote", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "fl", "type": "text", "x": 672, "y": 380, "w": 560, "text": "*Read with care:* LLaMA-65B beats Minerva-62B on GSM8k only with voting: 69.7 vs 68.5. Without it, 50.9 vs 52.4.", "fs": 18, "box": "bad", "op": 0}], "beats": [{"cap": "RACE: reading exams for Chinese middle and high school students. LLaMA-65B is close to PaLM-540B.", "src": "§3.3, Table 6", "set": {"rc": {"upto": 4}}}, {"cap": "Math: Minerva is PaLM fine-tuned on 38.5B tokens of math. LLaMA has no math fine-tuning.", "src": "§3.4", "set": {"mt": {"op": 1}, "mm": {"op": 1}}, "read": 2}, {"cap": "maj1@k: generate k answers and keep the majority. k is 100 for GSM8k and 256 for MATH.", "src": "Table 7"}, {"cap": "The text says 65B beats Minerva-62B on GSM8k. That holds with voting, not without.", "src": "§3.4, Table 7", "set": {"fl": {"op": 1}}, "read": 2}, {"cap": "On MATH, Minerva leads by far: 27.6 vs 10.6.", "src": "Table 7"}]}, {"title": "Code generation", "actors": [{"id": "he", "type": "bars", "x": 48, "y": 160, "w": 560, "title": "HumanEval · pass@1", "sub": "% solved on the first try · higher is better · Table 8", "max": 40, "upto": 0, "lw": 190, "vw": 64, "fs": 15, "bh": 20, "gap": 10, "rows": [{"n": "LaMDA 137B", "v": 14.0, "l": "14.0", "hl": false}, {"n": "PaLM 62B", "v": 15.9, "l": "15.9", "hl": false}, {"n": "PaLM-cont 62B", "v": 23.7, "l": "23.7", "hl": false}, {"n": "PaLM 540B", "v": 26.2, "l": "26.2", "hl": false}, {"n": "LLaMA 13B", "v": 15.8, "l": "15.8", "hl": true}, {"n": "LLaMA 65B", "v": 23.7, "l": "23.7", "hl": true}]}, {"id": "mb", "type": "bars", "x": 672, "y": 160, "w": 560, "title": "MBPP · pass@1", "sub": "% solved on the first try · higher is better · Table 8", "max": 40, "upto": 0, "lw": 190, "vw": 64, "fs": 15, "bh": 20, "gap": 10, "rows": [{"n": "LaMDA 137B", "v": 14.8, "l": "14.8", "hl": false}, {"n": "PaLM 62B", "v": 21.4, "l": "21.4", "hl": false}, {"n": "PaLM-cont 62B", "v": 31.2, "l": "31.2", "hl": false}, {"n": "PaLM 540B", "v": 36.8, "l": "36.8", "hl": false}, {"n": "LLaMA 13B", "v": 22.0, "l": "22.0", "hl": true}, {"n": "LLaMA 65B", "v": 37.7, "l": "37.7", "hl": true}]}, {"id": "ft", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "Code fine-tuning helps more: PaLM-Coder lifts HumanEval from 26.2% to 36%. LLaMA has none.", "fs": 19, "box": "plain", "op": 0}], "beats": [{"cap": "The model writes a Python function from a description. pass@1 is the share solved on the first try.", "src": "§3.5"}, {"cap": "LLaMA-13B and up beat LaMDA-137B on both tests.", "src": "§3.5, Table 8", "set": {"he": {"upto": 6}, "mb": {"upto": 6}}, "read": 2}, {"cap": "65B beats PaLM-62B. Against the longer-trained PaLM-cont, HumanEval is a tie: 23.7 each.", "src": "Table 8", "read": 2}, {"cap": "Fine-tuning on code helps more, but the paper leaves it out of scope.", "src": "§3.5", "set": {"ft": {"op": 1}}}]}, {"title": "Broad knowledge: MMLU", "actors": [{"id": "mm", "type": "bars", "x": 48, "y": 160, "w": 700, "title": "MMLU · 5-shot · average of 57 subjects", "sub": "accuracy % · higher is better · Tables 9, 10", "max": 80, "upto": 0, "lw": 190, "vw": 64, "fs": 16, "bh": 22, "gap": 12, "rows": [{"n": "GPT-3 175B", "v": 43.9, "l": "43.9", "hl": false}, {"n": "Gopher 280B", "v": 60.0, "l": "60.0", "hl": false}, {"n": "Chinchilla 70B", "v": 67.5, "l": "67.5", "hl": false}, {"n": "PaLM 540B", "v": 69.3, "l": "69.3", "hl": false}, {"n": "LLaMA 65B", "v": 63.4, "l": "63.4", "hl": true}, {"n": "LLaMA-I 65B", "v": 68.9, "l": "68.9", "hl": true}]}, {"id": "bk", "type": "text", "x": 790, "y": 170, "w": 440, "text": "*Their guess:* only 177GB of books and papers in the data. Others used up to 2TB of books.", "fs": 19, "box": "plain", "op": 0}, {"id": "it", "type": "text", "x": 790, "y": 320, "w": 440, "text": "*LLaMA-I:* one short instruction fine-tune. Best model then: code-davinci-002 at 77.4.", "fs": 19, "box": "plain", "op": 0}], "beats": [{"cap": "MMLU: multiple-choice questions in 57 subjects, with 5 examples. Higher accuracy is better.", "src": "§3.6"}, {"cap": "LLaMA-65B scores 63.4, behind Chinchilla at 67.5 and PaLM-540B at 69.3.", "src": "Table 9", "set": {"mm": {"upto": 5}}}, {"cap": "The authors’ explanation: few books in the data, 177GB against up to 2TB for the others.", "src": "§3.6", "set": {"bk": {"op": 1}}}, {"cap": "A short instruction fine-tune, LLaMA-I, lifts MMLU to 68.9. It still trails the best model, at 77.4.", "src": "§4, Table 10", "set": {"it": {"op": 1}, "mm": {"upto": 6}}}]}, {"title": "Performance keeps improving with tokens", "actors": [{"id": "pt", "type": "text", "x": 48, "y": 150, "w": 700, "text": "Training loss vs tokens · our sketch of Fig. 1’s shape, not the data", "fs": 16, "fw": 600}, {"id": "pl", "type": "plot", "x": 48, "y": 190, "w": 700, "h": 240, "series": [{"pts": "10,0 22,0 34,0 46,18 59,33 71,43 83,52 95,58 108,64 120,69 132,73 144,77 157,81 169,84 181,86 193,89 205,91 218,93 230,95 242,97 255,99 267,101 279,102 291,104 304,105 316,106 328,107 340,109 353,110 365,111 377,112 389,113 402,114 414,115 426,115 438,116 450,117 463,118 475,118 487,119 500,120", "tone": "muted"}, {"pts": "10,0 22,0 34,19 46,39 59,53 71,64 83,72 95,79 108,85 120,90 132,94 144,98 157,101 169,104 181,107 193,110 205,112 218,114 230,116 242,118 255,120 267,121 279,123 291,124 304,126 316,127 328,128 340,129 353,130 365,131 377,132 389,133 402,134 414,135 426,136 438,137 450,138 463,138 475,139 487,140 500,140", "tone": "muted", "dash": true}, {"pts": "10,0 27,33 44,67 61,87 79,100 96,110 113,118 130,124 148,130 165,134 182,138 199,142 217,145 234,147 251,150 268,152 286,154 303,156 320,158 337,160 355,161 372,163 389,164 406,165 424,167 441,168 458,169 475,170 493,171 510,172 527,173 544,174 562,174 579,175 596,176 613,177 631,177 648,178 665,179 682,179 700,180", "tone": "acc", "dash": true}, {"pts": "10,0 27,50 44,84 61,104 79,117 96,127 113,135 130,141 148,147 165,151 182,155 199,159 217,162 234,165 251,167 268,169 286,172 303,173 320,175 337,177 355,178 372,180 389,181 406,183 424,184 441,185 458,186 475,187 493,188 510,189 527,190 544,191 562,192 579,192 596,193 613,194 631,195 648,195 665,196 682,197 700,197", "tone": "acc"}]}, {"id": "ax", "type": "text", "x": 48, "y": 450, "w": 700, "text": "0 → 1.4T tokens · grey: 7B, 13B (stop at 1T) · blue: 33B, 65B", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "ob", "type": "list", "x": 800, "y": 160, "w": 430, "items": [{"t": "Loss falls to the last token", "s": "For all 4 sizes, at 1T and at 1.4T."}, {"t": "Scores track the loss", "s": "On most question answering and common sense tests."}, {"t": "Two exceptions", "s": "SIQA varies a lot. On WinoGrande, 33B and 65B stay close."}], "upto": 0, "fs": 18, "gap": 14, "mark": "dot", "sfs": 15, "mk": 20}], "beats": [{"cap": "Training loss keeps falling for every size, right to the end of training.", "src": "Fig. 1", "set": {"ob": {"upto": 1}}}, {"cap": "Benchmark scores rise steadily during training and track the loss.", "src": "§3.7, Fig. 2", "set": {"ob": {"upto": 2}}}, {"cap": "Exceptions: SIQA varies so much it may be unreliable. WinoGrande does not track the loss well.", "src": "§3.7", "set": {"ob": {"upto": 3}}, "read": 2}]}, {"title": "Bias, toxicity and truthfulness", "actors": [{"id": "t", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Test", "What it measures", "LLaMA", "Compared with"], "rows": [{"c": ["RealToxicityPrompts", "toxicity 0–1 · lower is better", "65B: 0.128 basic, 0.141 respectful", "7B: 0.106, 0.081 · rises with size"]}, {"c": ["CrowS-Pairs (65B)", "stereotype preference · lower is better", "66.6 average; religion 79.0", "GPT-3 67.2 · OPT 69.5"]}, {"c": ["WinoGender (65B)", "co-reference accuracy · higher is better", "their/them 81.7 · his “gotcha” 63.3", "drops when pronoun breaks stereotype"]}, {"c": ["TruthfulQA (65B)", "share of truthful answers · higher is better", "0.57", "GPT-3 175B: 0.28"]}], "fs": 15, "hfs": 13, "rpad": 8, "cols": "1.1fr 1.4fr 1.5fr 1.4fr", "upto": 0, "ghost": true}, {"id": "fl", "type": "text", "x": 48, "y": 470, "w": 1184, "text": "*Inside the paper:* the text sends prompts to PerspectiveAPI; Table 11’s caption says “PerplexityAPI”.", "fs": 17, "box": "bad", "op": 0}], "beats": [{"cap": "Toxicity rises with size, most for “respectful” prompts. The 65B model scores highest.", "src": "§5.1, Table 11", "set": {"t": {"upto": 1}}, "read": 2}, {"cap": "On stereotypes, 65B is slightly better than GPT-3 and OPT on average, but worst on religion.", "src": "§5.2, Table 12", "set": {"t": {"upto": 2}}, "read": 2}, {"cap": "On WinoGender, errors rise when the pronoun does not match the job’s majority gender. That shows gender bias.", "src": "§5.3, Table 13", "set": {"t": {"upto": 3}}, "read": 2}, {"cap": "65B is more truthful than GPT-3, but only 57% truthful. It still makes up answers.", "src": "§5.4, Table 14", "set": {"t": {"upto": 4}}, "read": 2}, {"cap": "A small mismatch: the API name in Table 11’s caption differs from the text. It is likely a typo.", "src": "§5.1, Table 11", "set": {"fl": {"op": 1}}}]}, {"title": "Carbon footprint", "actors": [{"id": "mw", "type": "bars", "x": 48, "y": 160, "w": 700, "title": "Energy to train one model", "sub": "MWh · lower is better · Table 15", "max": 500, "upto": 0, "lw": 190, "vw": 60, "fs": 15, "bh": 20, "gap": 10, "rows": [{"n": "OPT-175B", "v": 356, "l": "356", "hl": false}, {"n": "BLOOM-175B", "v": 475, "l": "475", "hl": false}, {"n": "LLaMA-7B", "v": 36, "l": "36", "hl": true}, {"n": "LLaMA-13B", "v": 59, "l": "59", "hl": true}, {"n": "LLaMA-33B", "v": 233, "l": "233", "hl": true}, {"n": "LLaMA-65B", "v": 449, "l": "449", "hl": true}]}, {"id": "fm", "type": "text", "x": 790, "y": 160, "w": 440, "text": "Wh = GPU-h × (GPU power) × PUE", "fs": 18, "font": "mono", "box": "plain", "op": 0}, {"id": "fx", "type": "text", "x": 790, "y": 220, "w": 440, "text": "400 W per A100 · PUE 1.1 · 0.385 kg CO2eq per kWh, the US average", "fs": 15, "tone": "muted", "op": 0}, {"id": "tot", "type": "stat", "x": 790, "y": 300, "w": 440, "v": "1,015 t", "l": "CO2eq for all development: about 2,638 MWh", "op": 0}, {"id": "ck", "type": "text", "x": 790, "y": 450, "w": 440, "text": "Our check: 1,022,362 GPU-hours ÷ 2,048 GPUs ≈ 21 days.", "fs": 17, "box": "ours", "op": 0}], "beats": [{"cap": "Energy is GPU-hours × GPU power × PUE. All models use the same data center assumptions.", "src": "§6", "set": {"fm": {"op": 1}, "fx": {"op": 1}}}, {"cap": "Training LLaMA-65B took about 449 MWh. OPT-175B took 356 and BLOOM-175B 475.", "src": "Table 15", "set": {"mw": {"upto": 6}}}, {"cap": "All development used 2,048 A100s for about 5 months: about 2,638 MWh and 1,015 tCO2eq.", "src": "§6", "set": {"tot": {"op": 1}}}, {"cap": "Table 15’s GPU-hours for 65B match the 21 days in §2.4.", "kind": "ours", "set": {"ck": {"op": 1}}}]}]}, {"n": "05", "name": "Using it", "short": "Using it", "lede": "Who it is for, three ways in, the settings that matter and what breaks.", "scenes": [{"title": "Is it for you?", "actors": [{"id": "use", "type": "list", "x": 48, "y": 165, "w": 560, "items": [{"t": "You need weights you can run and study"}, {"t": "Query volume is high, so serving cost dominates"}, {"t": "The model must fit one GPU: 13B runs on a V100"}, {"t": "Your task is common sense, QA or reading"}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "check", "mk": 30, "title": "Use it when", "ttone": "ok", "tfs": 18}, {"id": "skip", "type": "list", "x": 672, "y": 165, "w": 560, "items": [{"t": "You need strong math or code: specialists lead"}, {"t": "You need broad exam knowledge: MMLU lags"}, {"t": "Output reaches users unfiltered: toxicity grows with size"}, {"t": "You need chat-style answers: it is a base model"}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "cross", "mk": 30, "title": "Skip it, or adapt it, when", "ttone": "bad", "tfs": 18}], "beats": [{"cap": "Use it when you need an open model that is cheap to serve.", "src": "§1, §3.2", "set": {"use": {"upto": 4}}, "read": 3}, {"cap": "Skip or adapt it where the paper shows gaps.", "src": "§3.4–§3.6, §5", "set": {"skip": {"upto": 4}}, "read": 3}]}, {"title": "Three ways to use it", "actors": [{"id": "c0t", "type": "text", "x": 48, "y": 162, "w": 380, "text": "Adopt the models", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c0w", "type": "text", "x": 48, "y": 196, "w": 380, "text": "teams that need an open base model", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c0", "type": "list", "x": 48, "y": 250, "w": 380, "items": [{"t": "Pick the size your GPUs can serve"}, {"t": "Test zero- and few-shot on your task"}, {"t": "Add instruction tuning for chat"}, {"t": "Filter outputs for toxicity"}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c1t", "type": "text", "x": 450, "y": 162, "w": 380, "text": "Rebuild the recipe", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c1w", "type": "text", "x": 450, "y": 196, "w": 380, "text": "labs training their own model", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c1", "type": "list", "x": 450, "y": 250, "w": 380, "items": [{"t": "Mix the 7 public sources of Table 1"}, {"t": "Filter like CCNet"}, {"t": "Use pre-norm, SwiGLU and RoPE"}, {"t": "Train past 1T tokens"}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c2t", "type": "text", "x": 852, "y": 162, "w": 380, "text": "Borrow the idea", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c2w", "type": "text", "x": 852, "y": 196, "w": 380, "text": "any team choosing a model size", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c2", "type": "list", "x": 852, "y": 250, "w": 380, "items": [{"t": "Estimate lifetime query volume"}, {"t": "Fix the size by serving cost"}, {"t": "Spend extra training on it"}, {"t": "Re-check quality per query cost"}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}], "beats": [{"cap": "Adopt: start from the released models.", "src": "§1", "set": {"c0t": {"op": 1}, "c0w": {"op": 1}, "c0": {"upto": 4}}, "read": 3}, {"cap": "Rebuild: every data source and setting is in the paper.", "src": "§2", "set": {"c1t": {"op": 1}, "c1w": {"op": 1}, "c1": {"upto": 4}}, "read": 3}, {"cap": "Borrow: size for serving, then train longer.", "kind": "ours", "set": {"c2t": {"op": 1}, "c2w": {"op": 1}, "c2": {"upto": 4}}, "read": 3}]}, {"title": "Settings that matter", "actors": [{"id": "t", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Setting", "Paper default", "What changing it did"], "rows": [{"c": ["Model size", "7B · 13B · 33B · 65B", "bigger scores higher; toxicity rises too"]}, {"c": ["Training tokens", "1T (7B, 13B) · 1.4T (33B, 65B)", "7B still improving after 1T"]}, {"c": ["Peak learning rate", "3.0e−4 · 1.5e−4 for 33B and 65B", "not ablated in the paper"]}, {"c": ["Batch · FFN width", "4M tokens · ⅔·4d", "not ablated in the paper"]}, {"c": ["Majority vote k", "k = 100 on GSM8k", "65B: 50.9 → 69.7"]}, {"c": ["Instruction fine-tune", "one short run (LLaMA-I)", "MMLU: 63.4 → 68.9"]}], "fs": 17, "hfs": 13, "rpad": 9, "cols": "1fr 1.4fr 1.5fr", "upto": 0, "ghost": true}], "beats": [{"cap": "Size and training length are the main dials. The paper measures both.", "src": "Table 2, §1, Table 11", "set": {"t": {"upto": 2}}, "read": 3}, {"cap": "Learning rate, batch and FFN width are fixed. The paper does not test other values.", "src": "§2.2, §2.3", "set": {"t": {"upto": 4}}, "read": 2}, {"cap": "Two cheap add-ons help a lot: majority voting for math and a short instruction fine-tune.", "src": "Table 7, Table 10", "set": {"t": {"upto": 6}}, "read": 3}]}, {"title": "What breaks, and what to do", "actors": [{"id": "t", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Problem", "Why (from the paper)", "What to do (our suggestion)"], "rows": [{"c": ["Makes up answers", "only 57% truthful on TruthfulQA (§5.4)", "ground answers in retrieved documents"]}, {"c": ["Toxic output", "toxicity rises with size (Table 11)", "filter outputs; test the size you ship"]}, {"c": ["Gender bias", "more errors on “gotcha” cases (Table 13)", "test on your own data before launch"]}, {"c": ["Weak exam knowledge", "few books in its data (§3.6)", "fine-tune on domain text"]}, {"c": ["Weak math and code", "no math or code fine-tuning (§3.4, §3.5)", "fine-tune, or use majority voting"]}], "fs": 17, "hfs": 13, "rpad": 9, "cols": "1fr 1.6fr 1.5fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The problems and their causes come from the paper.", "src": "§3.4–§3.6, §5", "set": {"t": {"upto": 3}}, "read": 3}, {"cap": "The fixes in the last column are our suggestions, not tested in the paper.", "kind": "ours", "set": {"t": {"upto": 5}}, "read": 4}]}, {"title": "", "actors": [{"id": "q", "type": "text", "x": 140, "y": 220, "w": 1000, "text": "“Size the model for serving, then train it longer.”", "font": "serif", "fs": 50, "italic": true, "lh": 1.15, "align": "center"}, {"id": "s", "type": "text", "x": 200, "y": 420, "w": 880, "text": "Training is paid once. Inference is paid on every query.", "fs": 24, "tone": "muted", "align": "center"}], "beats": [{"cap": "The one idea to take from this paper.", "kind": "ours", "dur": 6}]}]}, {"n": "06", "name": "How the authors got there", "short": "Their thinking", "lede": "Count the cost of serving, then follow it: more tokens, public data, proven parts.", "scenes": [{"title": "How they found the problem", "actors": [{"id": "ppv", "type": "text", "x": 48, "y": 146, "w": 400, "text": "THE PIVOT", "font": "mono", "fs": 14, "tone": "acc", "op": 0}, {"id": "p0t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "The compute-optimal rule ignored the serving bill", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "p0e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  Chinchilla’s objective “disregards the inference budget”.  (§1)", "fs": 19, "box": "ok", "op": 0}, {"id": "p0e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Shown*  A 7B model still improves after 1T tokens; the rule says 200B for 10B.  (§1)", "fs": 19, "box": "acc", "op": 0}, {"id": "p0e2", "type": "text", "x": 48, "y": 420, "w": 560, "text": "*Inferred*  A widely used model runs far more often than it trains.", "fs": 19, "box": "ours", "op": 0}, {"id": "p0x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  database indexes; compiling hot code with heavy optimization.", "fs": 19, "box": "plain", "op": 0}, {"id": "p0f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  usage is low, so the one-time cost dominates.", "fs": 19, "box": "plain", "op": 0}, {"id": "p0r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Aimed for the best model at each inference budget, 7B to 65B.", "fs": 20, "box": "plain", "op": 0}, {"id": "p0r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Optimize the cost you pay most often, not the one you pay first.", "fs": 20, "box": "plain", "op": 0}, {"id": "p0r3", "type": "text", "x": 652, "y": 331, "w": 580, "text": "*Ask*  Which cost in my system repeats on every use?", "fs": 20, "box": "acc", "op": 0}], "beats": [{"cap": "The compute-optimal rule ignored the serving bill.", "src": "§1", "read": 6, "set": {"p0t": {"op": 1}, "p0e0": {"op": 1}, "p0e1": {"op": 1}, "p0e2": {"op": 1}, "ppv": {"op": 0}}}, {"cap": "Optimize the cost you pay most often, not the one you pay first.", "kind": "ours", "read": 4, "set": {"p0r0": {"op": 1}, "p0r2": {"op": 1}}}, {"cap": "Ask: Which cost in my system repeats on every use?", "kind": "ours", "read": 7, "set": {"p0e0": {"op": 0}, "p0e1": {"op": 0}, "p0e2": {"op": 0}, "p0r3": {"op": 1}, "p0x": {"op": 1}, "p0f": {"op": 1}}}]}, {"title": "How they shaped the solution", "actors": [{"id": "dpv", "type": "text", "x": 48, "y": 146, "w": 400, "text": "THE PIVOT", "font": "mono", "fs": 14, "tone": "acc", "op": 0}, {"id": "d0t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Train smaller models on many more tokens", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d0e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  “A smaller one trained longer will ultimately be cheaper at inference.”  (§1)", "fs": 19, "box": "ok", "op": 0}, {"id": "d0e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Shown*  Loss still falls at 1T and 1.4T tokens.  (Fig. 1)", "fs": 19, "box": "acc", "op": 0}, {"id": "d0x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  precomputing caches; tuning a hot query once.", "fs": 19, "box": "plain", "op": 0}, {"id": "d0f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  returns flatten: the paper did not reach that point.", "fs": 19, "box": "plain", "op": 0}, {"id": "d0r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Trained 7B on 1T tokens and 65B on 1.4T.", "fs": 20, "box": "plain", "op": 0}, {"id": "d0r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Keep investing past the textbook optimum when the payoff repeats.", "fs": 20, "box": "plain", "op": 0}, {"id": "d0r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  Where would extra one-time effort cut a recurring cost?", "fs": 20, "box": "acc", "op": 0}, {"id": "d1t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Use only public data", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d1e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  Only public data keeps the work “compatible with open-sourcing”.  (§1)", "fs": 19, "box": "ok", "op": 0}, {"id": "d1e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Shown*  The price: few books, and MMLU lags Chinchilla.  (§3.6)", "fs": 19, "box": "acc", "op": 0}, {"id": "d1x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  open-source tools with permissive dependencies; reproducible builds.", "fs": 19, "box": "plain", "op": 0}, {"id": "d1f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  the closed resource is essential to the task.", "fs": 19, "box": "plain", "op": 0}, {"id": "d1r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Built 1.4T tokens from 7 public sources.", "fs": 20, "box": "plain", "op": 0}, {"id": "d1r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Accept a constraint that lets others rebuild your work, and measure its cost.", "fs": 20, "box": "plain", "op": 0}, {"id": "d1r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  What would I gain if others could rebuild this?", "fs": 20, "box": "acc", "op": 0}, {"id": "d2t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Borrow proven parts instead of new ones", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d2e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  Pre-norm from GPT-3, SwiGLU from PaLM, RoPE from GPT-Neo.  (§2.2)", "fs": 19, "box": "ok", "op": 0}, {"id": "d2e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stated*  Training is close to earlier work, with a standard optimizer.  (§2)", "fs": 19, "box": "ok", "op": 0}, {"id": "d2x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  standard crypto libraries; proven UI patterns.", "fs": 19, "box": "plain", "op": 0}, {"id": "d2f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  the proven parts do not fit your scale or constraints.", "fs": 19, "box": "plain", "op": 0}, {"id": "d2r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Kept the transformer and took 3 changes from 3 models.", "fs": 20, "box": "plain", "op": 0}, {"id": "d2r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Assemble proven parts; spend novelty where it is the point.", "fs": 20, "box": "plain", "op": 0}, {"id": "d2r3", "type": "text", "x": 652, "y": 331, "w": 580, "text": "*Ask*  Where am I inventing something I could adopt?", "fs": 20, "box": "acc", "op": 0}, {"id": "qs", "type": "list", "x": 120, "y": 236, "w": 1040, "items": [{"t": "Which cost in my system repeats on every use?", "s": "The compute-optimal rule ignored the serving bill"}, {"t": "Where would extra one-time effort cut a recurring cost?", "s": "Train smaller models on many more tokens"}, {"t": "What would I gain if others could rebuild this?", "s": "Use only public data"}, {"t": "Where am I inventing something I could adopt?", "s": "Borrow proven parts instead of new ones"}], "upto": 0, "fs": 20, "gap": 10, "op": 0, "sfs": 15, "mk": 28}], "beats": [{"cap": "Train smaller models on many more tokens.", "src": "§1, Fig. 1", "read": 6, "set": {"d0t": {"op": 1}, "d0e0": {"op": 1}, "d0e1": {"op": 1}, "dpv": {"op": 1}}}, {"cap": "Keep investing past the textbook optimum when the payoff repeats.", "kind": "ours", "read": 4, "set": {"d0r0": {"op": 1}, "d0r2": {"op": 1}}}, {"cap": "Ask: Where would extra one-time effort cut a recurring cost?", "kind": "ours", "read": 7, "set": {"d0e0": {"op": 0}, "d0e1": {"op": 0}, "d0r3": {"op": 1}, "d0x": {"op": 1}, "d0f": {"op": 1}}}, {"cap": "Use only public data.", "src": "§1, §3.6", "read": 6, "set": {"d0t": {"op": 0}, "d0x": {"op": 0}, "d0f": {"op": 0}, "d0r0": {"op": 0}, "d0r2": {"op": 0}, "d0r3": {"op": 0}, "d0e0": {"op": 0}, "d0e1": {"op": 0}, "d1t": {"op": 1}, "d1e0": {"op": 1}, "d1e1": {"op": 1}, "dpv": {"op": 0}}}, {"cap": "Accept a constraint that lets others rebuild your work, and measure its cost.", "kind": "ours", "read": 4, "set": {"d1r0": {"op": 1}, "d1r2": {"op": 1}}}, {"cap": "Ask: What would I gain if others could rebuild this?", "kind": "ours", "read": 7, "set": {"d1e0": {"op": 0}, "d1e1": {"op": 0}, "d1r3": {"op": 1}, "d1x": {"op": 1}, "d1f": {"op": 1}}}, {"cap": "Borrow proven parts instead of new ones.", "src": "§2.2, §2", "read": 6, "set": {"d1t": {"op": 0}, "d1x": {"op": 0}, "d1f": {"op": 0}, "d1r0": {"op": 0}, "d1r2": {"op": 0}, "d1r3": {"op": 0}, "d1e0": {"op": 0}, "d1e1": {"op": 0}, "d2t": {"op": 1}, "d2e0": {"op": 1}, "d2e1": {"op": 1}, "dpv": {"op": 0}}}, {"cap": "Assemble proven parts; spend novelty where it is the point.", "kind": "ours", "read": 4, "set": {"d2r0": {"op": 1}, "d2r2": {"op": 1}}}, {"cap": "Ask: Where am I inventing something I could adopt?", "kind": "ours", "read": 7, "set": {"d2e0": {"op": 0}, "d2e1": {"op": 0}, "d2r3": {"op": 1}, "d2x": {"op": 1}, "d2f": {"op": 1}}}, {"cap": "Questions to carry into your own problems. The principles are our reading, not the authors’ words.", "kind": "ours", "read": 5, "set": {"d2t": {"op": 0}, "d2x": {"op": 0}, "d2f": {"op": 0}, "d2r0": {"op": 0}, "d2r2": {"op": 0}, "d2r3": {"op": 0}, "d2e0": {"op": 0}, "d2e1": {"op": 0}, "dpv": {"op": 0}, "qs": {"op": 1, "upto": 4}}}]}]}, {"n": "07", "name": "Glossary", "short": "Glossary", "lede": "The terms used in this film, in one place.", "scenes": [{"title": "Glossary", "actors": [{"id": "a", "type": "table", "x": 48, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Token", "A piece of text the model reads; LLaMA trains on about 1.4T of them."]}, {"c": ["BPE", "Byte-pair encoding: builds tokens by merging frequent character pairs."]}, {"c": ["Compute-optimal", "Model and data size that give the best result for one training budget."]}, {"c": ["Inference budget", "What it costs to run the trained model on queries."]}, {"c": ["Zero-shot", "A task description and no worked examples in the prompt."]}, {"c": ["Few-shot", "A prompt with 1 to 64 worked examples before the test."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}, {"id": "b", "type": "table", "x": 652, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Pre-normalization", "Normalizing the input of each sub-layer instead of its output."]}, {"c": ["RMSNorm", "Divides a vector by the root mean square of its numbers."]}, {"c": ["SwiGLU", "A feed-forward unit where a Swish branch gates a second branch."]}, {"c": ["RoPE", "Rotary embeddings: position enters by turning queries and keys."]}, {"c": ["Causal attention", "Each token looks only at itself and earlier tokens."]}, {"c": ["maj1@k", "Generate k answers and keep the most common one."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}], "beats": [{"cap": "Paper: arxiv.org/abs/2302.13971 · Code: github.com/facebookresearch/llama", "kind": "none", "dur": 14}]}]}]};
+    return this._R;
+  }
+
+
+  sceneKit(type, p, T) {
+    var P = [];
+    var base = function (o) {
+      var d = { isRect: false, isPath: false, isCirc: false, isText: false, isPoly: false, x: 0, y: 0, w: 0, h: 0, rx: 0, d: '', cx: 0, cy: 0, r: 0, pts: '', fill: 'none', stroke: 'none', sw: 0, dash: 'none', op: 1, anim: 'none', fs: 12, fw: 400, anchor: 'start', txt: '', font: T.body, tf: '', tdl: 0 };
+      for (var k in o) { if (o[k] !== undefined) d[k] = o[k]; }
+      P.push(d); return d;
+    };
+    var rect = function (x, y, w, h, o) { o = o || {}; o.isRect = true; o.x = x; o.y = y; o.w = Math.max(0, w); o.h = Math.max(0, h); return base(o); };
+    var path = function (d, o) { o = o || {}; o.isPath = true; o.d = d; return base(o); };
+    var circ = function (cx, cy, r, o) { o = o || {}; o.isCirc = true; o.cx = cx; o.cy = cy; o.r = r; return base(o); };
+    var text = function (x, y, t2, o) { o = o || {}; o.isText = true; o.x = x; o.y = y; o.txt = t2 == null ? '' : String(t2); if (o.fill === undefined) o.fill = T.ink; return base(o); };
+    var poly = function (pts, o) { o = o || {}; o.isPoly = true; o.pts = pts; return base(o); };
+    var I = {
+      gear: 'M12 8a4 4 0 1 0 .01 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1',
+      net: 'M5 4a2 2 0 1 0 .01 0 M5 16a2 2 0 1 0 .01 0 M19 10a2 2 0 1 0 .01 0 M12 4a2 2 0 1 0 .01 0 M12 16a2 2 0 1 0 .01 0 M7 6h3 M7 18h3 M14 7l3 4 M14 17l3-4 M7 7l3 9',
+      photo: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 8a1.5 1.5 0 1 0 .01 0',
+      depth: 'M4 5h16 M4 9h16 M4 13h16 M4 17h16',
+      code: 'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16',
+      task: 'M6 3h12v18H6z M9 8h6 M9 12h6 M9 16h4',
+      mask: 'M12 3a4 4 0 1 0 .01 0 M5 21c0-4 3-7 7-7s7 3 7 7z',
+      box3d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5',
+      mesh: 'M3 20L12 4l9 16z M7.5 12h9 M7.5 12L12 20l4.5-8',
+      camera: 'M3 8h4l2-3h6l2 3h4v11H3z M12 10a3.5 3.5 0 1 0 .01 0',
+      clock: 'M12 3a9 9 0 1 0 .01 0 M12 7v5l3 2',
+      book: 'M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z',
+      page: 'M6 3h9l4 4v14H6z M15 3v4h4 M9 12h7 M9 16h5',
+      eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 .01 0',
+      eyeoff: 'M3 3l18 18 M10.6 6.1A10 10 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.4 4 M6.6 6.6C3.9 8.4 2 12 2 12s4 6 10 6a9 9 0 0 0 4.4-1.1',
+      gpu: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+      film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+      brush: 'M14 4l6 6-8 8-6-6z M6 12l-3 8 8-3',
+      check: 'M5 12l5 5 9-10', cross: 'M6 6l12 12 M18 6L6 18', pause: 'M9 5v14 M15 5v14', dot: 'M12 11a1 1 0 1 0 .01 0'
+    };
+    var icon = function (name, x, y, k, col, op) { path(I[name] || I.dot, { tf: 'translate(' + x + ' ' + y + ') scale(' + k + ')', stroke: col || T.ink, sw: 1.7 / k, op: op == null ? 1 : op }); };
+    var toneCol = function (tn) { return tn === 'ok' ? T.ok : (tn === 'bad' ? T.bad : (tn === 'acc' ? T.acc : (tn === 'muted' ? T.muted : T.ink))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? T.accSoft : T.card)); };
+    var look = p.look || 'paint', wo = look === 'wire' ? 1 : 0, po = 1 - wo, w, h;
+    if (type === 'robot') {
+      var ex = p.lookdir === 'l' ? -3 : (p.lookdir === 'r' ? 3 : 0), th = !!p.think;
+      rect(20, 82, 10, 10, { rx: 2, fill: T.ink }); rect(40, 82, 10, 10, { rx: 2, fill: T.ink });
+      path('M10 52 L0 67', { stroke: T.ink, sw: 2.6 }); path('M60 52 L70 65', { stroke: T.ink, sw: 2.6 });
+      rect(10, 40, 50, 44, { rx: 12, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(35, 61, 6, { fill: th ? T.acc : T.rule, anim: th ? 'plpulse 1s ease-in-out infinite' : 'none' });
+      rect(15, 8, 40, 32, { rx: 10, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(28 + ex, 24, 3.6, { fill: T.ink }); circ(42 + ex, 24, 3.6, { fill: T.ink });
+      path('M35 8 V0', { stroke: T.ink, sw: 2 }); circ(35, -1, 3.2, { fill: p.col || T.acc });
+      circ(62, -6, 3, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out infinite' : 'none' });
+      circ(70, -15, 4, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .2s infinite' : 'none' });
+      circ(80, -26, 5, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .4s infinite' : 'none' });
+      if (p.label) text(35, 108, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+      w = 70; h = 92;
+    } else if (type === 'ground') {
+      w = p.w || 300; h = 24;
+      path('M0 1 H' + w, { stroke: T.acc, sw: 1.6, dash: '6 5', op: wo });
+      for (var gi = 12; gi < w; gi += 28) path('M' + gi + ' 2 l-9 11', { stroke: T.acc, sw: 1, op: wo * 0.6 });
+      rect(0, 0, w, h, { fill: T.grass, op: po }); rect(0, 0, w, 5, { fill: T.grassTop, op: po });
+    } else if (type === 'crate') {
+      w = h = p.w || 56;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      path('M0 0 L' + w + ' ' + h + ' M' + w + ' 0 L0 ' + h, { stroke: T.acc, sw: 1, dash: '4 4', op: wo });
+      rect(0, 0, w, h, { rx: 3, fill: T.crate, stroke: T.crateEdge, sw: 2, op: po });
+      path('M0 ' + (h / 3) + ' H' + w + ' M0 ' + (2 * h / 3) + ' H' + w + ' M4 4 L' + (w - 4) + ' ' + (h - 4), { stroke: T.crateEdge, sw: 1.3, op: po });
+    } else if (type === 'wall') {
+      w = p.w || 22; h = p.h || 120;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 2, fill: T.wall, stroke: T.wallEdge, sw: 1.5, op: po });
+      var bl = ''; for (var wy = 15; wy < h; wy += 15) bl += 'M0 ' + wy + ' H' + w + ' ';
+      if (bl) path(bl, { stroke: T.wallEdge, sw: 1, op: po * 0.7 });
+    } else if (type === 'block') {
+      w = p.w || 80; h = p.h || 40;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 4, fill: p.color || '#E9D7B9', stroke: '#A88B5E', sw: 1.5, op: po });
+      if (p.label) text(w / 2, h / 2 + 4, p.label, { anchor: 'middle', fs: 11, fill: wo ? T.acc : '#6E5634' });
+    } else if (type === 'card') {
+      w = p.w || 150; h = p.h || 96;
+      var small = h < 70;
+      if (p.on) rect(-5, -5, w + 10, h + 10, { rx: 16, stroke: T.acc, sw: 2, anim: 'plpulse 1.4s ease-in-out infinite' });
+      rect(0, 0, w, h, { rx: 12, fill: T.card, stroke: p.on ? T.acc : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 12, small ? (h - 20) / 2 : 10, 0.85, p.on ? T.acc : T.ink);
+      text(38, small ? h / 2 - (p.sub ? 1 : -5) : 26, p.label, { fs: 13.5, fw: 600 });
+      if (p.sub) text(38, small ? h / 2 + 14 : h - 12, p.sub, { fs: 11, fill: T.muted });
+      if (!small && p.fill) {
+        var bx = 10, by = 38, bw = w - 20, bh = h - (p.sub ? 62 : 48);
+        if (p.fill === 'depth') { for (var di = 0; di < 6; di++) rect(bx, by + di * bh / 6, bw, bh / 6 + 0.6, { fill: T.depth[di] }); }
+        else if (p.fill === 'paint') { rect(bx, by, bw, bh, { rx: 4, fill: T.sky }); circ(bx + bw - 18, by + 14, 8, { fill: T.sun }); rect(bx, by + bh * 0.72, bw, bh * 0.28, { fill: T.grass }); }
+        else if (p.fill === 'code' || p.fill === 'list') {
+          (p.lines || []).forEach(function (ln, li) {
+            if (li === p.hl) rect(bx - 3, by + li * 18 - 2, bw + 6, 18, { rx: 3, fill: T.accSoft });
+            text(bx, by + 11 + li * 18, ln, { fs: 11.5, font: p.fill === 'code' ? T.mono : T.body, fill: li === p.hl ? T.acc : T.ink });
+          });
+        }
+      }
+    } else if (type === 'icon') {
+      w = 48; h = 48;
+      rect(0, 0, 48, 48, { rx: 12, fill: T.card, stroke: p.tone ? toneCol(p.tone) : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 9, 9, 1.25, p.tone ? toneCol(p.tone) : T.ink);
+      if (p.label) text(24, 66, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+    } else if (type === 'badge') {
+      var bt = String(p.text || ''); w = Math.round(bt.length * 7.3 + 30); h = 32;
+      rect(0, 0, w, h, { rx: 16, fill: toneBg(p.tone), stroke: toneCol(p.tone), sw: 1.5 });
+      text(w / 2, 21, bt, { anchor: 'middle', fs: 13, fw: 600, fill: toneCol(p.tone) });
+    } else if (type === 'bubble') {
+      var bt2 = String(p.text || ''); w = Math.round(bt2.length * 7.4 + 26); h = 34;
+      path('M' + (w - 34) + ' 33 l10 12 l4 -12', { fill: T.card, stroke: T.ink, sw: 1.5 });
+      rect(0, 0, w, h, { rx: 10, fill: T.card, stroke: T.ink, sw: 1.5 });
+      text(13, 22, bt2, { fs: 12.5, font: T.mono });
+    } else if (type === 'label') {
+      var fs = p.fs || 13, lt = String(p.text || ''); w = Math.round(lt.length * fs * 0.56); h = fs + 6;
+      text(p.anchor === 'middle' ? w / 2 : 0, fs, lt, { fs: fs, fw: p.fw || 500, fill: toneCol(p.tone || 'muted'), anchor: p.anchor || 'start' });
+    } else if (type === 'panel') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 14, fill: T.card, stroke: T.ruleDark, sw: 1.2 });
+      text(16, 26, p.label, { fs: 13.5, fw: 600, fill: T.label });
+    } else if (type === 'curtain') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 10, fill: T.bg, op: 0.94 });
+      icon('eyeoff', w / 2 - 14, h / 2 - 34, 1.2, T.muted);
+      text(w / 2, h / 2 + 14, p.text || '', { anchor: 'middle', fs: 13, fill: T.muted });
+    } else if (type === 'cells') {
+      var pat = String(p.pat || ''), cw = p.cw || 26, ch = p.ch || 30, gap = p.gap == null ? 6 : p.gap, tx = p.texts || [];
+      w = Math.max(1, pat.length * (cw + gap) - gap); h = ch;
+      for (var ci = 0; ci < pat.length; ci++) {
+        var c = pat.charAt(ci), cx0 = ci * (cw + gap), st = { rx: 5, fill: T.rule, stroke: 'none', sw: 0, op: 1, anim: 'none', tdl: +(ci * 0.07).toFixed(2), dash: 'none' };
+        if (c === '.') st.op = 0;
+        else if (c === 'P') { st.fill = T.acc; }
+        else if (c === 'r') { st.fill = '#DCE3EE'; st.stroke = '#B5C0D2'; st.sw = 1; }
+        else if (c === 'N') { st.fill = T.acc; st.op = 0.85; st.anim = 'plpulse 1.2s ease-in-out infinite'; }
+        else if (c === 'x') { st.fill = T.rule; st.op = 0.2; }
+        else if (c === 'd') { st.fill = T.depth[1 + ci % 4]; }
+        else if (c === 'p') { st.fill = T.paintCell; }
+        else if (c === 'b') { st.fill = T.card; st.stroke = T.ink; st.sw = 1.5; }
+        else if (c === 'g') { st.fill = '#E3F4EB'; st.stroke = T.ok; st.sw = 1.5; }
+        else if (c === 'w') { st.fill = '#FBE6E6'; st.stroke = T.bad; st.sw = 1.6; st.dash = '7 5'; st.anim = 'plflow .7s linear infinite'; }
+        rect(cx0, 0, cw, ch, st);
+        if (tx[ci]) text(cx0 + cw / 2, ch / 2 + 4, tx[ci], { anchor: 'middle', fs: 12, fill: c === 'P' || c === 'N' ? '#FFFFFF' : T.ink, op: c === '.' ? 0 : 1, tdl: st.tdl });
+      }
+    } else if (type === 'strip') {
+      var sp = String(p.pat || ''), fw = p.fw || 40, fh = p.fh || 30, sg = p.gap == null ? 5 : p.gap;
+      w = Math.max(1, sp.length * (fw + sg) - sg); h = fh;
+      for (var si2 = 0; si2 < sp.length; si2++) {
+        var ch2 = sp.charAt(si2), x0 = si2 * (fw + sg), dl2 = +(si2 * 0.06).toFixed(2), cxr = x0 + fw * (0.12 + (si2 % 8) * 0.06), cs = fw * 0.2;
+        if (ch2 === '.') continue;
+        if (ch2 === 'x') { rect(x0, 0, fw, fh, { rx: 3, fill: T.rule, op: 0.3, tdl: dl2 }); continue; }
+        if (ch2 === 'd') {
+          for (var bd = 0; bd < 4; bd++) rect(x0, bd * fh / 4, fw, fh / 4 + 0.5, { fill: T.depth[2 + bd], tdl: dl2 });
+          rect(cxr, fh * 0.45, cs, fh * 0.38, { fill: T.depth[0], tdl: dl2 });
+          continue;
+        }
+        var faint = ch2 === 'N' ? 0.55 : 1;
+        rect(x0, 0, fw, fh, { fill: T.sky, op: faint, tdl: dl2 });
+        rect(x0, fh * 0.74, fw, fh * 0.26, { fill: T.grass, op: faint, tdl: dl2 });
+        if (ch2 !== 'q') rect(cxr, fh * 0.74 - fh * 0.34, cs, fh * 0.34, { fill: T.crate, stroke: T.crateEdge, sw: 1, op: faint, tdl: dl2 });
+        if (ch2 === 'P') rect(x0, 0, fw, fh, { rx: 3, stroke: T.acc, sw: 2.2 });
+        else if (ch2 === 'N') rect(x0 - 1, -1, fw + 2, fh + 2, { rx: 3, stroke: T.acc, sw: 2, anim: 'plpulse 1.1s ease-in-out infinite' });
+        else rect(x0, 0, fw, fh, { rx: 3, stroke: T.ruleDark, sw: 1 });
+      }
+      if (p.texts) p.texts.forEach(function (tx2, k2) { if (tx2) text(k2 * (fw + sg) + fw / 2, fh + 13, tx2, { anchor: 'middle', fs: 10.5, fill: T.muted }); });
+    } else if (type === 'beam') {
+      w = p.W || 840; h = p.H || 400;
+      var col = toneCol(p.tone || 'acc'), pts = String(p.pts || '0,0 1,1');
+      poly(pts, { stroke: col, sw: 7, op: 0.12 });
+      poly(pts, { stroke: col, sw: 2, dash: '7 6', anim: 'plflow 1s linear infinite' });
+      var pp = pts.trim().split(/\s+/).map(function (q) { return q.split(',').map(Number); });
+      var a2 = pp[pp.length - 1], a1 = pp[pp.length - 2] || [0, 0];
+      var ang = Math.atan2(a2[1] - a1[1], a2[0] - a1[0]) * 180 / Math.PI;
+      path('M0 0 L-11 -6 L-11 6 Z', { tf: 'translate(' + a2[0] + ' ' + a2[1] + ') rotate(' + ang.toFixed(1) + ')', fill: col });
+      if (p.label) {
+        var lfs = p.lfs || 11.5, lw = Math.round(String(p.label).length * lfs * 0.6 + 18), lx = p.lx == null ? (pp[0][0] + a2[0]) / 2 : p.lx, ly = p.ly == null ? (pp[0][1] + a2[1]) / 2 : p.ly;
+        rect(lx - lw / 2, ly - lfs, lw, lfs * 2, { rx: lfs, fill: T.card, stroke: col, sw: 1 });
+        text(lx, ly + lfs * 0.36, p.label, { anchor: 'middle', fs: lfs, fw: 600, fill: col });
+      }
+    } else if (type === 'tv') {
+      var sw2 = p.w || 220, sh2 = p.h || 140, kind = p.show || 'paint', ccx = 8 + sw2 * (p.cx == null ? 0.35 : p.cx), csz = sh2 * 0.26, gy = 8 + sh2 * 0.74;
+      w = sw2 + 16; h = sh2 + 40;
+      rect(0, 0, w, sh2 + 16, { rx: 12, fill: '#1E232B' });
+      if (kind === 'paint' || kind === 'ghost') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.sky });
+        circ(8 + sw2 * 0.85, 8 + sh2 * 0.2, sh2 * 0.08, { fill: T.sun });
+        rect(8, gy, sw2, sh2 * 0.26, { fill: T.grass }); rect(8, gy, sw2, 4, { fill: T.grassTop });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.wall, stroke: T.wallEdge, sw: 1 });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { rx: 2, fill: T.crate, stroke: T.crateEdge, sw: 1.5, op: kind === 'ghost' ? 0.28 : 1 });
+      } else if (kind === 'depth') {
+        for (var dq = 0; dq < 5; dq++) rect(8, 8 + dq * sh2 / 5, sw2, sh2 / 5 + 0.5, { fill: T.depth[1 + dq] });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.depth[1] });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { fill: T.depth[0] });
+      } else if (kind === 'wire') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.card });
+        path('M8 ' + gy + ' H' + (8 + sw2), { stroke: T.acc, sw: 1.5, dash: '6 5' });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { stroke: T.acc, sw: 1.5, dash: '5 4' });
+      } else { rect(8, 8, sw2, sh2, { rx: 4, fill: '#2A303A' }); }
+      if (p.q) text(8 + sw2 / 2, 8 + sh2 / 2 + 16, '?', { anchor: 'middle', fs: 44, fw: 700, fill: T.bad });
+      rect(w / 2 - 6, sh2 + 16, 12, 14, { fill: '#1E232B' }); rect(w / 2 - 34, sh2 + 28, 68, 6, { rx: 3, fill: '#1E232B' });
+      if (p.label) text(w / 2, sh2 + 58, p.label, { anchor: 'middle', fs: p.lfs || 14, fill: T.label, fw: 500 });
+    } else if (type === 'ramp') {
+      w = p.w || 110; h = p.h || 60;
+      path(p.flip ? 'M0 0 L0 ' + h + ' L' + w + ' ' + h + ' Z' : 'M0 ' + h + ' L' + w + ' ' + h + ' L' + w + ' 0 Z', look === 'wire' ? { stroke: T.acc, sw: 1.6, dash: '5 4' } : { fill: '#E9D7B9', stroke: '#A88B5E', sw: 1.6 });
+    } else if (type === 'scale') {
+      var SW = p.w || 380, th2 = (p.tilt || 0) * 14 * Math.PI / 180, LL = SW / 2 - 40, pc = SW / 2;
+      var ends = [[pc - LL * Math.cos(th2), 46 - LL * Math.sin(th2)], [pc + LL * Math.cos(th2), 46 + LL * Math.sin(th2)]];
+      w = SW; h = 250;
+      rect(pc - 5, 46, 10, 170, { fill: T.ink }); rect(pc - 70, 214, 140, 12, { rx: 4, fill: T.ink });
+      path('M' + ends[0][0].toFixed(1) + ' ' + ends[0][1].toFixed(1) + ' L' + ends[1][0].toFixed(1) + ' ' + ends[1][1].toFixed(1), { stroke: T.ink, sw: 6 });
+      circ(pc, 46, 9, { fill: T.acc });
+      [[p.lt, p.ls, p.lc], [p.rt, p.rs, p.rc]].forEach(function (L2, q) {
+        var ex2 = ends[q][0], ey2 = ends[q][1];
+        path('M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 - 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 + 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1), { stroke: T.muted, sw: 1.5 });
+        path('M' + (ex2 - 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Q' + ex2.toFixed(1) + ' ' + (ey2 + 108).toFixed(1) + ' ' + (ex2 + 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Z', { fill: L2[2] ? toneBg(L2[2]) : T.card, stroke: L2[2] ? toneCol(L2[2]) : T.ink, sw: 2 });
+        if (L2[0]) text(ex2, ey2 + 62, L2[0], { anchor: 'middle', fs: 16, fw: 600, fill: L2[2] ? toneCol(L2[2]) : T.ink });
+        if (L2[1]) text(ex2, ey2 + 130, L2[1], { anchor: 'middle', fs: 13, fill: T.muted });
+      });
+    } else if (type === 'db') {
+      w = p.w || 92; h = p.h || 110; var ry = 14;
+      path('M0 ' + ry + ' V' + (h - ry) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h - ry) + ' V' + ry, { fill: p.on ? T.accSoft : T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 ' + w + ' ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 0 ' + ry, { fill: T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + (h * 0.42) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h * 0.42), { stroke: p.on ? T.acc : T.ink, sw: 1.5 });
+      if (p.label) text(w / 2, h + 24, p.label, { anchor: 'middle', fs: p.lfs || 14, fw: 500, fill: T.label });
+    } else if (type === 'node') {
+      var r2 = p.r || 26; w = h = r2 * 2;
+      if (p.on) circ(r2, r2, r2 + 7, { stroke: T.acc, sw: 2, anim: 'plpulse 1.3s ease-in-out infinite' });
+      circ(r2, r2, r2, { fill: p.on ? T.acc : T.card, stroke: p.on || p.done ? T.acc : T.ruleDark, sw: 2 });
+      text(r2, r2 + 6, p.text || '', { anchor: 'middle', fs: p.fs || 18, fw: 600, fill: p.on ? '#FFFFFF' : (p.done ? T.acc : T.muted) });
+    } else if (type === 'tokens') {
+      var words = p.words || [], tw = p.tw || 86, th = p.th || 40, tg = p.gap == null ? 8 : p.gap, onl = p.on || [], upto = p.upto == null ? 999 : p.upto;
+      w = Math.max(1, words.length * (tw + tg) - tg); h = th + (p.subs ? 20 : 0);
+      words.forEach(function (wd, i) {
+        var on = onl.indexOf(i) >= 0, sh = i < upto, x0 = i * (tw + tg), dl = +(i * 0.05).toFixed(2);
+        rect(x0, 0, tw, th, { rx: 8, fill: on ? T.acc : T.card, stroke: on ? T.acc : T.ink, sw: 1.6, op: sh ? 1 : 0.12, tdl: dl });
+        text(x0 + tw / 2, th / 2 + (p.fs || 16) * 0.36, wd, { anchor: 'middle', fs: p.fs || 16, fw: 500, fill: on ? '#FFFFFF' : T.ink, op: sh ? 1 : 0.12, tdl: dl });
+        if (p.subs && p.subs[i]) text(x0 + tw / 2, th + 15, p.subs[i], { anchor: 'middle', fs: 11, fill: T.muted, op: sh ? 1 : 0.12, font: T.mono });
+      });
+    } else if (type === 'arcs') {
+      var n2 = p.n || 6, tw2 = p.tw || 86, tg2 = p.gap == null ? 8 : p.gap, fr = p.from || 0, ws = p.weights || [], AH = p.h || 120;
+      var cc = function (i) { return i * (tw2 + tg2) + tw2 / 2; };
+      w = Math.max(1, n2 * (tw2 + tg2) - tg2); h = 1;
+      for (var j2 = 0; j2 < n2; j2++) {
+        var wv = ws[j2] == null ? 0.2 : ws[j2];
+        if (j2 === fr) { circ(cc(j2), -6, 3 + wv * 6, { fill: T.acc, op: 0.3 + 0.7 * wv }); continue; }
+        var pk = -(AH * (0.35 + 0.65 * Math.abs(fr - j2) / n2));
+        path('M' + cc(fr) + ' -2 Q' + ((cc(fr) + cc(j2)) / 2).toFixed(1) + ' ' + pk.toFixed(1) + ' ' + cc(j2) + ' -2', { stroke: T.acc, sw: +(1 + 7 * wv).toFixed(1), op: +(0.18 + 0.82 * wv).toFixed(2) });
+        if (p.showw) text(cc(j2), -14, wv.toFixed(2), { anchor: 'middle', fs: 13, fw: 600, fill: T.acc, font: T.mono });
+      }
+    } else if (type === 'heat') {
+      var R2 = p.rows || [], C2 = p.cols || [], V2 = p.w || [], cs2 = p.cs || 34, lw2 = R2.length && p.labels !== false ? (p.lw || 74) : 0, tp = C2.length && p.labels !== false ? (p.top || 26) : 0;
+      var nr = V2.length, nc = nr ? V2[0].length : 0;
+      w = lw2 + nc * cs2; h = tp + nr * cs2;
+      if (lw2) R2.forEach(function (rl, i) { text(lw2 - 8, tp + i * cs2 + cs2 / 2 + 4, rl, { anchor: 'end', fs: p.lfs || 12, fill: p.hlr === i ? T.acc : T.label, fw: p.hlr === i ? 600 : 400 }); });
+      if (tp) C2.forEach(function (cl, j) { text(lw2 + j * cs2 + cs2 / 2, tp - 9, cl, { anchor: 'middle', fs: p.lfs || 12, fill: T.label }); });
+      for (var i3 = 0; i3 < nr; i3++) for (var j3 = 0; j3 < nc; j3++) {
+        var vv = V2[i3][j3], blocked = p.mask && j3 > i3, dl3 = +((i3 * nc + j3) * 0.006).toFixed(3);
+        rect(lw2 + j3 * cs2 + 1, tp + i3 * cs2 + 1, cs2 - 2, cs2 - 2, { rx: 3, fill: blocked ? T.rule : (p.tone === 'ink' ? T.ink : T.acc), op: blocked ? 0.55 : +(0.06 + 0.94 * vv).toFixed(2), tdl: dl3 });
+        if (p.showv && !blocked) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, (p.fmt === 'int' ? Math.round(vv * 10) : vv.toFixed(2)).toString().replace(/^0\./, '.'), { anchor: 'middle', fs: p.vfs || 11, fill: vv > 0.5 ? '#FFFFFF' : T.ink, font: T.mono });
+        if (blocked && p.showx) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, '×', { anchor: 'middle', fs: 13, fill: T.muted });
+      }
+      if (p.hlr != null && p.hlr >= 0) rect(lw2 - 2, tp + p.hlr * cs2 - 1, nc * cs2 + 4, cs2 + 2, { rx: 5, stroke: T.ink, sw: 2 });
+    } else if (type === 'plot') {
+      w = p.w || 500; h = p.h || 200;
+      path('M0 ' + (p.axisY == null ? h : p.axisY) + ' H' + w + ' M0 0 V' + h, { stroke: T.ruleDark, sw: 1.2 });
+      (p.series || []).forEach(function (sr) { poly(sr.pts, { stroke: sr.tone === 'acc' ? T.acc : (sr.tone === 'muted' ? T.muted : T.ink), sw: sr.sw || 2.4, dash: sr.dash ? '6 5' : 'none', op: sr.op == null ? 1 : sr.op }); });
+    } else { w = 10; h = 10; }
+    return { w: w, h: h, prims: P };
+  }
+
+
+  /* ---------------- rendering ---------------- */
+  renderVals() {
+    var self = this, S = this.state;
+    var themes = [
+      { name: 'Cloud', bg: '#F2F4F7', card: '#FFFFFF', ink: '#12161C', muted: '#5E6773', label: '#3E4652', rule: '#DFE3E9', sh: 'rgba(20, 35, 60, 0.22)', shSoft: 'rgba(20, 35, 60, 0.07)' },
+      { name: 'Sky', bg: '#E9F0FA', card: '#FFFFFF', ink: '#0F1A2B', muted: '#56657A', label: '#33445C', rule: '#D6E0EE', sh: 'rgba(30, 70, 140, 0.22)', shSoft: 'rgba(30, 70, 140, 0.07)' },
+      { name: 'Mint', bg: '#E8F4EF', card: '#FFFFFF', ink: '#0F1F19', muted: '#52685F', label: '#32483F', rule: '#D2E4DB', sh: 'rgba(20, 90, 60, 0.2)', shSoft: 'rgba(20, 90, 60, 0.07)' },
+      { name: 'Lilac', bg: '#EFEDFA', card: '#FFFFFF', ink: '#17142A', muted: '#615C7A', label: '#433E5E', rule: '#DFDAF1', sh: 'rgba(70, 50, 150, 0.2)', shSoft: 'rgba(70, 50, 150, 0.07)' },
+      { name: 'Stone', bg: '#EBECEE', card: '#FBFBFC', ink: '#141518', muted: '#5D6068', label: '#3B3E45', rule: '#DADCE0', sh: 'rgba(20, 22, 30, 0.22)', shSoft: 'rgba(20, 22, 30, 0.07)' }
+    ];
+    var chosen = S.theme ?? (this.props.paper ?? 'Cloud');
+    var t = themes.find(function (x) { return x.name === chosen; }) || themes[0];
+    var accent = this.props.accent ?? '#2F5BEA';
+    var hex = accent.replace('#', '');
+    var cr = parseInt(hex.substring(0, 2), 16), cg = parseInt(hex.substring(2, 4), 16), cb = parseInt(hex.substring(4, 6), 16);
+    var rgba = function (a) { return 'rgba(' + cr + ', ' + cg + ', ' + cb + ', ' + a + ')'; };
+    var OK = '#1F9D63', BAD = '#D64545';
+    var tone = function (tn, dflt) { return tn === 'acc' ? accent : (tn === 'ok' ? OK : (tn === 'bad' ? BAD : (tn === 'muted' ? t.muted : (tn === 'label' ? t.label : (dflt || t.ink))))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? rgba(0.1) : t.bg)); };
+    var SANS = "'IBM Plex Sans', sans-serif", SERIF = "'Newsreader', serif", MONO = "'IBM Plex Mono', monospace";
+    var segs = function (txt, base) {
+      var out = [], parts = String(txt == null ? '' : txt).split('*');
+      parts.forEach(function (p, k) { if (p) out.push({ t: p, c: k % 2 ? accent : (base || 'inherit'), fw: k % 2 ? 600 : 'inherit' }); });
+      if (!out.length) out.push({ t: '', c: 'inherit', fw: 'inherit' });
+      return out;
+    };
+    var TK = { acc: accent, accSoft: rgba(0.12), ink: t.ink, muted: t.muted, label: t.label, rule: t.rule, ruleDark: t.muted + '66', card: t.card, bg: t.bg,
+      ok: OK, bad: BAD, sky: '#D3E6F8', grass: '#BFE3C6', grassTop: '#8CC796', crate: '#DDAE73', crateEdge: '#9A6B36', wall: '#C3C9D3', wallEdge: '#8C94A3', sun: '#F5C451',
+      depth: ['#273041', '#3B475C', '#56647B', '#7684A0', '#9AA7C0', '#C3CCDD'], paintCell: '#A9CDEB', body: SANS, mono: MONO };
+
+    var R = this.report(), F = this.film(), LIST = F.list;
+    var si = Math.max(0, Math.min(LIST.length - 1, S.scene)), cur = LIST[si], playing = !!S.playing;
+    var ch = R.chapters[cur.ch], chs = this.chScenes(ch, cur.ch);
+
+    var DY = 70; // captions sit at the top; the picture zone is y 210-650 (scripts author it as 140-580)
+    var actorView = function (a, st, z, ox, oy) {
+      var html = ['text', 'stat', 'table', 'bars', 'list'].indexOf(st.type) >= 0;
+      var vid = a.id, vtype = st.type;
+      var v = { isSvg: false, isText: false, isStat: false, isTable: false, isBars: false, isList: false, x: 0, y: 0, s: 1, op: st.op == null ? 1 : st.op, dl: st.dl || 0, w: 10, h: 10, anim: 'none', prims: [], labels: [] };
+      if (!html) {
+        var kk = self.sceneKit(st.type, Object.assign({ W: 1280, H: 720 }, st), TK);
+        var isBeam = st.type === 'beam';
+        v.isSvg = true; v.w = kk.w; v.h = kk.h;
+        v.prims = kk.prims.filter(function (q) { return !q.isText; });
+        v.labels = kk.prims.filter(function (q) { return q.isText && q.txt !== ''; }).map(function (q) {
+          return { x: q.x, y: +(q.y - q.fs * 0.76).toFixed(1), tx: q.anchor === 'middle' ? -50 : (q.anchor === 'end' ? -100 : 0), txt: q.txt, fs: q.fs, fw: q.fw, font: q.font, fill: q.fill, op: q.op, tdl: q.tdl };
+        });
+        v.x = +(ox + (isBeam ? 0 : (st.x || 0)) * z).toFixed(1); v.y = +(DY + oy + (isBeam ? 0 : (st.y || 0)) * z).toFixed(1); v.s = +((st.s || 1) * z).toFixed(3);
+        v.anim = st.type === 'robot' && st.bob !== false ? 'bob 3.2s ease-in-out infinite' : 'none';
+        v.id = vid; v.type = vtype;
+        return v;
+      }
+      v.x = st.x || 0; v.y = DY + (st.y || 0); v.s = st.s || 1; v.w = st.w || 400;
+      var upto = st.upto == null ? 999 : st.upto;
+      if (st.type === 'text') {
+        v.isText = true; v.fs = st.fs || 22; v.fw = st.fw || (st.font === 'serif' ? 500 : 400); v.font = st.font === 'serif' ? SERIF : (st.font === 'mono' ? MONO : SANS);
+        v.fst = st.italic ? 'italic' : 'normal'; v.lh = st.lh || 1.35; v.color = tone(st.tone); v.align = st.align || 'left';
+        v.bg = st.box && st.box !== 'ours' ? toneBg(st.box) : 'transparent'; v.pad = st.box ? (st.pad || '14px 18px') : '0'; v.rad = st.box ? '14px' : '0';
+        v.bd = st.box === 'ours' ? '1px dashed ' + accent : (st.box ? '1px solid ' + (st.box === 'plain' ? t.rule : tone(st.box)) : 'none');
+        v.segs = segs(st.text);
+      } else if (st.type === 'stat') {
+        v.isStat = true; v.v = st.v; v.l = st.l; v.fs = st.fs || 52; v.c = tone(st.tone || 'acc'); v.bg = st.on ? rgba(0.08) : t.card; v.bd = st.on ? accent : t.rule;
+      } else if (st.type === 'table') {
+        v.isTable = true; v.fs = st.fs || 18; v.hfs = st.hfs || 15; v.rpad = st.rpad || 11;
+        v.cols = st.cols || st.head.map(function () { return '1fr'; }).join(' ');
+        var al = st.align || [];
+        v.head = st.head.map(function (h2, k) { return { t: h2, al: al[k] || 'left' }; });
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto, hl = r.hl || st.hl === k;
+          return { bg: hl && shown ? rgba(0.08) : 'transparent', op: shown ? 1 : (st.ghost ? 0.12 : 0),
+            cells: r.c.map(function (c, j) {
+              var tn = (r.tones || [])[j];
+              return { t: c, al: al[j] || 'left', fw: j === 0 || (r.bold || []).indexOf(j) >= 0 ? 600 : 400, c: tn ? tone(tn) : (j === 0 ? t.ink : t.label), font: (st.mono || []).indexOf(j) >= 0 ? MONO : 'inherit' };
+            }) };
+        });
+      } else if (st.type === 'bars') {
+        v.isBars = true; v.title = st.title || ''; v.sub = st.sub || ''; v.tfs = st.tfs || 18; v.fs = st.fs || 16; v.lw = st.lw || 150; v.vw = st.vw || 90; v.bh = st.bh || 22; v.gap = st.gap == null ? 8 : st.gap;
+        var mx = st.max || Math.max.apply(null, st.rows.map(function (r) { return r.v; }));
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto;
+          return { n: r.n, l: r.l || String(r.v), w: shown ? Math.max(r.v > 0 ? 1.5 : 0, Math.min(100, r.v / mx * 100)).toFixed(1) : '0', c: r.hl ? accent : (r.tone ? tone(r.tone) : '#9AA3AF'), op: shown ? 1 : 0.25, dl: (k * 0.12).toFixed(2), fw: r.hl ? 600 : 400, vc: r.hl ? accent : t.label };
+        });
+      } else if (st.type === 'list') {
+        v.isList = true; v.fs = st.fs || 20; v.sfs = st.sfs || 16; v.tfw = st.tfw || 500; v.gap = st.gap == null ? 16 : st.gap; v.mk = st.mk || 30; v.mt = st.mt == null ? -1 : st.mt; v.mfs = st.mfs || 15;
+        v.hasTitle = !!st.title; v.title = st.title || ''; v.tfs = st.tfs || 18; v.tc = tone(st.ttone || 'label');
+        v.items = st.items.map(function (it, k) {
+          var shown = k < upto, mk = it.m || st.mark || 'num', m, mbg, mc, mbd = 'none';
+          if (mk === 'check') { m = '✓'; mbg = '#E3F4EB'; mc = OK; }
+          else if (mk === 'cross') { m = '✕'; mbg = '#FBE6E6'; mc = BAD; }
+          else if (mk === 'dot') { m = ''; mbg = 'transparent'; mc = accent; mbd = '6px solid ' + accent; }
+          else { m = String(it.no || k + 1); var on2 = it.hl || st.hl === k; mbg = on2 ? accent : rgba(0.1); mc = on2 ? '#FFFFFF' : accent; }
+          return { m: m, mbg: mbg, mc: mc, mbd: mbd, t: it.t, s: it.s || '', hasS: !!it.s, op: shown ? 1 : (st.ghost ? 0.15 : 0), dx: shown ? 0 : -12, dl: (st.stagger ? k * 0.12 : 0).toFixed(2) };
+        });
+      }
+      v.id = vid; v.type = vtype;
+      return v;
+    };
+
+    var curSc = cur.sc;
+    var scenes = chs.map(function (s, k) {
+      var nb = s.beats.length, kb = k < curSc ? nb - 1 : (k > curSc ? 0 : cur.beat);
+      var stt = {};
+      s.actors.forEach(function (a) { stt[a.id] = Object.assign({}, a); });
+      for (var qb = 0; qb <= kb; qb++) { var set = s.beats[qb].set || {}; for (var aid in set) { if (stt[aid]) Object.assign(stt[aid], set[aid]); } }
+      var z = s.zoom || 1, ox = s.ox || 0, oy = s.oy || 0;
+      var on = k === curSc;
+      var hasCaps = s.beats.some(function (b) { return b.cap; });
+      return {
+        op: on ? 1 : 0, pe: on ? 'auto' : 'none', band: hasCaps ? 1 : 0, capTop: s.title ? 104 : 40,
+        tag: s.card ? '' : (ch.n ? ch.n + ' · ' : '') + ch.name, title: s.title || '',
+        dots: nb > 1 ? s.beats.map(function (b, k2) { return { no: k2 + 1, w: k2 === kb ? 22 : 8, bg: k2 <= kb ? accent : t.rule, pick: function () { self._go(F.chStart[cur.ch] + self._offset(cur.ch, k) + k2); } }; }) : [],
+        actors: on || Math.abs(k - curSc) <= 1 ? s.actors.map(function (a) { return actorView(a, stt[a.id], z, ox, oy); }) : [],
+        caps: s.beats.map(function (b, k2) {
+          var src = b.src, ours = b.kind === 'ours';
+          return { segs: segs(b.cap), op: k2 === kb ? 1 : 0, dy: k2 === kb ? 0 : (k2 < kb ? -8 : 8), chip: src || (ours ? 'Our note' : ''),
+            cop: src || ours ? 1 : 0, cbd: ours ? '1px dashed ' + accent : '1px solid ' + t.rule, cfg: ours ? accent : t.label };
+        })
+      };
+    });
+
+    var fmtT = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); };
+    var frac = playing ? 0 : (S.frac || 0);
+    var pos = cur.start + cur.dur * frac, total = F.total;
+    var speeds = [0.75, 1, 1.25, 1.5, 2, 3, 4];
+    var pl = {
+      icon: playing ? '❚❚' : '▶', playLabel: playing ? 'Pause' : 'Play',
+      toggle: function () { self._toggle(); }, prev: function () { self._go(si - 1); }, next: function () { self._go(si + 1); },
+      label: cur.label + (cur.nb > 1 ? ' · ' + (cur.beat + 1) + '/' + cur.nb : ''),
+      time: fmtT(pos / S.speed) + ' / ' + fmtT(total / S.speed),
+      w: playing ? ((cur.start + cur.dur) / total * 100).toFixed(2) : (pos / total * 100).toFixed(2),
+      tr: playing ? (cur.dur / S.speed).toFixed(2) : '0',
+      segs: R.chapters.map(function (c, ci) {
+        var a = LIST[F.chStart[ci]].start, b = ci + 1 < R.chapters.length ? LIST[F.chStart[ci + 1]].start : total;
+        return { name: (c.n ? c.n + ' ' : '') + c.name, w: (b - a).toFixed(1), pick: function () { self._go(F.chStart[ci]); } };
+      }),
+      speedLabel: S.speed + '×', menuOpen: !!S.menu, menu: function () { self.setState({ menu: !S.menu }); },
+      speeds: speeds.map(function (v) { var on = S.speed === v; return { l: v + '×', fg: on ? accent : t.ink, bg: on ? rgba(0.1) : 'transparent', fw: on ? 600 : 400, pick: function () { self._setSpeed(v); } }; })
+    };
+    var chips = R.chapters.map(function (c, ci) {
+      var on = ci === cur.ch;
+      return { n: c.n || '·', name: c.short || c.name, bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, fw: on ? 600 : 400, pick: function () { self._go(F.chStart[ci]); } };
+    });
+    var sc = S.scale || 1;
+    return { t: t, accent: accent, accSoft: rgba(0.1), pid: this.pid(), meta: R.meta, chips: chips, scenes: scenes, pl: pl,
+      scale: sc.toFixed(4), stW: Math.round(1280 * sc), stH: Math.round(720 * sc) };
+  }
+  _offset(ci, k) {
+    var s = this.chScenes(this.report().chapters[ci], ci), n = 0;
+    for (var i = 0; i < k; i++) n += s[i].beats.length;
+    return n;
+  }
+}
+
+mountFilm(Component, "film-tpl", "film", {});
+</script>
+</body>
+</html>
