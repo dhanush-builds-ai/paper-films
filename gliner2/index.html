@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLiNER2: Efficient Multi-Task Information Extraction · paper film</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{height:100%}
+#film{height:100vh}
+body{margin:0}
+button{cursor:pointer;font-family:inherit}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes plpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes plflow{to{stroke-dashoffset:-26}}
+@keyframes plblink{0%,100%{opacity:.15}50%{opacity:1}}
+.h{font-family:'Newsreader',serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--rule);background:var(--card);font-size:13.5px;color:var(--ink)}
+.seg{height:100%;border:none;padding:0;background:transparent;border-right:2px solid var(--card)}
+.seg:hover{background:rgba(0,0,0,.08)}
+.chap{height:32px;padding:0 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="film"></div>
+<template id="film-tpl">
+<div style="--bg: {{t.bg}}; --card: {{t.card}}; --ink: {{t.ink}}; --muted: {{t.muted}}; --label: {{t.label}}; --rule: {{t.rule}}; --acc: {{accent}}; --accsoft: {{accSoft}}; width: 100%; height: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; padding: 14px 24px 16px; overflow: hidden">
+
+<div data-topbar="1" style="flex-shrink: 0; display: flex; align-items: center; gap: 16px; height: 42px; min-width: 0">
+<div data-papertitle="1" style="min-width: 0; flex: 1 1 auto">
+<div class="mono" style="font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.line}}</div>
+<div class="h" style="font-size: 19px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{meta.title}}</div>
+</div>
+<div style="display: flex; gap: 12px; flex-shrink: 0; font-size: 13px">
+<sc-for list="{{meta.links}}" as="lk" hint-placeholder-count="2"><a href="{{lk.u}}" target="_blank" rel="noopener" style="color: var(--acc); text-decoration: none">{{lk.t}} ↗</a></sc-for>
+</div>
+</div>
+<div data-chips="1" style="flex-shrink: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 6px 0 10px">
+<div style="display: flex; gap: 6px; width: max-content">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><button class="chap" onClick="{{c.pick}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.fw}}"><span class="mono" style="font-size: 11px; opacity: .7; margin-right: 6px">{{c.n}}</span>{{c.name}}</button></sc-for>
+</div>
+</div>
+
+<div id="{{pid}}-holder" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+<div style="position: relative; width: {{stW}}px; height: {{stH}}px; flex-shrink: 0">
+<div data-stage="1" style="position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform: scale({{scale}}); transform-origin: 0 0; background: var(--card); border-radius: 22px; box-shadow: 0 0 0 1px var(--rule), 0 2px 6px {{t.shSoft}}, 0 24px 60px -16px {{t.sh}}; overflow: hidden">
+
+<sc-for list="{{scenes}}" as="sc" hint-placeholder-count="6">
+<div data-scene="1" style="position: absolute; inset: 0; opacity: {{sc.op}}; transition: opacity .7s ease; pointer-events: {{sc.pe}}">
+
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 196px; background: var(--bg); opacity: {{sc.band}}"></div>
+<div class="mono" style="position: absolute; left: 48px; top: 26px; font-size: 13px; letter-spacing: .08em; color: var(--acc); text-transform: uppercase">{{sc.tag}}</div>
+<div data-headline="1" class="h" style="position: absolute; left: 48px; top: 46px; width: 1000px; font-size: 34px; line-height: 1.12; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</div>
+<div style="position: absolute; right: 48px; top: 32px; display: flex; gap: 6px; align-items: center">
+<sc-for list="{{sc.dots}}" as="dt" hint-placeholder-count="6"><button onClick="{{dt.pick}}" aria-label="Beat {{dt.no}}" style="width: {{dt.w}}px; height: 8px; border-radius: 4px; border: none; padding: 0; background: {{dt.bg}}; transition: width .4s, background .4s"></button></sc-for>
+</div>
+
+<sc-for list="{{sc.actors}}" as="a" hint-placeholder-count="12">
+<div data-actor="{{a.id}}" data-type="{{a.type}}" style="position: absolute; left: 0; top: 0; width: {{a.w}}px; transform: translate({{a.x}}px, {{a.y}}px) scale({{a.s}}); transform-origin: 0 0; opacity: {{a.op}}; transition: transform 1.2s cubic-bezier(.45,0,.2,1) {{a.dl}}s, opacity .8s ease {{a.dl}}s">
+<sc-if value="{{a.isSvg}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; width: {{a.w}}px; height: {{a.h}}px; animation: {{a.anim}}">
+<svg width="{{a.w}}" height="{{a.h}}" viewBox="0 0 {{a.w}} {{a.h}}" style="overflow: visible; display: block">
+<sc-for list="{{a.prims}}" as="q" hint-placeholder-count="8">
+<sc-if value="{{q.isRect}}" hint-placeholder-val="{{ false }}"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" rx="{{q.rx}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease {{q.tdl}}s, stroke .8s ease {{q.tdl}}s, opacity .8s ease {{q.tdl}}s"></rect></sc-if>
+<sc-if value="{{q.isPath}}" hint-placeholder-val="{{ false }}"><path d="{{q.d}}" transform="{{q.tf}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}; transition: opacity .8s ease {{q.tdl}}s, stroke .8s ease, fill .8s ease, d .9s ease"></path></sc-if>
+<sc-if value="{{q.isCirc}}" hint-placeholder-val="{{ false }}"><circle cx="{{q.cx}}" cy="{{q.cy}}" r="{{q.r}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; opacity: {{q.op}}; animation: {{q.anim}}; transition: fill .8s ease, opacity .8s ease"></circle></sc-if>
+<sc-if value="{{q.isPoly}}" hint-placeholder-val="{{ false }}"><polyline points="{{q.pts}}" style="fill: {{q.fill}}; stroke: {{q.stroke}}; stroke-width: {{q.sw}}; stroke-dasharray: {{q.dash}}; stroke-linecap: round; stroke-linejoin: round; opacity: {{q.op}}; animation: {{q.anim}}"></polyline></sc-if>
+</sc-for>
+</svg>
+<sc-for list="{{a.labels}}" as="lb" hint-placeholder-count="4"><div data-lbl="1" style="position: absolute; left: {{lb.x}}px; top: {{lb.y}}px; transform: translateX({{lb.tx}}%); white-space: nowrap; line-height: 1; font-size: {{lb.fs}}px; font-weight: {{lb.fw}}; font-family: {{lb.font}}; color: {{lb.fill}}; opacity: {{lb.op}}; transition: opacity .8s ease {{lb.tdl}}s, color .8s ease; pointer-events: none">{{lb.txt}}</div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isText}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; font-weight: {{a.fw}}; font-family: {{a.font}}; font-style: {{a.fst}}; line-height: {{a.lh}}; color: {{a.color}}; text-align: {{a.align}}; background: {{a.bg}}; padding: {{a.pad}}; border-radius: {{a.rad}}; border: {{a.bd}}; box-sizing: border-box"><sc-for list="{{a.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{a.isStat}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; box-sizing: border-box; padding: 20px 22px; border-radius: 18px; background: {{a.bg}}; border: 1px solid {{a.bd}}">
+<div class="h" style="font-size: {{a.fs}}px; color: {{a.c}}; line-height: 1; font-weight: 500">{{a.v}}</div>
+<div style="font-size: 17px; color: var(--label); margin-top: 10px; line-height: 1.35">{{a.l}}</div>
+</div>
+</sc-if>
+<sc-if value="{{a.isTable}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px; font-size: {{a.fs}}px; line-height: 1.35">
+<div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: 0 14px 10px; border-bottom: 2px solid var(--ink); font-weight: 600; color: var(--label); font-size: {{a.hfs}}px"><sc-for list="{{a.head}}" as="hc" hint-placeholder-count="4"><div style="text-align: {{hc.al}}">{{hc.t}}</div></sc-for></div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="5"><div style="display: grid; grid-template-columns: {{a.cols}}; gap: 0 18px; padding: {{a.rpad}}px 14px; border-bottom: 1px solid var(--rule); background: {{r.bg}}; opacity: {{r.op}}; transition: opacity .6s ease, background .6s ease"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="text-align: {{c.al}}; font-weight: {{c.fw}}; color: {{c.c}}; font-family: {{c.font}}">{{c.t}}</div></sc-for></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isBars}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<div style="font-size: {{a.tfs}}px; font-weight: 600; margin-bottom: 4px">{{a.title}}</div>
+<div style="font-size: 14px; color: var(--muted); margin-bottom: 10px">{{a.sub}}</div>
+<sc-for list="{{a.rows}}" as="r" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: {{a.lw}}px minmax(0, 1fr) {{a.vw}}px; align-items: center; gap: 12px; margin: {{a.gap}}px 0; opacity: {{r.op}}; transition: opacity .5s ease"><div style="font-size: {{a.fs}}px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.n}}</div><div style="position: relative; height: {{a.bh}}px; border-radius: 6px; background: var(--bg); overflow: hidden"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{r.w}}%; border-radius: 6px; background: {{r.c}}; transition: width 1.1s cubic-bezier(.3,0,.2,1) {{r.dl}}s"></div></div><div class="mono" style="font-size: {{a.fs}}px; font-weight: {{r.fw}}; color: {{r.vc}}">{{r.l}}</div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{a.isList}}" hint-placeholder-val="{{ false }}">
+<div style="width: {{a.w}}px">
+<sc-if value="{{a.hasTitle}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.tfs}}px; font-weight: 600; color: {{a.tc}}; margin-bottom: 14px">{{a.title}}</div></sc-if>
+<sc-for list="{{a.items}}" as="it" hint-placeholder-count="4"><div style="display: flex; gap: 14px; align-items: flex-start; margin: 0 0 {{a.gap}}px; opacity: {{it.op}}; transform: translateX({{it.dx}}px); transition: opacity .6s ease {{it.dl}}s, transform .6s ease {{it.dl}}s"><div style="flex-shrink: 0; width: {{a.mk}}px; height: {{a.mk}}px; margin-top: {{a.mt}}px; border-radius: 50%; background: {{it.mbg}}; color: {{it.mc}}; border: {{it.mbd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{a.mfs}}px; font-weight: 600">{{it.m}}</div><div style="min-width: 0"><div style="font-size: {{a.fs}}px; font-weight: {{a.tfw}}; line-height: 1.32">{{it.t}}</div><sc-if value="{{it.hasS}}" hint-placeholder-val="{{ false }}"><div style="font-size: {{a.sfs}}px; color: var(--muted); line-height: 1.4; margin-top: 4px">{{it.s}}</div></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-for list="{{sc.caps}}" as="cp" hint-placeholder-count="5">
+<div data-cap="1" style="position: absolute; left: 48px; top: {{sc.capTop}}px; width: 1184px; font-size: 23px; line-height: 1.38; opacity: {{cp.op}}; transform: translateY({{cp.dy}}px); transition: opacity .5s ease, transform .5s ease"><sc-for list="{{cp.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}; font-weight: {{sg.fw}}">{{sg.t}}</span></sc-for><span class="mono" style="display: inline-block; vertical-align: 3px; margin-left: 12px; font-size: 13px; padding: 2px 9px; border-radius: 6px; border: {{cp.cbd}}; color: {{cp.cfg}}; opacity: {{cp.cop}}">{{cp.chip}}</span></div>
+</sc-for>
+
+</div>
+</sc-for>
+
+</div>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin-top: 14px; height: 50px; display: flex; align-items: center; gap: 12px">
+<button onClick="{{pl.toggle}}" aria-label="{{pl.playLabel}}" style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--acc); color: #FFFFFF; font-size: 15px">{{pl.icon}}</button>
+<button class="btn" onClick="{{pl.prev}}" aria-label="Previous" style="width: 36px; padding: 0; flex-shrink: 0">⏮</button>
+<button class="btn" onClick="{{pl.next}}" aria-label="Next" style="width: 36px; padding: 0; flex-shrink: 0">⏭</button>
+<div style="flex: 1; min-width: 0; padding: 0 6px">
+<div style="display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; margin-bottom: 7px"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pl.label}}</span><span class="mono" style="color: var(--muted); white-space: nowrap">{{pl.time}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 5px; background: var(--rule); overflow: hidden">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pl.w}}%; background: var(--acc); transition: width {{pl.tr}}s linear"></div>
+<div style="position: absolute; inset: 0; display: flex">
+<sc-for list="{{pl.segs}}" as="sg" hint-placeholder-count="8"><button class="seg" onClick="{{sg.pick}}" aria-label="Jump to {{sg.name}}" title="{{sg.name}}" style="flex-grow: {{sg.w}}"></button></sc-for>
+</div>
+</div>
+</div>
+<div style="position: relative; flex-shrink: 0">
+<sc-if value="{{pl.menuOpen}}" hint-placeholder-val="{{ false }}">
+<div>
+<button onClick="{{pl.menu}}" aria-label="Close speed menu" style="position: fixed; inset: 0; border: none; background: transparent; cursor: default"></button>
+<div style="position: absolute; right: 0; bottom: 56px; width: 150px; padding: 8px; box-sizing: border-box; border-radius: 18px; border: 1px solid var(--rule); background: var(--card); box-shadow: 0 14px 34px -8px {{t.sh}}; z-index: 5">
+<sc-for list="{{pl.speeds}}" as="sp" hint-placeholder-count="7"><button onClick="{{sp.pick}}" style="display: block; width: 100%; height: 34px; padding: 0 14px; border: none; border-radius: 12px; text-align: left; background: {{sp.bg}}; color: {{sp.fg}}; font-weight: {{sp.fw}}; font-size: 16px; font-family: 'IBM Plex Mono', monospace">{{sp.l}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+<button onClick="{{pl.menu}}" aria-label="Playback speed" style="height: 46px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); font-size: 16px; font-family: 'IBM Plex Mono', monospace">{{pl.speedLabel}}<span style="font-size: 11px; margin-left: 8px">▾</span></button>
+</div>
+</div>
+</div>
+</template>
+<script>
+/* paper-film standalone runtime (MIT).
+ * Renders the film template without any host runtime:
+ *   {{path}} holes in text and attributes, <sc-for list as>, <sc-if value>, onClick="{{fn}}".
+ * Re-renders patch the existing DOM in place, so CSS transitions play between beats.
+ */
+(function () {
+  var SVG = 'http://www.w3.org/2000/svg';
+  var HOLE = /\{\{\s*([^}]+?)\s*\}\}/g;
+  var ONLY = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+
+  function lookup(scope, path) {
+    path = path.trim();
+    if (path === 'true') return true;
+    if (path === 'false') return false;
+    if (/^-?\d+(\.\d+)?$/.test(path)) return +path;
+    var parts = path.split('.'), v = scope[parts[0]];
+    for (var i = 1; i < parts.length && v != null; i++) v = v[parts[i]];
+    return v;
+  }
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) { var v = lookup(scope, p); return v == null ? '' : String(v); });
+  }
+
+  // template node -> array of vnodes
+  function build(node, scope, inSvg) {
+    if (node.nodeType === 3) {
+      var t = node.nodeValue;
+      if (t.indexOf('{{') < 0) return /\S/.test(t) || t === ' ' ? [{ text: t }] : (t.length ? [{ text: t }] : []);
+      return [{ text: interp(t, scope) }];
+    }
+    if (node.nodeType !== 1) return [];
+    var tag = node.localName;
+    if (tag === 'sc-for') {
+      var m = ONLY.exec(node.getAttribute('list') || ''), list = m ? lookup(scope, m[1]) : null, as = node.getAttribute('as') || 'item';
+      var out = [];
+      (list || []).forEach(function (item, idx) {
+        var s = Object.create(scope); s[as] = item; s.$index = idx;
+        kidsOf(node).forEach(function (c) { out.push.apply(out, build(c, s, inSvg)); });
+      });
+      return out;
+    }
+    if (tag === 'sc-if') {
+      var mv = ONLY.exec(node.getAttribute('value') || ''), ok = mv ? lookup(scope, mv[1]) : false;
+      if (!ok) return [];
+      var res = [];
+      kidsOf(node).forEach(function (c) { res.push.apply(res, build(c, scope, inSvg)); });
+      return res;
+    }
+    var svg = inSvg || tag === 'svg', v = { tag: tag, svg: svg, attrs: {}, on: {}, kids: [] };
+    for (var i = 0; i < node.attributes.length; i++) {
+      var a = node.attributes[i], name = a.name, val = a.value;
+      if (name.indexOf('hint-') === 0) continue;
+      if (/^on[A-Z]/.test(name) || /^on[a-z]+$/.test(name)) {
+        var mm = ONLY.exec(val); if (mm) v.on[name.slice(2).toLowerCase()] = lookup(scope, mm[1]);
+        continue;
+      }
+      var only = ONLY.exec(val);
+      v.attrs[name] = only ? lookup(scope, only[1]) : (val.indexOf('{{') >= 0 ? interp(val, scope) : val);
+    }
+    kidsOf(node).forEach(function (c) { v.kids.push.apply(v.kids, build(c, scope, svg)); });
+    return [v];
+  }
+  function kidsOf(node) { return Array.prototype.slice.call((node.content || node).childNodes); }
+
+  function create(v) {
+    if (v.text != null) { var tn = document.createTextNode(v.text); tn.__v = v; return tn; }
+    var el = v.svg ? document.createElementNS(SVG, v.tag) : document.createElement(v.tag);
+    el.__v = { tag: v.tag, attrs: {}, on: {}, kids: [] };
+    update(el, v);
+    return el;
+  }
+  function setAttr(el, k, val) {
+    if (val == null || val === false) { el.removeAttribute(k); return; }
+    if (k === 'class') k = 'class';
+    el.setAttribute(k, val === true ? '' : String(val));
+  }
+  function update(el, v) {
+    var old = el.__v || { attrs: {}, on: {}, kids: [] };
+    for (var k in v.attrs) if (old.attrs[k] !== v.attrs[k]) setAttr(el, k, v.attrs[k]);
+    for (var k2 in old.attrs) if (!(k2 in v.attrs)) el.removeAttribute(k2);
+    for (var e in v.on) el['on' + e] = typeof v.on[e] === 'function' ? v.on[e] : null;
+    for (var e2 in old.on) if (!(e2 in v.on)) el['on' + e2] = null;
+    patchKids(el, v.kids);
+    el.__v = { tag: v.tag, attrs: v.attrs, on: v.on, kids: v.kids };
+  }
+  function patchKids(el, kids) {
+    var cur = el.childNodes;
+    for (var i = 0; i < kids.length; i++) {
+      var nv = kids[i], ex = cur[i];
+      if (!ex) { el.appendChild(create(nv)); continue; }
+      var ov = ex.__v;
+      if (nv.text != null) {
+        if (ex.nodeType === 3) { if (ex.nodeValue !== nv.text) ex.nodeValue = nv.text; ex.__v = nv; }
+        else el.replaceChild(create(nv), ex);
+      } else if (ex.nodeType === 1 && ov && ov.tag === nv.tag) update(ex, nv);
+      else el.replaceChild(create(nv), ex);
+    }
+    while (el.childNodes.length > kids.length) el.removeChild(el.lastChild);
+  }
+
+  window.DCLogic = function DCLogic(props) { this.props = props || {}; this.state = {}; };
+  window.DCLogic.prototype.setState = function (o) {
+    Object.assign(this.state, typeof o === 'function' ? o(this.state) : o);
+    if (this.__schedule) this.__schedule();
+  };
+  window.DCLogic.prototype.forceUpdate = function () { if (this.__schedule) this.__schedule(); };
+
+  window.mountFilm = function (Component, tplId, mountId, props) {
+    var tpl = document.getElementById(tplId), root = document.getElementById(mountId);
+    var comp = new Component(props || {}), queued = false;
+    var render = function () {
+      queued = false;
+      var vals = comp.renderVals(), vnodes = [];
+      kidsOf(tpl).forEach(function (n) { vnodes.push.apply(vnodes, build(n, vals, false)); });
+      patchKids(root, vnodes.filter(function (v) { return v.text == null || /\S/.test(v.text); }));
+    };
+    comp.__schedule = function () { if (!queued) { queued = true; requestAnimationFrame(render); } };
+    render();
+    if (comp.componentDidMount) comp.componentDidMount();
+    return comp;
+  };
+})();
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, scene: 0, playing: true, speed: 1, menu: false, frac: 0, scale: this._fit() };
+    this._speed = 1;
+    var self = this;
+    if (typeof window !== 'undefined') {
+      var key = '__paperfilm_' + this.pid();
+      if (window[key] && window[key] !== this) { window[key]._dead = true; clearTimeout(window[key]._tm); }
+      window[key] = this;
+      setTimeout(function () { if (!self._dead && self.state.playing) self._schedule(self.state.scene, 0, true); }, 1400);
+      window.addEventListener('resize', function () { if (!self._dead) self.setState({ scale: self._fit() }); });
+      setTimeout(function () { if (!self._dead) self.setState({ scale: self._fit() }); }, 300);
+      document.addEventListener('visibilitychange', function () { if (document.hidden && self.state.playing && !self._dead) self._toggle(); });
+    }
+  }
+  _fit() {
+    if (typeof window === 'undefined') return 1;
+    var holder = document.getElementById(this.pid() + '-holder');
+    var W = holder ? holder.clientWidth : window.innerWidth - 48;
+    var H = holder ? holder.clientHeight : window.innerHeight - 190;
+    if (!W || !H) { W = window.innerWidth - 48; H = window.innerHeight - 190; }
+    // leave room round the card so its shadow shows and it floats
+    return Math.max(0.3, Math.min((W - 56) / 1280, (H - 36) / 720));
+  }
+
+  /* ---------------- film timeline ---------------- */
+  pid() { if (!this._pid) this._pid = String(this.report().meta.title || 'r').replace(/[^A-Za-z0-9]/g, '').slice(0, 16); return this._pid; }
+  chScenes(ch, ci) {
+    if (!this._chs) this._chs = {};
+    if (this._chs[ci]) return this._chs[ci];
+    var out = [];
+    if (ch.card !== false) {
+      out.push({ card: true, title: '', tag: '', beats: [{ cap: '', dur: ch.cardDur || 4.2 }], actors: [
+        { id: 'n', type: 'text', x: 120, y: 200, w: 400, text: ch.n, fs: 120, font: 'serif', tone: 'acc', lh: 1 },
+        { id: 't', type: 'text', x: 120, y: 340, w: 1040, text: ch.name, fs: 64, font: 'serif', lh: 1.05 },
+        { id: 'l', type: 'text', x: 120, y: 436, w: 980, text: ch.lede || '', fs: 26, tone: 'muted', lh: 1.4 }
+      ] });
+    }
+    ch.scenes.forEach(function (s) { out.push(s); });
+    this._chs[ci] = out;
+    return out;
+  }
+  film() {
+    if (this._film) return this._film;
+    var self = this, R = this.report(), list = [], chStart = [];
+    var W = function (x) { return x ? String(x).replace(/\*/g, '').split(/\s+/).filter(Boolean).length : 0; };
+    R.chapters.forEach(function (ch, ci) {
+      chStart[ci] = list.length;
+      self.chScenes(ch, ci).forEach(function (s, si) {
+        s.beats.forEach(function (b, bi) {
+          var d = b.dur || Math.max(4.5, Math.min(17, 2.4 + W(b.cap) / 2.5 + (b.read || 0)));
+          list.push({ ch: ci, sc: si, beat: bi, nb: s.beats.length, dur: d, label: (ch.n ? ch.n + ' ' : '') + ch.name + (s.title ? ' · ' + s.title : '') });
+        });
+      });
+    });
+    var t = 0; list.forEach(function (x) { x.start = t; t += x.dur; });
+    this._film = { list: list, chStart: chStart, total: t };
+    return this._film;
+  }
+  _schedule(i, frac, playing) {
+    var self = this, L = this.film().list;
+    clearTimeout(this._tm);
+    if (this._dead || !playing || typeof window === 'undefined') return;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var d = L[i].dur / this._speed;
+    this._t0 = Date.now() - d * frac * 1000;
+    this._tm = setTimeout(function () {
+      if (self._dead) return;
+      if (i + 1 < L.length) self._go(i + 1, true);
+      else self.setState({ playing: false, frac: 1 });
+    }, Math.max(50, d * (1 - frac) * 1000));
+  }
+  _go(i, keepPlaying) {
+    var L = this.film().list;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    var playing = keepPlaying === undefined ? this.state.playing : keepPlaying;
+    this.setState({ scene: i, frac: 0, playing: playing });
+    this._schedule(i, 0, playing);
+  }
+  _frac() {
+    if (!this.state.playing || !this._t0) return this.state.frac || 0;
+    var d = this.film().list[this.state.scene].dur / this._speed;
+    return Math.max(0, Math.min(0.999, (Date.now() - this._t0) / 1000 / d));
+  }
+  _toggle() {
+    var L = this.film().list;
+    if (this.state.playing) { var fr = this._frac(); clearTimeout(this._tm); this.setState({ playing: false, frac: fr }); return; }
+    var i = this.state.scene, f2 = this.state.frac || 0;
+    if (i >= L.length - 1 && f2 >= 1) { i = 0; f2 = 0; }
+    this.setState({ playing: true, scene: i, frac: f2 });
+    this._schedule(i, f2, true);
+  }
+  _setSpeed(v) {
+    var fr = this._frac();
+    this._speed = v;
+    this.setState({ speed: v, frac: fr, menu: false });
+    if (this.state.playing) this._schedule(this.state.scene, fr, true);
+  }
+
+  report() {
+    if (!this._R) this._R = {"meta": {"line": "Paper film · arXiv:2507.18546 · 2025", "title": "GLiNER2: Efficient Multi-Task Information Extraction", "links": [{"t": "Paper", "u": "https://arxiv.org/abs/2507.18546"}, {"t": "Code", "u": "https://github.com/fastino-ai/GLiNER2"}]}, "chapters": [{"n": "", "name": "Overview", "short": "Overview", "lede": "", "scenes": [{"title": "", "actors": [{"id": "tag", "type": "text", "x": 120, "y": 150, "w": 900, "text": "A PAPER FILM", "font": "mono", "fs": 15, "tone": "acc"}, {"id": "ti", "type": "text", "x": 120, "y": 182, "w": 1040, "text": "GLiNER2", "font": "serif", "fs": 64, "lh": 1.05}, {"id": "st", "type": "text", "x": 120, "y": 262, "w": 1040, "text": "An Efficient Multi-Task Information Extraction System with Schema-Driven Interface", "font": "serif", "fs": 26, "lh": 1.25, "tone": "muted"}, {"id": "au", "type": "text", "x": 120, "y": 340, "w": 1040, "text": "Urchade Zaratiana, Gil Pasternak, Oliver Boyd, George Hurn-Maloney, Ash Lewis · Fastino AI", "fs": 17, "tone": "muted", "lh": 1.5}, {"id": "me", "type": "text", "x": 120, "y": 378, "w": 1000, "text": "arXiv:2507.18546 · July 2025 · Apache 2.0", "fs": 16, "tone": "muted", "font": "mono"}, {"id": "tk", "type": "tokens", "x": 120, "y": 470, "words": ["[P]", "entities", "[E]", "person", "[E]", "product", "[SEP]", "Steve", "Jobs", "loved", "the", "iPhone"], "tw": 78, "th": 40, "gap": 8, "on": [0, 2, 4, 6], "fs": 14}, {"id": "tl", "type": "text", "x": 120, "y": 524, "w": 594, "text": "the task, written as tokens", "fs": 14, "tone": "acc", "font": "mono", "align": "center"}, {"id": "xl", "type": "text", "x": 722, "y": 524, "w": 422, "text": "the text", "fs": 14, "tone": "muted", "font": "mono", "align": "center"}], "beats": [{"cap": "", "dur": 4.5}]}, {"title": "The paper in one paragraph", "actors": [{"id": "p", "type": "text", "x": 48, "y": 140, "w": 1184, "text": "GLiNER2 is a *205M-parameter* encoder for three extraction jobs: finding entities, classifying text and filling structured records. You describe the jobs as a *schema*, which becomes special tokens placed before the text. *One forward pass* on a CPU answers every job together. It has the best average zero-shot classification score of the open models tested, and comes close to GPT-4o on entity recognition.", "font": "serif", "fs": 27, "lh": 1.42}, {"id": "s0", "type": "stat", "x": 48, "y": 410, "w": 278, "v": "0.72", "l": "average zero-shot accuracy on 7 classification sets", "op": 0}, {"id": "s1", "type": "stat", "x": 350, "y": 410, "w": 278, "v": "0.590", "l": "entity F1 on CrossNER, vs 0.599 for GPT-4o", "op": 0, "dl": 0.12}, {"id": "s2", "type": "stat", "x": 652, "y": 410, "w": 278, "v": "2.62×", "l": "average speed-up over GPT-4o, running on CPU", "op": 0, "dl": 0.24}, {"id": "s3", "type": "stat", "x": 954, "y": 410, "w": 278, "v": "163 ms", "l": "for 20 labels, vs 6,758 ms for DeBERTa-v3", "op": 0, "dl": 0.36}], "beats": [{"cap": "Everything in this film expands this one paragraph.", "kind": "ours", "read": 6}, {"cap": "Four numbers to remember. The Evidence chapter shows how each one was measured.", "src": "Tables 2–4", "set": {"s0": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}, "s3": {"op": 1}}, "read": 3}]}], "card": false}, {"n": "01", "name": "The problem", "short": "Problem", "lede": "Extraction needed a GPU, an outside API, or a separate small model for every task.", "scenes": [{"title": "Text in, structured data out", "actors": [{"id": "em", "type": "text", "x": 48, "y": 160, "w": 520, "text": "“Hi, this is Dana Reyes from Northwind. Order 4471 for 2 laptops arrived damaged. I want a refund.”", "font": "serif", "fs": 24, "lh": 1.4, "box": "plain"}, {"id": "el", "type": "text", "x": 48, "y": 330, "w": 520, "text": "one support email (our example)", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "ar", "type": "beam", "x": 0, "y": 0, "pts": "590,230 660,230", "op": 0}, {"id": "o1", "type": "text", "x": 680, "y": 160, "w": 552, "text": "*Entities*  person: Dana Reyes · company: Northwind", "fs": 19, "box": "plain", "op": 0}, {"id": "o2", "type": "text", "x": 680, "y": 240, "w": 552, "text": "*Class*  intent: refund request · sentiment: negative", "fs": 19, "box": "plain", "op": 0}, {"id": "o3", "type": "text", "x": 680, "y": 320, "w": 552, "text": "*Record*  order { id: 4471, item: laptop, qty: 2 }", "fs": 19, "box": "plain", "font": "mono", "op": 0}, {"id": "n", "type": "text", "x": 48, "y": 440, "w": 1184, "text": "Information extraction turns unstructured text into structured data a program can use.", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "Products receive text all day: emails, chats, contracts, records. Programs need fields, not prose.", "kind": "ours"}, {"cap": "So we want the entities: who is writing, and which company.", "src": "§1", "set": {"ar": {"op": 1}, "o1": {"op": 1}}}, {"cap": "We want labels for the whole text, like intent and sentiment.", "src": "§1", "set": {"o2": {"op": 1}}}, {"cap": "And we want records with fields, sometimes several of them in one text.", "src": "§1", "set": {"o3": {"op": 1}}}, {"cap": "This is information extraction: finding structured information in unstructured text.", "src": "§1", "set": {"n": {"op": 1}}}]}, {"title": "Option 1: ask a large language model", "actors": [{"id": "ol", "type": "card", "x": 48, "y": 165, "w": 540, "h": 34, "icon": "gpu", "label": "Open LLMs · 7B to 175B parameters"}, {"id": "cl", "type": "card", "x": 672, "y": 165, "w": 560, "h": 34, "icon": "net", "label": "Closed LLMs · behind an API"}, {"id": "og", "type": "list", "x": 48, "y": 230, "w": 540, "items": [{"t": "Needs a GPU", "s": "Even Llama-2-7B is too slow on CPU for production"}, {"t": "GPUs are scarce", "s": "A barrier for teams with small budgets"}], "upto": 0, "fs": 20, "gap": 18, "mark": "cross", "mk": 28, "sfs": 15}, {"id": "cg", "type": "list", "x": 672, "y": 230, "w": 560, "items": [{"t": "Data leaves your servers", "s": "PII, financial and business records"}, {"t": "Rules may forbid it", "s": "GDPR, HIPAA, on-premises requirements"}, {"t": "You pay on every call", "s": "Recurring API cost"}], "upto": 0, "fs": 20, "gap": 18, "mark": "cross", "mk": 28, "sfs": 15}, {"id": "ok", "type": "text", "x": 48, "y": 510, "w": 1184, "text": "LLMs extract well. The cost is in *how* you have to run them.", "fs": 21, "box": "plain", "op": 0}], "beats": [{"cap": "Large language models do many extraction tasks well.", "src": "§1"}, {"cap": "Open models need a GPU. Even a 7B model is too slow on CPU for production use.", "src": "§1, Table 1", "set": {"og": {"upto": 2}}, "read": 2}, {"cap": "Closed models run behind an API. Sensitive text must leave your servers, and every call costs money.", "src": "§1, Table 1", "set": {"cg": {"upto": 3}}, "read": 2}, {"cap": "Healthcare, finance and government teams often must keep data on their own machines.", "src": "§1", "set": {"ok": {"op": 1}}}]}, {"title": "Option 2: one small model per task", "actors": [{"id": "g", "type": "text", "x": 48, "y": 150, "w": 1184, "text": "GLiNER: a small encoder, prompted with entity types, runs on CPU and matches LLMs on entity recognition.", "fs": 20, "box": "plain"}, {"id": "m0", "type": "card", "x": 48, "y": 240, "w": 380, "h": 34, "icon": "box3d", "label": "GLiNER · entities (NER)", "op": 1}, {"id": "m1", "type": "card", "x": 450, "y": 240, "w": 380, "h": 34, "icon": "box3d", "label": "GLiREL · relations", "op": 0}, {"id": "m2", "type": "card", "x": 852, "y": 240, "w": 380, "h": 34, "icon": "box3d", "label": "GLiClass · text classes", "op": 0}, {"id": "m3", "type": "card", "x": 48, "y": 300, "w": 380, "h": 34, "icon": "box3d", "label": "GLiNER-BioMed · biomedical entities", "op": 0}, {"id": "m4", "type": "card", "x": 450, "y": 300, "w": 380, "h": 34, "icon": "box3d", "label": "GLiDRE · French document relations", "op": 0}, {"id": "m5", "type": "card", "x": 852, "y": 300, "w": 380, "h": 34, "icon": "box3d", "label": "spaCy · Stanza · CoreNLP · one model per task", "op": 0}, {"id": "cm", "type": "cells", "x": 48, "y": 390, "pat": "bbbbbb", "cw": 180, "ch": 40, "gap": 20, "texts": ["model 1", "model 2", "model 3", "deploy 1", "deploy 2", "deploy 3"], "op": 0}, {"id": "fr", "type": "text", "x": 48, "y": 460, "w": 1184, "text": "Each new task meant a *new model* to build, ship and run. The paper calls this *fragmentation*.", "fs": 21, "box": "bad", "op": 0}], "beats": [{"cap": "GLiNER showed a small encoder can find entities as well as LLMs, on a CPU. But it does entities only.", "src": "§1, Table 1"}, {"cap": "Others adapted it: GLiREL for relations, GLiClass for classification, and domain versions.", "src": "§1", "set": {"m1": {"op": 1}, "m2": {"op": 1}, "m3": {"op": 1}, "m4": {"op": 1}}}, {"cap": "Classic libraries like spaCy also need a separate model per task, and often fail on labels they never saw.", "src": "§5", "set": {"m5": {"op": 1}}}, {"cap": "A full pipeline then runs several models over the same text, each built and deployed on its own.", "src": "§1", "set": {"cm": {"op": 1}}}, {"cap": "Each new task meant a new model. The paper calls this fragmentation.", "src": "§1", "set": {"fr": {"op": 1}}}]}, {"title": "What is missing", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 165, "w": 1184, "head": ["Option", "Many tasks", "Runs on CPU", "Data stays local", "New labels, no retraining"], "rows": [{"c": ["LLM behind an API", "yes", "no", "no", "yes"], "tones": [null, "ok", "bad", "bad", "ok"]}, {"c": ["Open LLM, 7B or more", "yes", "too slow", "yes", "yes"], "tones": [null, "ok", "bad", "ok", "ok"]}, {"c": ["GLiNER-style specialists", "one each", "yes", "yes", "yes"], "tones": [null, "bad", "ok", "ok", "ok"]}, {"c": ["spaCy, Stanza, CoreNLP", "one model each", "yes", "yes", "often not"], "tones": [null, "bad", "ok", "ok", "bad"]}, {"c": ["What teams need", "yes", "yes", "yes", "yes"], "tones": [null, "ok", "ok", "ok", "ok"], "hl": true}], "fs": 19, "hfs": 15, "rpad": 14, "cols": "2fr 1fr 1fr 1.1fr 1.4fr", "upto": 0, "ghost": true}], "beats": [{"cap": "Large language models do every task, but need a GPU or send data away.", "src": "§1, Table 1", "set": {"tb": {"upto": 2}}}, {"cap": "Small models run locally on CPU, but cover one task each.", "src": "§1, §5", "set": {"tb": {"upto": 4}}}, {"cap": "Teams need many tasks, on CPU, with private data and new labels. No option gave all four. That is the problem.", "src": "§1", "set": {"tb": {"upto": 5}}}]}]}, {"n": "02", "name": "The core idea", "short": "Idea", "lede": "Put the task into the input as tokens, and read every answer from one pass of one encoder.", "scenes": [{"title": "Write the task into the input", "actors": [{"id": "sr", "type": "tokens", "x": 60, "y": 160, "words": ["[P]", "entities", "[E]", "person", "[E]", "product", "[SEP]"], "tw": 92, "th": 40, "gap": 6, "fs": 15, "on": [0, 2, 4, 6], "op": 0}, {"id": "xr", "type": "tokens", "x": 760, "y": 160, "words": ["Steve", "Jobs", "loved", "the", "iPhone"], "tw": 88, "th": 40, "gap": 6, "fs": 15}, {"id": "enc", "type": "panel", "x": 60, "y": 240, "w": 1164, "h": 60, "label": "one encoder · one forward pass", "op": 0}, {"id": "b0", "type": "beam", "x": 0, "y": 0, "pts": "640,206 640,236", "op": 0}, {"id": "ep", "type": "card", "x": 60, "y": 340, "w": 220, "h": 34, "icon": "dot", "label": "[E] person", "op": 0}, {"id": "eq", "type": "card", "x": 60, "y": 400, "w": 220, "h": 34, "icon": "dot", "label": "[E] product", "op": 0}, {"id": "s1", "type": "card", "x": 760, "y": 340, "w": 220, "h": 34, "icon": "page", "label": "Steve Jobs", "op": 0}, {"id": "s2", "type": "card", "x": 760, "y": 400, "w": 220, "h": 34, "icon": "page", "label": "iPhone", "op": 0}, {"id": "m1", "type": "beam", "x": 0, "y": 0, "pts": "756,357 284,357", "tone": "acc", "label": "person", "lx": 520, "ly": 341, "op": 0}, {"id": "m2", "type": "beam", "x": 0, "y": 0, "pts": "756,417 284,417", "tone": "acc", "label": "product", "lx": 520, "ly": 401, "op": 0}, {"id": "rule", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "Write the task as *tokens* before the text. Read each answer from the *task’s own tokens*.", "fs": 24, "box": "acc", "op": 0}], "beats": [{"cap": "Take the paper’s example sentence. We want the person and the product in it.", "src": "App. A"}, {"cap": "GLiNER2 writes the request itself as tokens, in front of the text: entities, person, product.", "src": "§2, App. A", "set": {"sr": {"op": 1}}}, {"cap": "One encoder reads the request and the text together, so each part can see the other.", "src": "§2", "set": {"enc": {"op": 1}, "b0": {"op": 1}}}, {"cap": "Each [E] token comes out as a vector for its entity type. Each piece of text comes out as a vector too.", "src": "App. A", "set": {"ep": {"op": 1}, "eq": {"op": 1}, "s1": {"op": 1}, "s2": {"op": 1}}}, {"cap": "Matching the two kinds of vectors gives the answer: Steve Jobs is a person, the iPhone is a product.", "src": "App. A", "set": {"m1": {"op": 1}, "m2": {"op": 1}}}, {"cap": "Classification and structured records work the same way, with their own special tokens.", "src": "§2", "set": {"rule": {"op": 1}}}]}, {"title": "An analogy: systems you already build", "actors": [{"id": "tb", "type": "table", "x": 120, "y": 165, "w": 1040, "head": ["In GLiNER2", "In a system you might build"], "rows": [{"c": ["The schema (entity types, labels, fields)", "A SQL query: the engine stays the same, the query changes"]}, {"c": ["Special tokens [E], [L], [C]", "Named placeholders in a template; each one gets filled"]}, {"c": ["One forward pass for every task", "One table scan that computes many aggregates at once"]}, {"c": ["A label description", "A docstring that tells the engine what a field means"]}], "fs": 19, "hfs": 15, "rpad": 14, "cols": "1fr 1.6fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The parts of GLiNER2 map to patterns engineers already use. This mapping is ours.", "kind": "ours", "set": {"tb": {"upto": 2}}, "read": 3}, {"cap": "One pass for all tasks is like one scan for many aggregates. A description is like a docstring.", "kind": "ours", "set": {"tb": {"upto": 4}}, "read": 3}]}, {"title": "Take this home", "actors": [{"id": "l1", "type": "text", "x": 48, "y": 155, "w": 330, "text": "Before: one service per task", "fs": 17, "tone": "muted"}, {"id": "a1", "type": "card", "x": 48, "y": 190, "w": 300, "h": 34, "icon": "box3d", "label": "entity model"}, {"id": "a2", "type": "card", "x": 48, "y": 236, "w": 300, "h": 34, "icon": "box3d", "label": "classifier"}, {"id": "a3", "type": "card", "x": 48, "y": 282, "w": 300, "h": 34, "icon": "net", "label": "LLM for JSON fields"}, {"id": "l2", "type": "text", "x": 400, "y": 155, "w": 300, "text": "After: one model, one schema", "fs": 17, "tone": "acc", "op": 0}, {"id": "b1", "type": "card", "x": 400, "y": 236, "w": 300, "h": 34, "icon": "gear", "label": "model + schema", "on": true, "op": 0}, {"id": "w", "type": "list", "x": 760, "y": 155, "w": 472, "items": [{"t": "Private data redaction", "s": "Find names, IDs and accounts on your own servers"}, {"t": "Support ticket triage", "s": "Intent, urgency and the order number, in one call"}, {"t": "Order and invoice parsing", "s": "One record per line item"}], "upto": 0, "fs": 19, "gap": 14, "mark": "num", "mk": 28, "sfs": 15}, {"id": "q", "type": "text", "x": 48, "y": 470, "w": 1184, "text": "Ask: *how many models run on the same text* in my product, and could one schema replace them?", "fs": 22, "box": "acc", "op": 0}], "beats": [{"cap": "Before: one service per task, each reading the same text. These examples are ours.", "kind": "ours"}, {"cap": "After: one model gets a schema that lists every task, and answers them all.", "kind": "ours", "set": {"l2": {"op": 1}, "b1": {"op": 1}}}, {"cap": "Places it fits: private data redaction, ticket triage, order parsing.", "kind": "ours", "set": {"w": {"upto": 3}}, "read": 3}, {"cap": "The question to ask of your own system.", "kind": "ours", "set": {"q": {"op": 1}}, "read": 2}]}]}, {"n": "03", "name": "How it works", "short": "How it works", "lede": "One sentence, followed from the prompt tokens through the encoder to each task’s answer.", "scenes": [{"title": "The model, piece by piece", "actors": [{"id": "in", "type": "tokens", "x": 60, "y": 150, "words": ["[P]", "entities", "[E]", "person", "[E]", "product", "[SEP]", "Steve", "Jobs", "loved", "the", "iPhone"], "tw": 92, "th": 40, "gap": 6, "fs": 14, "on": [0, 2, 4, 6]}, {"id": "enc", "type": "panel", "x": 60, "y": 220, "w": 1170, "h": 60, "label": "pretrained transformer encoder · 205M parameters · up to 2,048 tokens", "op": 0}, {"id": "b0", "type": "beam", "x": 0, "y": 0, "pts": "640,196 640,216", "op": 0}, {"id": "r0", "type": "card", "x": 60, "y": 330, "w": 400, "h": 34, "icon": "dot", "label": "span vectors · [E] and [C] vectors", "op": 0}, {"id": "r1", "type": "card", "x": 500, "y": 330, "w": 360, "h": 34, "icon": "dot", "label": "[L] label vectors", "op": 0}, {"id": "r2", "type": "card", "x": 900, "y": 330, "w": 330, "h": 34, "icon": "dot", "label": "[P] prompt vector", "op": 0}, {"id": "u0", "type": "beam", "x": 0, "y": 0, "pts": "260,284 260,326", "op": 0}, {"id": "u1", "type": "beam", "x": 0, "y": 0, "pts": "680,284 680,326", "op": 0}, {"id": "u2", "type": "beam", "x": 0, "y": 0, "pts": "1065,284 1065,326", "op": 0}, {"id": "h0", "type": "card", "x": 60, "y": 420, "w": 400, "h": 34, "icon": "gear", "label": "match: sigmoid(span · type)", "op": 0}, {"id": "h1", "type": "card", "x": 500, "y": 420, "w": 360, "h": 34, "icon": "gear", "label": "MLP → softmax or sigmoid", "op": 0}, {"id": "h2", "type": "card", "x": 900, "y": 420, "w": 330, "h": 34, "icon": "gear", "label": "count MLP · 0 to 19", "op": 0}, {"id": "v0", "type": "beam", "x": 0, "y": 0, "pts": "260,368 260,416", "op": 0}, {"id": "v1", "type": "beam", "x": 0, "y": 0, "pts": "680,368 680,416", "op": 0}, {"id": "v2", "type": "beam", "x": 0, "y": 0, "pts": "1065,368 1065,416", "op": 0}, {"id": "o0", "type": "text", "x": 60, "y": 500, "w": 400, "text": "entities and record fields", "fs": 17, "align": "center", "tone": "acc", "op": 0}, {"id": "o1", "type": "text", "x": 500, "y": 500, "w": 360, "text": "class labels", "fs": 17, "align": "center", "tone": "acc", "op": 0}, {"id": "o2", "type": "text", "x": 900, "y": 500, "w": 330, "text": "how many records", "fs": 17, "align": "center", "tone": "acc", "op": 0}, {"id": "w0", "type": "beam", "x": 0, "y": 0, "pts": "260,458 260,496", "op": 0}, {"id": "w1", "type": "beam", "x": 0, "y": 0, "pts": "680,458 680,496", "op": 0}, {"id": "w2", "type": "beam", "x": 0, "y": 0, "pts": "1065,458 1065,496", "op": 0}, {"id": "nt", "type": "text", "x": 48, "y": 550, "w": 1184, "text": "drawing: ours, from §2 and App. A · the paper has no architecture figure", "fs": 13, "tone": "muted", "font": "mono", "align": "center"}], "beats": [{"cap": "The input is the task prompt, a [SEP] separator, then the text, joined into one sequence.", "src": "§2"}, {"cap": "A pretrained transformer encoder reads it all. GLiNER2 has 205M parameters and reads up to 2,048 tokens.", "src": "§2, Table 1", "set": {"enc": {"op": 1}, "b0": {"op": 1}}}, {"cap": "Out come vectors: one for each span of text, and one for each special token in the prompt.", "src": "App. A", "set": {"r0": {"op": 1}, "r1": {"op": 1}, "r2": {"op": 1}, "u0": {"op": 1}, "u1": {"op": 1}, "u2": {"op": 1}}}, {"cap": "Three small heads read them: span matching, a label classifier and a count predictor.", "src": "App. A", "set": {"h0": {"op": 1}, "h1": {"op": 1}, "h2": {"op": 1}, "v0": {"op": 1}, "v1": {"op": 1}, "v2": {"op": 1}}}, {"cap": "Each head gives one kind of answer. All of them come from the same encoder pass.", "src": "§2, App. A", "set": {"o0": {"op": 1}, "o1": {"op": 1}, "o2": {"op": 1}, "w0": {"op": 1}, "w1": {"op": 1}, "w2": {"op": 1}}}, {"cap": "The paper draws no architecture figure. This drawing is ours, built from its text.", "kind": "ours"}]}, {"title": "Five special tokens", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Token", "Role", "Prompt format"], "rows": [{"c": ["[P]", "Prompt: starts a task; what follows is task metadata", "[P] entities ( … )"], "bold": [0]}, {"c": ["[E]", "Entity: comes before each entity type", "[E] person [E] location"], "bold": [0]}, {"c": ["[C]", "Child: comes before each field of a structure", "[P] product ([C] name [C] price)"], "bold": [0]}, {"c": ["[L]", "Label: comes before each class label", "[P] sentiment ([L] positive …)"], "bold": [0]}, {"c": ["[SEP]", "Separator: keeps task specs apart from the text", "… [SEP] x₁ x₂ … x_N"], "bold": [0]}], "fs": 18, "hfs": 15, "rpad": 14, "cols": "0.5fr 2fr 1.7fr", "mono": [0, 2], "upto": 0, "ghost": true}, {"id": "n", "type": "text", "x": 48, "y": 470, "w": 1184, "text": "All five start as *random vectors* and are *learned* in training, so the model forms its own meaning for each role.", "fs": 21, "box": "plain", "op": 0}], "beats": [{"cap": "[P] starts a task. [E] marks each entity type the model should find.", "src": "App. A", "set": {"tb": {"upto": 2}}, "read": 2}, {"cap": "[C] marks each field of a record. [L] marks each class label.", "src": "App. A", "set": {"tb": {"upto": 4}}, "read": 2}, {"cap": "[SEP] separates the parts, so the task specs do not leak into the text.", "src": "App. A", "set": {"tb": {"upto": 5}}, "read": 2}, {"cap": "The tokens start random and are learned during training.", "src": "App. A", "set": {"n": {"op": 1}}}]}, {"title": "Entities: score every span against every type", "actors": [{"id": "sr", "type": "tokens", "x": 60, "y": 150, "words": ["[P]", "entities", "[E]", "person", "[E]", "product", "[SEP]", "Steve", "Jobs", "loved", "the", "iPhone"], "tw": 92, "th": 40, "gap": 6, "fs": 14, "on": [2, 4]}, {"id": "hl", "type": "text", "x": 60, "y": 214, "w": 400, "text": "span × entity type · illustrative scores", "fs": 13, "tone": "muted", "font": "mono", "op": 0}, {"id": "hm", "type": "heat", "x": 60, "y": 236, "rows": ["Steve", "Steve Jobs", "Jobs", "loved", "the iPhone", "iPhone"], "cols": ["person", "product"], "w": [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]], "cs": 54, "lw": 100, "top": 26, "lfs": 12, "showv": false, "op": 0}, {"id": "eq", "type": "text", "x": 520, "y": 236, "w": 712, "text": "score(sᵢ, eⱼ) = sim(h_sᵢ, h_eⱼ)", "font": "mono", "fs": 24, "box": "acc", "op": 0}, {"id": "eqn", "type": "text", "x": 520, "y": 300, "w": 712, "text": "h_s: span vector · h_e: the [E] token’s vector · sim: dot product, then sigmoid", "fs": 16, "tone": "muted", "op": 0}, {"id": "th", "type": "text", "x": 520, "y": 356, "w": 712, "text": "Keep a span when its score is above *0.5* for any type.", "fs": 20, "box": "plain", "op": 0}, {"id": "r1", "type": "card", "x": 520, "y": 420, "w": 340, "h": 34, "icon": "check", "label": "person: Steve Jobs", "op": 0}, {"id": "r2", "type": "card", "x": 880, "y": 420, "w": 352, "h": 34, "icon": "check", "label": "product: iPhone", "op": 0}, {"id": "ds", "type": "text", "x": 520, "y": 480, "w": 712, "text": "A type can carry a description: *product* → “a device or item that is sold” (our example).", "fs": 18, "box": "ours", "op": 0}], "beats": [{"cap": "The prompt lists the entity types, each after an [E] token. Here: person and product.", "src": "App. A"}, {"cap": "The model builds a vector for every span of text, up to a maximum width.", "src": "App. A", "set": {"hl": {"op": 1}, "hm": {"op": 1}}}, {"cap": "Each span is scored against each type’s vector: a dot product, then a sigmoid. These scores are illustrative.", "src": "Eq. 1, App. A", "set": {"eq": {"op": 1}, "eqn": {"op": 1}, "hm": {"w": [[0.31, 0.02], [0.96, 0.03], [0.42, 0.02], [0.01, 0.01], [0.03, 0.38], [0.02, 0.94]], "showv": true}}}, {"cap": "Spans above 0.5 are kept: Steve Jobs as a person, the iPhone as a product.", "src": "App. A", "set": {"th": {"op": 1}, "r1": {"op": 1}, "r2": {"op": 1}}}, {"cap": "Every span gets its own score, so entities may overlap or nest.", "src": "§1"}, {"cap": "Entity types can come with a plain-language description, to tell the model what you mean.", "src": "§2, §4.1", "set": {"ds": {"op": 1}}}, {"cap": "The paper does not state the maximum span width.", "kind": "ours"}]}, {"title": "Classes: one score per label token", "actors": [{"id": "sr", "type": "tokens", "x": 60, "y": 150, "words": ["[P]", "sentiment", "[L]", "positive", "[L]", "negative", "[L]", "neutral", "[SEP]"], "tw": 96, "th": 40, "gap": 6, "fs": 14, "on": [2, 4, 6]}, {"id": "xr", "type": "tokens", "x": 60, "y": 200, "words": ["Steve", "Jobs", "loved", "the", "iPhone"], "tw": 96, "th": 36, "gap": 6, "fs": 14}, {"id": "l0", "type": "card", "x": 60, "y": 260, "w": 250, "h": 34, "icon": "dot", "label": "[L] positive", "op": 0}, {"id": "l1", "type": "card", "x": 60, "y": 320, "w": 250, "h": 34, "icon": "dot", "label": "[L] negative", "op": 0}, {"id": "l2", "type": "card", "x": 60, "y": 380, "w": 250, "h": 34, "icon": "dot", "label": "[L] neutral", "op": 0}, {"id": "mlp", "type": "block", "x": 370, "y": 258, "w": 120, "h": 158, "label": "MLP", "color": "#DCE3EE", "op": 0}, {"id": "a0", "type": "beam", "x": 0, "y": 0, "pts": "314,277 366,277", "op": 0}, {"id": "a1", "type": "beam", "x": 0, "y": 0, "pts": "314,337 366,337", "op": 0}, {"id": "a2", "type": "beam", "x": 0, "y": 0, "pts": "314,397 366,397", "op": 0}, {"id": "lg", "type": "text", "x": 510, "y": 230, "w": 150, "text": "logit · toy", "fs": 13, "tone": "muted", "font": "mono", "op": 0}, {"id": "g0", "type": "text", "x": 510, "y": 266, "w": 150, "text": "+2.9", "fs": 20, "font": "mono", "op": 0}, {"id": "g1", "type": "text", "x": 510, "y": 326, "w": 150, "text": "-1.4", "fs": 20, "font": "mono", "op": 0}, {"id": "g2", "type": "text", "x": 510, "y": 386, "w": 150, "text": "+0.3", "fs": 20, "font": "mono", "op": 0}, {"id": "pr", "type": "bars", "x": 690, "y": 240, "w": 540, "title": "softmax · single label", "sub": "probability · illustrative", "max": 1, "upto": 0, "lw": 110, "vw": 60, "fs": 16, "bh": 22, "gap": 14, "rows": [{"n": "positive", "v": 0.92, "l": "0.92", "hl": true}, {"n": "negative", "v": 0.01, "l": "0.01", "hl": false}, {"n": "neutral", "v": 0.07, "l": "0.07", "hl": false}]}, {"id": "eq", "type": "text", "x": 60, "y": 470, "w": 560, "text": "logitᵢ = MLP(h_ℓᵢ)", "font": "mono", "fs": 24, "box": "acc", "op": 0}, {"id": "ml", "type": "text", "x": 690, "y": 470, "w": 540, "text": "Several classification tasks can share one call, each with its own labels and settings.", "fs": 18, "box": "plain", "op": 0}], "beats": [{"cap": "For classes, the prompt names the task and its labels, each after an [L] token.", "src": "App. A"}, {"cap": "After the encoder, each [L] token holds a vector for its label that has read the text.", "src": "App. A", "set": {"l0": {"op": 1}, "l1": {"op": 1}, "l2": {"op": 1}}}, {"cap": "An MLP turns each label vector into one number, a logit. The logits here are toy values.", "src": "Eq. 2, App. A", "set": {"mlp": {"op": 1}, "a0": {"op": 1}, "a1": {"op": 1}, "a2": {"op": 1}, "lg": {"op": 1}, "g0": {"op": 1}, "g1": {"op": 1}, "g2": {"op": 1}, "eq": {"op": 1}}}, {"cap": "For a single label, softmax turns the logits into one choice. The answer is positive.", "src": "App. A", "set": {"pr": {"upto": 3}}}, {"cap": "For multi-label tasks, a sigmoid scores each label on its own, so several labels can be on.", "src": "§4.1, App. A", "set": {"pr": {"title": "sigmoid · multi-label", "rows": [{"n": "positive", "v": 0.95, "l": "0.95", "hl": true}, {"n": "negative", "v": 0.2, "l": "0.20", "hl": false}, {"n": "neutral", "v": 0.57, "l": "0.57", "hl": true}]}}}, {"cap": "Labels can carry descriptions too. Several classification tasks can run in one call.", "src": "§4.1", "set": {"ml": {"op": 1}}}]}, {"title": "Records: count first, then fill each field", "actors": [{"id": "sr", "type": "tokens", "x": 60, "y": 150, "words": ["[P]", "product", "[C]", "name", "[C]", "price", "[SEP]"], "tw": 104, "th": 36, "gap": 6, "fs": 14, "on": [0, 2, 4, 6]}, {"id": "xr", "type": "tokens", "x": 60, "y": 206, "words": ["iPhone", "costs", "$999", ".", "Galaxy", "is", "$899", "."], "tw": 104, "th": 40, "gap": 6, "fs": 15}, {"id": "ct", "type": "card", "x": 900, "y": 150, "w": 330, "h": 34, "icon": "gear", "label": "[P] → count MLP · 20 classes", "op": 0}, {"id": "k", "type": "text", "x": 900, "y": 200, "w": 330, "text": "K = 2", "font": "mono", "fs": 30, "tone": "acc", "align": "center", "op": 0}, {"id": "f0", "type": "card", "x": 60, "y": 380, "w": 260, "h": 34, "icon": "dot", "label": "name · record 1", "on": true, "op": 0}, {"id": "f1", "type": "card", "x": 340, "y": 380, "w": 260, "h": 34, "icon": "dot", "label": "price · record 1", "on": true, "op": 0}, {"id": "f2", "type": "card", "x": 620, "y": 380, "w": 260, "h": 34, "icon": "dot", "label": "name · record 2", "on": false, "op": 0}, {"id": "f3", "type": "card", "x": 900, "y": 380, "w": 260, "h": 34, "icon": "dot", "label": "price · record 2", "on": false, "op": 0}, {"id": "m0", "type": "beam", "x": 0, "y": 0, "pts": "190,376 112,252", "tone": "acc", "op": 0}, {"id": "m1", "type": "beam", "x": 0, "y": 0, "pts": "470,376 332,252", "tone": "acc", "op": 0}, {"id": "m2", "type": "beam", "x": 0, "y": 0, "pts": "750,376 552,252", "tone": "acc", "op": 0}, {"id": "m3", "type": "beam", "x": 0, "y": 0, "pts": "1030,376 772,252", "tone": "acc", "op": 0}, {"id": "rs", "type": "table", "x": 60, "y": 450, "w": 560, "head": ["Record", "name", "price"], "rows": [{"c": ["1", "iPhone", "$999"]}, {"c": ["2", "Galaxy", "$899"]}], "fs": 17, "hfs": 15, "rpad": 8, "cols": "0.8fr 1fr 1fr", "mono": [1, 2], "op": 0}, {"id": "sx", "type": "text", "x": 660, "y": 450, "w": 572, "text": "In the library: *name::str::description* · a choice list: *category::[electronics|software|hardware]::str*", "fs": 17, "box": "plain", "op": 0}], "beats": [{"cap": "The paper’s example: a product record with two fields, name and price, each after a [C] token.", "src": "App. A"}, {"cap": "Step 1: an MLP reads the [P] vector and predicts how many records there are, from 0 to 19. Here K = 2.", "src": "App. A", "set": {"ct": {"op": 1}, "k": {"op": 1}}}, {"cap": "Step 2: each [C] vector is combined with a learned record-number vector. 2 records × 2 fields = 4 field vectors.", "src": "App. A", "set": {"f0": {"op": 1}, "f1": {"op": 1}, "f2": {"op": 1}, "f3": {"op": 1}}}, {"cap": "Step 3: each field vector is matched against the spans, like entities. The best span wins.", "src": "App. A", "set": {"m0": {"op": 1}, "m1": {"op": 1}, "m2": {"op": 1}, "m3": {"op": 1}}}, {"cap": "So the two records stay apart: the iPhone keeps $999 and the Galaxy keeps $899.", "src": "App. A", "set": {"rs": {"op": 1}}}, {"cap": "Fields hold one value (str) or many (list), and can be limited to a list of choices.", "src": "§4.1, Fig. 3", "set": {"sx": {"op": 1}}, "read": 2}, {"cap": "One schema can hold several structures, for example a product and a company.", "src": "§4.1, Fig. 4"}]}, {"title": "All tasks in one forward pass", "actors": [{"id": "t1", "type": "tokens", "x": 60, "y": 150, "words": ["[P]", "entities", "[E]", "person", "[E]", "product", "[SEP]"], "tw": 96, "th": 36, "gap": 6, "fs": 14, "on": [0, 2, 4, 6]}, {"id": "t2", "type": "tokens", "x": 60, "y": 196, "words": ["[P]", "sentiment", "[L]", "positive", "[L]", "negative", "[L]", "neutral", "[SEP]"], "tw": 96, "th": 36, "gap": 6, "fs": 14, "on": [0, 2, 4, 6, 8], "op": 0}, {"id": "t3", "type": "tokens", "x": 60, "y": 242, "words": ["Steve", "Jobs", "loved", "the", "iPhone"], "tw": 96, "th": 36, "gap": 6, "fs": 14}, {"id": "lb", "type": "text", "x": 990, "y": 150, "w": 240, "text": "task 1 · entities", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "lc", "type": "text", "x": 990, "y": 196, "w": 240, "text": "task 2 · sentiment", "fs": 14, "tone": "muted", "font": "mono", "op": 0}, {"id": "ld", "type": "text", "x": 990, "y": 242, "w": 240, "text": "the text", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "enc", "type": "panel", "x": 60, "y": 300, "w": 1170, "h": 50, "label": "one forward pass", "op": 0}, {"id": "out", "type": "text", "x": 60, "y": 380, "w": 620, "text": "{ person: [“Steve Jobs”],\n  product: [“iPhone”],\n  sentiment: “positive” }", "font": "mono", "fs": 20, "box": "acc", "op": 0}, {"id": "dl", "type": "text", "x": 720, "y": 380, "w": 510, "text": "DeBERTa-v3 zero-shot: 3 labels, 3 passes", "fs": 15, "tone": "muted", "font": "mono", "op": 0}, {"id": "dc", "type": "cells", "x": 720, "y": 410, "pat": "bbb", "cw": 110, "ch": 30, "gap": 8, "texts": ["positive", "negative", "neutral"], "op": 0}, {"id": "gl", "type": "text", "x": 720, "y": 460, "w": 510, "text": "GLiNER2: 3 labels, 1 pass", "fs": 15, "tone": "acc", "font": "mono", "op": 0}, {"id": "gc", "type": "cells", "x": 720, "y": 490, "pat": "P", "cw": 346, "ch": 30, "gap": 8, "texts": ["all 3 labels"], "op": 0}], "beats": [{"cap": "To run several tasks, GLiNER2 joins their prompts with [SEP], then adds the text.", "src": "App. A", "set": {"t2": {"op": 1}, "lc": {"op": 1}}}, {"cap": "The encoder reads it all once. Every task shares the same understanding of the text.", "src": "§2, App. A", "set": {"enc": {"op": 1}}}, {"cap": "One computation gives the entities and the sentiment.", "src": "App. A", "set": {"out": {"op": 1}}}, {"cap": "Compare DeBERTa-v3, the usual zero-shot classifier: it runs one forward pass per label.", "src": "§3.3", "set": {"dl": {"op": 1}, "dc": {"op": 1}}}, {"cap": "GLiNER2 puts every label in the same input, so more labels do not mean more passes.", "src": "§3.3", "set": {"gl": {"op": 1}, "gc": {"op": 1}}}, {"cap": "One schema can combine entities, classes and records in a single call.", "src": "§4.1, Fig. 8"}]}, {"title": "Training: data and settings", "actors": [{"id": "dt", "type": "bars", "x": 48, "y": 150, "w": 560, "title": "Training examples by source", "sub": "count · 254,334 in total", "max": 118636, "upto": 0, "lw": 110, "vw": 80, "fs": 16, "bh": 20, "gap": 12, "rows": [{"n": "News", "v": 74456, "l": "74,456", "hl": false}, {"n": "Law", "v": 19798, "l": "19,798", "hl": false}, {"n": "Wikipedia", "v": 17909, "l": "17,909", "hl": false}, {"n": "PubMed", "v": 16400, "l": "16,400", "hl": false}, {"n": "ArXiv", "v": 7135, "l": "7,135", "hl": false}, {"n": "Synthetic", "v": 118636, "l": "118,636", "hl": true}]}, {"id": "an", "type": "text", "x": 48, "y": 470, "w": 560, "text": "Every example is *labelled by GPT-4o* for all tasks, then checked for quality.", "fs": 19, "box": "plain", "op": 0}, {"id": "hp", "type": "table", "x": 672, "y": 150, "w": 560, "head": ["Setting", "Value"], "rows": [{"c": ["Epochs", "5"]}, {"c": ["Optimizer", "AdamW"]}, {"c": ["Learning rate, encoder", "1 × 10⁻⁵"]}, {"c": ["Learning rate, task layers", "2 × 10⁻⁵"]}, {"c": ["Weight decay", "0.01"]}, {"c": ["Warm-up steps", "1,000"]}, {"c": ["Gradient clipping", "1.0"]}], "fs": 17, "hfs": 15, "rpad": 8, "cols": "1.6fr 1fr", "mono": [1], "op": 0}], "beats": [{"cap": "The model trains on 254,334 examples. 135,698 are real texts from news, law, Wikipedia, PubMed and arXiv.", "src": "§3.1, Table 6", "set": {"dt": {"upto": 5}}, "read": 2}, {"cap": "118,636 more are synthetic, written by GPT-4o: emails, text messages, resumes, orders, bank records.", "src": "§3.1, App. B.1", "set": {"dt": {"upto": 6}}}, {"cap": "GPT-4o labels all of them, for every task, and the labels are checked for quality.", "src": "§3.1", "set": {"an": {"op": 1}}}, {"cap": "Training runs 5 epochs with AdamW, with a smaller learning rate for the encoder than for the task layers.", "src": "Table 5, App. B", "set": {"hp": {"op": 1}}, "read": 3}, {"cap": "Why two rates: the pretrained encoder changes slowly, while the new task layers adapt fast.", "src": "App. B"}]}]}, {"n": "04", "name": "Evidence", "short": "Evidence", "lede": "Three tests: zero-shot classification, zero-shot entities, and speed on CPU.", "scenes": [{"title": "How they tested it", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Test", "Question", "How they measured", "Result"], "rows": [{"c": ["Classification", "Can it classify with labels it never trained on?", "Accuracy on 7 public sets, zero-shot", "0.72 average; best open model"]}, {"c": ["Entities", "Does doing many tasks cost entity quality?", "F1 on CrossNER, 5 domains, zero-shot", "0.590; GPT-4o 0.599"]}, {"c": ["Speed", "Does it stay fast as labels grow?", "CPU latency in ms, 5 to 50 labels", "130 to 208 ms"]}, {"c": ["Records", "How well does it fill structures?", "Not tested: no zero-shot benchmark", "—"], "tones": [null, null, "bad", null]}], "fs": 17, "hfs": 14, "rpad": 12, "cols": "0.9fr 1.7fr 1.6fr 1.3fr", "upto": 0, "ghost": true}], "beats": [{"cap": "Three tests. First, classification with labels the model never trained on.", "src": "§3.2", "set": {"tb": {"upto": 1}}, "read": 2}, {"cap": "Second, entity recognition across five specialist domains.", "src": "§3.2", "set": {"tb": {"upto": 2}}, "read": 2}, {"cap": "Third, speed on CPU as the number of labels grows.", "src": "§3.3", "set": {"tb": {"upto": 3}}, "read": 2}, {"cap": "Record extraction is not tested. The authors say no zero-shot benchmark exists for it yet.", "src": "§3.2", "set": {"tb": {"upto": 4}}, "read": 2}]}, {"title": "Zero-shot classification", "actors": [{"id": "m", "type": "text", "x": 48, "y": 146, "w": 1184, "text": "accuracy · higher is better · GPT-4o is a far larger upper bound", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "tb", "type": "table", "x": 48, "y": 172, "w": 1184, "head": ["Dataset", "Task", "Labels", "GPT-4o", "GLiClass 190M", "DeBERTa-v3 435M", "GLiNER2 205M"], "rows": [{"c": ["SNIPS", "Intent", "7", "0.97", "0.80", "0.77", "0.83"], "hl": false, "bold": [6]}, {"c": ["Banking77", "Intent", "77", "0.78", "0.21", "0.42", "0.70"], "hl": false, "bold": [6]}, {"c": ["Amazon Intent", "Intent", "31", "0.72", "0.51", "0.59", "0.53"], "hl": false, "bold": [6]}, {"c": ["SST-2", "Sentiment", "2", "0.94", "0.90", "0.92", "0.86"], "hl": false, "bold": [6]}, {"c": ["IMDB", "Sentiment", "2", "0.95", "0.92", "0.89", "0.87"], "hl": false, "bold": [6]}, {"c": ["AG News", "Topic", "4", "0.85", "0.68", "0.68", "0.74"], "hl": false, "bold": [6]}, {"c": ["20 Newsgroups", "Topic", "20", "0.68", "0.36", "0.54", "0.49"], "hl": false, "bold": [6]}, {"c": ["Average", "—", "—", "0.84", "0.63", "0.69", "0.72"], "hl": true, "bold": [6]}], "fs": 16, "hfs": 13, "rpad": 7, "cols": "1.4fr 1fr 0.7fr 0.9fr 1.1fr 1.2fr 1.2fr", "mono": [2, 3, 4, 5, 6], "align": ["left", "left", "right", "right", "right", "right", "right"], "upto": 0, "ghost": true}], "beats": [{"cap": "Intent: GLiNER2 scores 0.83 on SNIPS and 0.70 on Banking77, against 0.77 and 0.42 for DeBERTa-v3.", "src": "Table 2, §3.2", "set": {"tb": {"upto": 2}}, "read": 3}, {"cap": "On Amazon Intent it trails DeBERTa-v3 by 6 points.", "src": "Table 2, §3.2", "set": {"tb": {"upto": 3}}, "read": 2}, {"cap": "Sentiment: 0.86 to 0.87, close to DeBERTa-v3 and within 10 points of GPT-4o.", "src": "Table 2, §3.2", "set": {"tb": {"upto": 5}}, "read": 2}, {"cap": "Topics: ahead on AG News, 5 points behind DeBERTa-v3 on 20 Newsgroups.", "src": "Table 2, §3.2", "set": {"tb": {"upto": 7}}, "read": 2}, {"cap": "Average: 0.72, the best of the open models. GPT-4o leads on all seven sets, at far larger scale.", "src": "Table 2, §3.2", "set": {"tb": {"upto": 8}}, "read": 3}]}, {"title": "Zero-shot entity recognition", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 600, "head": ["CrossNER domain", "GPT-4o", "GLiNER-M", "GLiNER2"], "rows": [{"c": ["AI", "0.547", "0.518", "0.526"]}, {"c": ["Literature", "0.561", "0.597", "0.564"]}, {"c": ["Music", "0.736", "0.694", "0.632"]}, {"c": ["Politics", "0.632", "0.686", "0.679"]}, {"c": ["Science", "0.518", "0.581", "0.547"]}, {"c": ["Average", "0.599", "0.615", "0.590"], "hl": true}], "fs": 17, "hfs": 15, "rpad": 9, "cols": "1.5fr 1fr 1fr 1fr", "mono": [1, 2, 3], "align": ["left", "right", "right", "right"], "upto": 0, "ghost": true}, {"id": "av", "type": "bars", "x": 700, "y": 150, "w": 532, "title": "CrossNER average", "sub": "F1 · higher is better", "max": 0.7, "upto": 0, "lw": 110, "vw": 64, "fs": 16, "bh": 22, "gap": 14, "rows": [{"n": "GLiNER-M", "v": 0.615, "l": "0.615", "hl": false}, {"n": "GPT-4o", "v": 0.599, "l": "0.599", "hl": false}, {"n": "GLiNER2", "v": 0.59, "l": "0.590", "hl": true}]}, {"id": "fl", "type": "text", "x": 700, "y": 380, "w": 532, "text": "The text says GLiNER2 is higher than GPT-4o on AI (0.526 vs 0.547). Table 3 shows it is *lower*. Only Literature is higher.", "fs": 17, "box": "bad", "op": 0}], "beats": [{"cap": "CrossNER tests entities in five domains the model did not train for. The score is F1, higher is better.", "src": "§3.2, Table 3", "set": {"tb": {"upto": 3}}, "read": 2}, {"cap": "GLiNER2 is strongest on Politics, at 0.679.", "src": "Table 3", "set": {"tb": {"upto": 6}}, "read": 2}, {"cap": "On average it gets 0.590: close to GPT-4o, and a little behind GLiNER-M, a model built only for entities.", "src": "Table 3, §3.2", "set": {"av": {"upto": 3}}}, {"cap": "A mismatch in the paper: the text says GLiNER2 beats GPT-4o on AI. Its own table says it does not.", "src": "§3.2, Table 3", "set": {"fl": {"op": 1}}, "read": 2}, {"cap": "GLiNER-M scores are taken from the earlier GLiNER paper, not re-run.", "src": "App. B"}]}, {"title": "Speed on CPU as labels grow", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 176, "w": 620, "head": ["Labels", "GPT-4o", "DeBERTa-v3", "GLiClass", "GLiNER2"], "rows": [{"c": ["5", "358", "1,714", "137", "130"]}, {"c": ["10", "382", "3,404", "131", "132"]}, {"c": ["20", "425", "6,758", "140", "163"]}, {"c": ["50", "463", "16,897", "190", "208"]}, {"c": ["Speed-up", "1.00×", "0.10×", "2.75×", "2.62×"], "hl": true}], "fs": 17, "hfs": 14, "rpad": 9, "cols": "1.6fr 1fr 1.2fr 1fr 1fr", "mono": [1, 2, 3, 4], "align": ["left", "right", "right", "right", "right"], "upto": 0, "ghost": true}, {"id": "u", "type": "text", "x": 48, "y": 146, "w": 620, "text": "latency in ms · lower is better · all on CPU except GPT-4o (OpenAI API)", "fs": 14, "tone": "muted", "font": "mono"}, {"id": "b", "type": "bars", "x": 712, "y": 150, "w": 520, "title": "At 50 labels", "sub": "ms · lower is better · log scale", "max": 2.4, "upto": 0, "lw": 110, "vw": 70, "fs": 16, "bh": 22, "gap": 14, "rows": [{"n": "GLiClass", "v": 0.279, "l": "190", "hl": false}, {"n": "GLiNER2", "v": 0.318, "l": "208", "hl": true}, {"n": "GPT-4o", "v": 0.666, "l": "463", "hl": false}, {"n": "DeBERTa-v3", "v": 2.228, "l": "16,897", "hl": false}]}, {"id": "fl", "type": "text", "x": 48, "y": 480, "w": 1184, "text": "The text says DeBERTa is “6.8× slower with 20 labels”. No ratio in Table 4 gives 6.8, but its 20-label time is 6,758 ms, about 6.8 *seconds*. Against GLiNER2’s 163 ms that is about 41× (our arithmetic).", "fs": 17, "box": "bad", "op": 0}], "beats": [{"cap": "Latency per text, in milliseconds, as the number of labels grows from 5 to 50.", "src": "Table 4, §3.3", "set": {"tb": {"upto": 1}}}, {"cap": "DeBERTa-v3 runs one pass per label, so its time grows with the label count: 1,714 to 16,897 ms.", "src": "Table 4, §3.3", "set": {"tb": {"upto": 4}}, "read": 2}, {"cap": "GLiNER2 goes from 130 to 208 ms. It averages 2.62× faster than GPT-4o, close to GLiClass.", "src": "Table 4, §3.3", "set": {"tb": {"upto": 5}, "b": {"upto": 4}}, "read": 2}, {"cap": "A likely unit slip: “6.8× slower” matches the 6.8 seconds in the table, not any ratio in it.", "src": "§3.3, Table 4", "set": {"fl": {"op": 1}}, "read": 2}, {"cap": "The paper does not name the CPU. GPT-4o times go through the API, so they include the network.", "kind": "ours"}]}, {"title": "What the tests do not show", "actors": [{"id": "ls", "type": "list", "x": 48, "y": 160, "w": 1184, "items": [{"t": "Record extraction has no numbers", "s": "No zero-shot benchmark exists yet; the authors plan one (§3.2)"}, {"t": "Privacy and cost are not measured", "s": "Table 1 compares features; only speed is timed (§3.3)"}, {"t": "Composed tasks are not scored", "s": "Each test runs one task type at a time (§3.2)"}, {"t": "A baseline name does not match its ID", "s": "Called DeBERTa-v3-base, but the ID given is deberta-v3-large (App. B)"}], "upto": 0, "fs": 20, "gap": 16, "mark": "dot", "mk": 24, "sfs": 16}], "beats": [{"cap": "There are no numbers for record extraction, and privacy and cost are features, not measurements.", "src": "§3.2, Table 1", "set": {"ls": {"upto": 2}}, "read": 3}, {"cap": "Tasks are tested one at a time. And the DeBERTa baseline is named as the base model but its ID is the large one.", "src": "§3.2, App. B", "set": {"ls": {"upto": 4}}, "read": 3}]}]}, {"n": "05", "name": "Using it", "short": "Using it", "lede": "Is it for you? Three ways to use it, the settings, and what breaks.", "scenes": [{"title": "Is it for you?", "actors": [{"id": "use", "type": "list", "x": 48, "y": 165, "w": 560, "items": [{"t": "You run several extraction tasks on the same text."}, {"t": "Data must stay on your own servers, and you have no GPU."}, {"t": "Your labels change often and you cannot retrain each time."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "check", "mk": 30, "title": "Use it when", "ttone": "ok", "tfs": 18}, {"id": "skip", "type": "list", "x": 672, "y": 165, "w": 560, "items": [{"t": "You need the best possible accuracy: GPT-4o leads on every classification set."}, {"t": "You only need entities: GLiNER-M scores a little higher."}, {"t": "You need proven record extraction: it is not benchmarked yet."}], "upto": 0, "fs": 20, "gap": 18, "stagger": true, "mark": "cross", "mk": 30, "title": "Skip it, or adapt it, when", "ttone": "bad", "tfs": 18}], "beats": [{"cap": "Use it when many tasks, privacy and CPU cost all matter.", "src": "§1, Table 1", "set": {"use": {"upto": 3}}, "read": 3}, {"cap": "Adapt or skip it when top accuracy matters most, or when you need tested record extraction.", "src": "Tables 2–3, §3.2", "set": {"skip": {"upto": 3}}, "read": 3}]}, {"title": "Three ways to use it", "actors": [{"id": "c0t", "type": "text", "x": 48, "y": 162, "w": 380, "text": "Adopt the library", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c0w", "type": "text", "x": 48, "y": 196, "w": 380, "text": "You want extraction running this week.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c0", "type": "list", "x": 48, "y": 250, "w": 380, "items": [{"t": "pip install gliner2."}, {"t": "Load the weights from Hugging Face with from_pretrained."}, {"t": "Pass the text plus entity types, labels or a record schema."}, {"t": "Combine tasks in one schema."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c1t", "type": "text", "x": 450, "y": 162, "w": 380, "text": "Fine-tune it", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c1w", "type": "text", "x": 450, "y": 196, "w": 380, "text": "You have labelled data from your domain.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c1", "type": "list", "x": 450, "y": 250, "w": 380, "items": [{"t": "Start from the released weights (Apache 2.0)."}, {"t": "Label your texts for every task you need."}, {"t": "Use the paper’s recipe: 2 learning rates, 5 epochs."}, {"t": "Test on your own data, not only public sets."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}, {"id": "c2t", "type": "text", "x": 852, "y": 162, "w": 380, "text": "Borrow the idea", "fs": 22, "fw": 600, "op": 0.2}, {"id": "c2w", "type": "text", "x": 852, "y": 196, "w": 380, "text": "You build your own models.", "fs": 16, "tone": "muted", "op": 0.2}, {"id": "c2", "type": "list", "x": 852, "y": 250, "w": 380, "items": [{"t": "Write the task into the input as tokens."}, {"t": "Read each answer from its own token."}, {"t": "Score all labels in one pass."}, {"t": "Predict how many records before filling fields."}], "upto": 0, "fs": 18, "gap": 16, "ghost": true, "stagger": true, "mk": 28, "mfs": 14}], "beats": [{"cap": "Path 1: adopt the library. It installs with pip and loads weights from Hugging Face.", "src": "§1, §4.1", "set": {"c0t": {"op": 1}, "c0w": {"op": 1}, "c0": {"upto": 4}}, "read": 3}, {"cap": "Path 2: fine-tune it on your own domain. The paper lists fine-tuning support.", "src": "Table 1, App. B", "set": {"c1t": {"op": 1}, "c1w": {"op": 1}, "c1": {"upto": 4}}, "read": 3}, {"cap": "Path 3: borrow the idea for your own models.", "src": "§2, App. A", "set": {"c2t": {"op": 1}, "c2w": {"op": 1}, "c2": {"upto": 4}}, "read": 3}]}, {"title": "Settings that matter", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Setting", "Paper value", "What it changes", "Source"], "rows": [{"c": ["Type and label descriptions", "optional", "Tell the model what a type or label means", "§2, §4.1"]}, {"c": ["Span threshold", "0.5", "Which spans count as entities", "App. A"]}, {"c": ["Single or multi-label", "softmax / sigmoid", "One label per text, or several", "§4.1, App. A"]}, {"c": ["Field type", "str or list", "One value per field, or many", "§4.1"]}, {"c": ["Field choices", "[a|b|c]", "Limit a field to listed values", "§4.1"]}, {"c": ["Records per structure", "0 to 19", "The count head has 20 classes", "App. A"]}, {"c": ["Context length", "2,048 tokens", "Prompt plus text must fit", "Table 1"]}], "fs": 17, "hfs": 14, "rpad": 9, "cols": "1.5fr 1.1fr 2fr 0.8fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The paper has no ablations, so these are its values and what each one controls, not measured trade-offs.", "kind": "ours", "set": {"tb": {"upto": 3}}, "read": 4}, {"cap": "Record fields have types and choice lists. The count head and the context length set hard limits.", "src": "§4.1, App. A, Table 1", "set": {"tb": {"upto": 7}}, "read": 4}]}, {"title": "What breaks, and what to do", "actors": [{"id": "tb", "type": "table", "x": 48, "y": 150, "w": 1184, "head": ["Problem", "Why", "What to do"], "rows": [{"c": ["Many-label topic sets are weaker", "20 Newsgroups 0.49, Amazon Intent 0.53 (Table 2)", "Add label descriptions; test; fine-tune"]}, {"c": ["Entities trail a specialist", "0.590 vs GLiNER-M 0.615 (Table 3)", "Use GLiNER if you only need entities"]}, {"c": ["Record quality is unknown", "No benchmark (§3.2)", "Build a small test set of your own"]}, {"c": ["More than 19 records in a text", "Count head stops at 19 (App. A)", "Split the text into smaller pieces"]}, {"c": ["Long documents", "2,048-token context (Table 1)", "Split into chunks; merge the results"]}, {"c": ["Labels learned from GPT-4o", "All training labels came from GPT-4o (§3.1)", "Check outputs on your hardest cases"]}], "fs": 16, "hfs": 14, "rpad": 9, "cols": "1.4fr 1.7fr 1.6fr", "upto": 0, "ghost": true}], "beats": [{"cap": "The first three come from the scores: weaker topic sets, a small gap on entities, untested records.", "src": "Tables 2–3, §3.2", "set": {"tb": {"upto": 3}}, "read": 4}, {"cap": "The rest come from design limits and training data. The fixes in the last column are ours.", "src": "App. A, Table 1, §3.1", "set": {"tb": {"upto": 6}}, "read": 4}]}, {"title": "", "actors": [{"id": "q", "type": "text", "x": 140, "y": 220, "w": 1000, "text": "“Make the task part of the input, and one pass answers them all.”", "font": "serif", "fs": 50, "italic": true, "lh": 1.15, "align": "center"}, {"id": "s", "type": "text", "x": 200, "y": 420, "w": 880, "text": "GLiNER2 writes entities, labels and record fields as tokens, and reads every answer from one encoder pass.", "fs": 24, "tone": "muted", "align": "center"}], "beats": [{"cap": "The one idea to take from this paper.", "kind": "ours", "dur": 6}]}]}, {"n": "06", "name": "How the authors got there", "short": "Their thinking", "lede": "How they found the problem, the decisions that shaped the design, and the questions you can take to your own work.", "scenes": [{"title": "How they found the problem", "actors": [{"id": "ppv", "type": "text", "x": 48, "y": 146, "w": 400, "text": "THE PIVOT", "font": "mono", "fs": 14, "tone": "acc", "op": 0}, {"id": "p0t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Each new task meant another model", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "p0e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  LLMs need GPUs or APIs, which raise privacy and cost problems.  (§1)", "fs": 19, "box": "ok", "op": 0}, {"id": "p0e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stated*  Each GLiNER adaptation needed its own model, so pipelines fragmented.  (§1)", "fs": 19, "box": "ok", "op": 0}, {"id": "p0e2", "type": "text", "x": 48, "y": 420, "w": 560, "text": "*Inferred*  Small encoders already worked; the cost was how many of them a team ran.", "fs": 19, "box": "ours", "op": 0}, {"id": "p0x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  Several linters each parsing the same file; services that each re-parse a request.", "fs": 19, "box": "plain", "op": 0}, {"id": "p0f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  The tasks conflict, so sharing one model makes each worse.", "fs": 19, "box": "plain", "op": 0}, {"id": "p0r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Set the goal: one CPU model for entities, classes and records.", "fs": 20, "box": "plain", "op": 0}, {"id": "p0r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  When every fix is a new specialist, count the specialists as the cost.", "fs": 20, "box": "plain", "op": 0}, {"id": "p0r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  How many separate tools run on the same input in my system?", "fs": 20, "box": "acc", "op": 0}], "beats": [{"cap": "Each new task meant another model.", "src": "§1", "read": 6, "set": {"p0t": {"op": 1}, "p0e0": {"op": 1}, "p0e1": {"op": 1}, "p0e2": {"op": 1}, "ppv": {"op": 0}}}, {"cap": "When every fix is a new specialist, count the specialists as the cost.", "kind": "ours", "read": 4, "set": {"p0r0": {"op": 1}, "p0r2": {"op": 1}}}, {"cap": "Ask: How many separate tools run on the same input in my system?", "kind": "ours", "read": 7, "set": {"p0e0": {"op": 0}, "p0e1": {"op": 0}, "p0e2": {"op": 0}, "p0r3": {"op": 1}, "p0x": {"op": 1}, "p0f": {"op": 1}}}]}, {"title": "How they shaped the solution", "actors": [{"id": "dpv", "type": "text", "x": 48, "y": 146, "w": 400, "text": "THE PIVOT", "font": "mono", "fs": 14, "tone": "acc", "op": 0}, {"id": "d0t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Turn every task into a prompt", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d0e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  GLiNER prompts an encoder with entity types; GLiNER2 extends this to schemas for many tasks.  (§2)", "fs": 19, "box": "ok", "op": 0}, {"id": "d0e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stated*  The core change is one input format built from prompt templates.  (§2)", "fs": 19, "box": "ok", "op": 0}, {"id": "d0e2", "type": "text", "x": 48, "y": 420, "w": 560, "text": "*Shown*  Entity F1 stays within 0.025 of GLiNER-M while adding tasks.  (Table 3)", "fs": 19, "box": "acc", "op": 0}, {"id": "d0x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  A SQL engine that runs any query; a template renderer.", "fs": 19, "box": "plain", "op": 0}, {"id": "d0f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  A task needs a kind of output the shared engine cannot give.", "fs": 19, "box": "plain", "op": 0}, {"id": "d0r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Task prompt, [SEP], then the text, with [P], [E], [C] and [L] tokens.", "fs": 20, "box": "plain", "op": 0}, {"id": "d0r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Make the request part of the data, so one engine serves many requests.", "fs": 20, "box": "plain", "op": 0}, {"id": "d0r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  Could my separate jobs become one job, with the difference passed in?", "fs": 20, "box": "acc", "op": 0}, {"id": "d1t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Score all labels in one pass", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d1e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  DeBERTa runs a pass per label, so its time grows with the label count.  (§3.3)", "fs": 19, "box": "ok", "op": 0}, {"id": "d1e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Shown*  5 to 50 labels: GLiNER2 130 to 208 ms, DeBERTa 1,714 to 16,897 ms.  (Table 4)", "fs": 19, "box": "acc", "op": 0}, {"id": "d1x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  One table scan for many aggregates; checking all rules on a request at once.", "fs": 19, "box": "plain", "op": 0}, {"id": "d1f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  Input plus all questions no longer fit (2,048 tokens).", "fs": 19, "box": "plain", "op": 0}, {"id": "d1r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  All [L] tokens sit in one input; one pass gives a logit per label.", "fs": 20, "box": "plain", "op": 0}, {"id": "d1r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Read the data once for all questions, not once per question.", "fs": 20, "box": "plain", "op": 0}, {"id": "d1r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  Where do I re-read the same input once per option?", "fs": 20, "box": "acc", "op": 0}, {"id": "d2t", "type": "text", "x": 48, "y": 168, "w": 1184, "text": "Count the records before filling them", "font": "serif", "fs": 34, "lh": 1.1, "op": 0}, {"id": "d2e0", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Stated*  An MLP predicts the count K from [P]; [C] vectors get record-number vectors.  (App. A)", "fs": 19, "box": "ok", "op": 0}, {"id": "d2e1", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stated*  This keeps each record’s field values apart.  (App. A)", "fs": 19, "box": "ok", "op": 0}, {"id": "d2x", "type": "text", "x": 48, "y": 236, "w": 560, "text": "*Works for*  Line items on an invoice; allocating slots before a batch job.", "fs": 19, "box": "plain", "op": 0}, {"id": "d2f", "type": "text", "x": 48, "y": 328, "w": 560, "text": "*Stops working when*  The count passes the cap (19) or is unclear.", "fs": 19, "box": "plain", "op": 0}, {"id": "d2r0", "type": "text", "x": 652, "y": 496, "w": 580, "text": "*What they did*  Predict K (0 to 19), build K × m field vectors, match each to a span.", "fs": 20, "box": "plain", "op": 0}, {"id": "d2r2", "type": "text", "x": 652, "y": 400, "w": 580, "text": "*In any field*  Decide how many things there are before filling in their details.", "fs": 20, "box": "plain", "op": 0}, {"id": "d2r3", "type": "text", "x": 652, "y": 304, "w": 580, "text": "*Ask*  When my output repeats, do I know how many items first?", "fs": 20, "box": "acc", "op": 0}, {"id": "qs", "type": "list", "x": 120, "y": 236, "w": 1040, "items": [{"t": "How many separate tools run on the same input in my system?", "s": "Each new task meant another model"}, {"t": "Could my separate jobs become one job, with the difference passed in?", "s": "Turn every task into a prompt"}, {"t": "Where do I re-read the same input once per option?", "s": "Score all labels in one pass"}, {"t": "When my output repeats, do I know how many items first?", "s": "Count the records before filling them"}], "upto": 0, "fs": 20, "gap": 10, "op": 0, "sfs": 15, "mk": 28}], "beats": [{"cap": "Turn every task into a prompt.", "src": "§2, Table 3", "read": 6, "set": {"d0t": {"op": 1}, "d0e0": {"op": 1}, "d0e1": {"op": 1}, "d0e2": {"op": 1}, "dpv": {"op": 1}}}, {"cap": "Make the request part of the data, so one engine serves many requests.", "kind": "ours", "read": 4, "set": {"d0r0": {"op": 1}, "d0r2": {"op": 1}}}, {"cap": "Ask: Could my separate jobs become one job, with the difference passed in?", "kind": "ours", "read": 7, "set": {"d0e0": {"op": 0}, "d0e1": {"op": 0}, "d0e2": {"op": 0}, "d0r3": {"op": 1}, "d0x": {"op": 1}, "d0f": {"op": 1}}}, {"cap": "Score all labels in one pass.", "src": "§3.3, Table 4", "read": 6, "set": {"d0t": {"op": 0}, "d0x": {"op": 0}, "d0f": {"op": 0}, "d0r0": {"op": 0}, "d0r2": {"op": 0}, "d0r3": {"op": 0}, "d0e0": {"op": 0}, "d0e1": {"op": 0}, "d0e2": {"op": 0}, "d1t": {"op": 1}, "d1e0": {"op": 1}, "d1e1": {"op": 1}, "dpv": {"op": 0}}}, {"cap": "Read the data once for all questions, not once per question.", "kind": "ours", "read": 4, "set": {"d1r0": {"op": 1}, "d1r2": {"op": 1}}}, {"cap": "Ask: Where do I re-read the same input once per option?", "kind": "ours", "read": 7, "set": {"d1e0": {"op": 0}, "d1e1": {"op": 0}, "d1r3": {"op": 1}, "d1x": {"op": 1}, "d1f": {"op": 1}}}, {"cap": "Count the records before filling them.", "src": "App. A", "read": 6, "set": {"d1t": {"op": 0}, "d1x": {"op": 0}, "d1f": {"op": 0}, "d1r0": {"op": 0}, "d1r2": {"op": 0}, "d1r3": {"op": 0}, "d1e0": {"op": 0}, "d1e1": {"op": 0}, "d2t": {"op": 1}, "d2e0": {"op": 1}, "d2e1": {"op": 1}, "dpv": {"op": 0}}}, {"cap": "Decide how many things there are before filling in their details.", "kind": "ours", "read": 4, "set": {"d2r0": {"op": 1}, "d2r2": {"op": 1}}}, {"cap": "Ask: When my output repeats, do I know how many items first?", "kind": "ours", "read": 7, "set": {"d2e0": {"op": 0}, "d2e1": {"op": 0}, "d2r3": {"op": 1}, "d2x": {"op": 1}, "d2f": {"op": 1}}}, {"cap": "Questions to carry into your own problems. The principles are our reading, not the authors’ words.", "kind": "ours", "read": 5, "set": {"d2t": {"op": 0}, "d2x": {"op": 0}, "d2f": {"op": 0}, "d2r0": {"op": 0}, "d2r2": {"op": 0}, "d2r3": {"op": 0}, "d2e0": {"op": 0}, "d2e1": {"op": 0}, "dpv": {"op": 0}, "qs": {"op": 1, "upto": 4}}}]}]}, {"n": "07", "name": "Glossary", "short": "Glossary", "lede": "The terms used in this film, in one place.", "scenes": [{"title": "Glossary", "actors": [{"id": "a", "type": "table", "x": 48, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Information extraction", "Turning unstructured text into structured data."]}, {"c": ["Entity (NER)", "A span of text of a given type, such as a person."]}, {"c": ["Zero-shot", "Using labels or types the model never trained on."]}, {"c": ["Encoder", "A transformer that reads the whole input at once."]}, {"c": ["Schema", "The list of entity types, labels and fields you ask for."]}, {"c": ["Special token", "A learned marker such as [P], [E], [C], [L] or [SEP]."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}, {"id": "b", "type": "table", "x": 652, "y": 150, "w": 580, "head": ["Term", "Meaning"], "rows": [{"c": ["Span", "A run of one or more consecutive words."]}, {"c": ["Logit", "A raw score before softmax or sigmoid."]}, {"c": ["Softmax / sigmoid", "One label wins / each label scored on its own."]}, {"c": ["Structure", "A parent record with child fields, like product: name, price."]}, {"c": ["Count head", "The MLP that predicts how many records, 0 to 19."]}, {"c": ["Forward pass", "One run of the model over its input."]}], "fs": 15.5, "hfs": 14, "rpad": 9, "cols": "0.75fr 2fr"}], "beats": [{"cap": "Paper: arxiv.org/abs/2507.18546 · Code: github.com/fastino-ai/GLiNER2", "kind": "none", "dur": 14}]}]}]};
+    return this._R;
+  }
+
+
+  sceneKit(type, p, T) {
+    var P = [];
+    var base = function (o) {
+      var d = { isRect: false, isPath: false, isCirc: false, isText: false, isPoly: false, x: 0, y: 0, w: 0, h: 0, rx: 0, d: '', cx: 0, cy: 0, r: 0, pts: '', fill: 'none', stroke: 'none', sw: 0, dash: 'none', op: 1, anim: 'none', fs: 12, fw: 400, anchor: 'start', txt: '', font: T.body, tf: '', tdl: 0 };
+      for (var k in o) { if (o[k] !== undefined) d[k] = o[k]; }
+      P.push(d); return d;
+    };
+    var rect = function (x, y, w, h, o) { o = o || {}; o.isRect = true; o.x = x; o.y = y; o.w = Math.max(0, w); o.h = Math.max(0, h); return base(o); };
+    var path = function (d, o) { o = o || {}; o.isPath = true; o.d = d; return base(o); };
+    var circ = function (cx, cy, r, o) { o = o || {}; o.isCirc = true; o.cx = cx; o.cy = cy; o.r = r; return base(o); };
+    var text = function (x, y, t2, o) { o = o || {}; o.isText = true; o.x = x; o.y = y; o.txt = t2 == null ? '' : String(t2); if (o.fill === undefined) o.fill = T.ink; return base(o); };
+    var poly = function (pts, o) { o = o || {}; o.isPoly = true; o.pts = pts; return base(o); };
+    var I = {
+      gear: 'M12 8a4 4 0 1 0 .01 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1',
+      net: 'M5 4a2 2 0 1 0 .01 0 M5 16a2 2 0 1 0 .01 0 M19 10a2 2 0 1 0 .01 0 M12 4a2 2 0 1 0 .01 0 M12 16a2 2 0 1 0 .01 0 M7 6h3 M7 18h3 M14 7l3 4 M14 17l3-4 M7 7l3 9',
+      photo: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 8a1.5 1.5 0 1 0 .01 0',
+      depth: 'M4 5h16 M4 9h16 M4 13h16 M4 17h16',
+      code: 'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16',
+      task: 'M6 3h12v18H6z M9 8h6 M9 12h6 M9 16h4',
+      mask: 'M12 3a4 4 0 1 0 .01 0 M5 21c0-4 3-7 7-7s7 3 7 7z',
+      box3d: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5',
+      mesh: 'M3 20L12 4l9 16z M7.5 12h9 M7.5 12L12 20l4.5-8',
+      camera: 'M3 8h4l2-3h6l2 3h4v11H3z M12 10a3.5 3.5 0 1 0 .01 0',
+      clock: 'M12 3a9 9 0 1 0 .01 0 M12 7v5l3 2',
+      book: 'M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z',
+      page: 'M6 3h9l4 4v14H6z M15 3v4h4 M9 12h7 M9 16h5',
+      eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 .01 0',
+      eyeoff: 'M3 3l18 18 M10.6 6.1A10 10 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.4 4 M6.6 6.6C3.9 8.4 2 12 2 12s4 6 10 6a9 9 0 0 0 4.4-1.1',
+      gpu: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+      film: 'M4 4h16v16H4z M8 4v16 M16 4v16 M4 8h4 M4 12h4 M4 16h4 M16 8h4 M16 12h4 M16 16h4',
+      brush: 'M14 4l6 6-8 8-6-6z M6 12l-3 8 8-3',
+      check: 'M5 12l5 5 9-10', cross: 'M6 6l12 12 M18 6L6 18', pause: 'M9 5v14 M15 5v14', dot: 'M12 11a1 1 0 1 0 .01 0'
+    };
+    var icon = function (name, x, y, k, col, op) { path(I[name] || I.dot, { tf: 'translate(' + x + ' ' + y + ') scale(' + k + ')', stroke: col || T.ink, sw: 1.7 / k, op: op == null ? 1 : op }); };
+    var toneCol = function (tn) { return tn === 'ok' ? T.ok : (tn === 'bad' ? T.bad : (tn === 'acc' ? T.acc : (tn === 'muted' ? T.muted : T.ink))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? T.accSoft : T.card)); };
+    var look = p.look || 'paint', wo = look === 'wire' ? 1 : 0, po = 1 - wo, w, h;
+    if (type === 'robot') {
+      var ex = p.lookdir === 'l' ? -3 : (p.lookdir === 'r' ? 3 : 0), th = !!p.think;
+      rect(20, 82, 10, 10, { rx: 2, fill: T.ink }); rect(40, 82, 10, 10, { rx: 2, fill: T.ink });
+      path('M10 52 L0 67', { stroke: T.ink, sw: 2.6 }); path('M60 52 L70 65', { stroke: T.ink, sw: 2.6 });
+      rect(10, 40, 50, 44, { rx: 12, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(35, 61, 6, { fill: th ? T.acc : T.rule, anim: th ? 'plpulse 1s ease-in-out infinite' : 'none' });
+      rect(15, 8, 40, 32, { rx: 10, fill: p.body || T.card, stroke: T.ink, sw: 2 });
+      circ(28 + ex, 24, 3.6, { fill: T.ink }); circ(42 + ex, 24, 3.6, { fill: T.ink });
+      path('M35 8 V0', { stroke: T.ink, sw: 2 }); circ(35, -1, 3.2, { fill: p.col || T.acc });
+      circ(62, -6, 3, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out infinite' : 'none' });
+      circ(70, -15, 4, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .2s infinite' : 'none' });
+      circ(80, -26, 5, { fill: T.muted, op: th ? 1 : 0, anim: th ? 'plblink 1.2s ease-in-out .4s infinite' : 'none' });
+      if (p.label) text(35, 108, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+      w = 70; h = 92;
+    } else if (type === 'ground') {
+      w = p.w || 300; h = 24;
+      path('M0 1 H' + w, { stroke: T.acc, sw: 1.6, dash: '6 5', op: wo });
+      for (var gi = 12; gi < w; gi += 28) path('M' + gi + ' 2 l-9 11', { stroke: T.acc, sw: 1, op: wo * 0.6 });
+      rect(0, 0, w, h, { fill: T.grass, op: po }); rect(0, 0, w, 5, { fill: T.grassTop, op: po });
+    } else if (type === 'crate') {
+      w = h = p.w || 56;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      path('M0 0 L' + w + ' ' + h + ' M' + w + ' 0 L0 ' + h, { stroke: T.acc, sw: 1, dash: '4 4', op: wo });
+      rect(0, 0, w, h, { rx: 3, fill: T.crate, stroke: T.crateEdge, sw: 2, op: po });
+      path('M0 ' + (h / 3) + ' H' + w + ' M0 ' + (2 * h / 3) + ' H' + w + ' M4 4 L' + (w - 4) + ' ' + (h - 4), { stroke: T.crateEdge, sw: 1.3, op: po });
+    } else if (type === 'wall') {
+      w = p.w || 22; h = p.h || 120;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 2, fill: T.wall, stroke: T.wallEdge, sw: 1.5, op: po });
+      var bl = ''; for (var wy = 15; wy < h; wy += 15) bl += 'M0 ' + wy + ' H' + w + ' ';
+      if (bl) path(bl, { stroke: T.wallEdge, sw: 1, op: po * 0.7 });
+    } else if (type === 'block') {
+      w = p.w || 80; h = p.h || 40;
+      rect(0, 0, w, h, { stroke: T.acc, sw: 1.6, dash: '5 4', op: wo });
+      rect(0, 0, w, h, { rx: 4, fill: p.color || '#E9D7B9', stroke: '#A88B5E', sw: 1.5, op: po });
+      if (p.label) text(w / 2, h / 2 + 4, p.label, { anchor: 'middle', fs: 11, fill: wo ? T.acc : '#6E5634' });
+    } else if (type === 'card') {
+      w = p.w || 150; h = p.h || 96;
+      var small = h < 70;
+      if (p.on) rect(-5, -5, w + 10, h + 10, { rx: 16, stroke: T.acc, sw: 2, anim: 'plpulse 1.4s ease-in-out infinite' });
+      rect(0, 0, w, h, { rx: 12, fill: T.card, stroke: p.on ? T.acc : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 12, small ? (h - 20) / 2 : 10, 0.85, p.on ? T.acc : T.ink);
+      text(38, small ? h / 2 - (p.sub ? 1 : -5) : 26, p.label, { fs: 13.5, fw: 600 });
+      if (p.sub) text(38, small ? h / 2 + 14 : h - 12, p.sub, { fs: 11, fill: T.muted });
+      if (!small && p.fill) {
+        var bx = 10, by = 38, bw = w - 20, bh = h - (p.sub ? 62 : 48);
+        if (p.fill === 'depth') { for (var di = 0; di < 6; di++) rect(bx, by + di * bh / 6, bw, bh / 6 + 0.6, { fill: T.depth[di] }); }
+        else if (p.fill === 'paint') { rect(bx, by, bw, bh, { rx: 4, fill: T.sky }); circ(bx + bw - 18, by + 14, 8, { fill: T.sun }); rect(bx, by + bh * 0.72, bw, bh * 0.28, { fill: T.grass }); }
+        else if (p.fill === 'code' || p.fill === 'list') {
+          (p.lines || []).forEach(function (ln, li) {
+            if (li === p.hl) rect(bx - 3, by + li * 18 - 2, bw + 6, 18, { rx: 3, fill: T.accSoft });
+            text(bx, by + 11 + li * 18, ln, { fs: 11.5, font: p.fill === 'code' ? T.mono : T.body, fill: li === p.hl ? T.acc : T.ink });
+          });
+        }
+      }
+    } else if (type === 'icon') {
+      w = 48; h = 48;
+      rect(0, 0, 48, 48, { rx: 12, fill: T.card, stroke: p.tone ? toneCol(p.tone) : T.ruleDark, sw: 1.5 });
+      icon(p.icon || 'dot', 9, 9, 1.25, p.tone ? toneCol(p.tone) : T.ink);
+      if (p.label) text(24, 66, p.label, { anchor: 'middle', fs: 11.5, fill: T.muted });
+    } else if (type === 'badge') {
+      var bt = String(p.text || ''); w = Math.round(bt.length * 7.3 + 30); h = 32;
+      rect(0, 0, w, h, { rx: 16, fill: toneBg(p.tone), stroke: toneCol(p.tone), sw: 1.5 });
+      text(w / 2, 21, bt, { anchor: 'middle', fs: 13, fw: 600, fill: toneCol(p.tone) });
+    } else if (type === 'bubble') {
+      var bt2 = String(p.text || ''); w = Math.round(bt2.length * 7.4 + 26); h = 34;
+      path('M' + (w - 34) + ' 33 l10 12 l4 -12', { fill: T.card, stroke: T.ink, sw: 1.5 });
+      rect(0, 0, w, h, { rx: 10, fill: T.card, stroke: T.ink, sw: 1.5 });
+      text(13, 22, bt2, { fs: 12.5, font: T.mono });
+    } else if (type === 'label') {
+      var fs = p.fs || 13, lt = String(p.text || ''); w = Math.round(lt.length * fs * 0.56); h = fs + 6;
+      text(p.anchor === 'middle' ? w / 2 : 0, fs, lt, { fs: fs, fw: p.fw || 500, fill: toneCol(p.tone || 'muted'), anchor: p.anchor || 'start' });
+    } else if (type === 'panel') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 14, fill: T.card, stroke: T.ruleDark, sw: 1.2 });
+      text(16, 26, p.label, { fs: 13.5, fw: 600, fill: T.label });
+    } else if (type === 'curtain') {
+      w = p.w || 300; h = p.h || 200;
+      rect(0, 0, w, h, { rx: 10, fill: T.bg, op: 0.94 });
+      icon('eyeoff', w / 2 - 14, h / 2 - 34, 1.2, T.muted);
+      text(w / 2, h / 2 + 14, p.text || '', { anchor: 'middle', fs: 13, fill: T.muted });
+    } else if (type === 'cells') {
+      var pat = String(p.pat || ''), cw = p.cw || 26, ch = p.ch || 30, gap = p.gap == null ? 6 : p.gap, tx = p.texts || [];
+      w = Math.max(1, pat.length * (cw + gap) - gap); h = ch;
+      for (var ci = 0; ci < pat.length; ci++) {
+        var c = pat.charAt(ci), cx0 = ci * (cw + gap), st = { rx: 5, fill: T.rule, stroke: 'none', sw: 0, op: 1, anim: 'none', tdl: +(ci * 0.07).toFixed(2), dash: 'none' };
+        if (c === '.') st.op = 0;
+        else if (c === 'P') { st.fill = T.acc; }
+        else if (c === 'r') { st.fill = '#DCE3EE'; st.stroke = '#B5C0D2'; st.sw = 1; }
+        else if (c === 'N') { st.fill = T.acc; st.op = 0.85; st.anim = 'plpulse 1.2s ease-in-out infinite'; }
+        else if (c === 'x') { st.fill = T.rule; st.op = 0.2; }
+        else if (c === 'd') { st.fill = T.depth[1 + ci % 4]; }
+        else if (c === 'p') { st.fill = T.paintCell; }
+        else if (c === 'b') { st.fill = T.card; st.stroke = T.ink; st.sw = 1.5; }
+        else if (c === 'g') { st.fill = '#E3F4EB'; st.stroke = T.ok; st.sw = 1.5; }
+        else if (c === 'w') { st.fill = '#FBE6E6'; st.stroke = T.bad; st.sw = 1.6; st.dash = '7 5'; st.anim = 'plflow .7s linear infinite'; }
+        rect(cx0, 0, cw, ch, st);
+        if (tx[ci]) text(cx0 + cw / 2, ch / 2 + 4, tx[ci], { anchor: 'middle', fs: 12, fill: c === 'P' || c === 'N' ? '#FFFFFF' : T.ink, op: c === '.' ? 0 : 1, tdl: st.tdl });
+      }
+    } else if (type === 'strip') {
+      var sp = String(p.pat || ''), fw = p.fw || 40, fh = p.fh || 30, sg = p.gap == null ? 5 : p.gap;
+      w = Math.max(1, sp.length * (fw + sg) - sg); h = fh;
+      for (var si2 = 0; si2 < sp.length; si2++) {
+        var ch2 = sp.charAt(si2), x0 = si2 * (fw + sg), dl2 = +(si2 * 0.06).toFixed(2), cxr = x0 + fw * (0.12 + (si2 % 8) * 0.06), cs = fw * 0.2;
+        if (ch2 === '.') continue;
+        if (ch2 === 'x') { rect(x0, 0, fw, fh, { rx: 3, fill: T.rule, op: 0.3, tdl: dl2 }); continue; }
+        if (ch2 === 'd') {
+          for (var bd = 0; bd < 4; bd++) rect(x0, bd * fh / 4, fw, fh / 4 + 0.5, { fill: T.depth[2 + bd], tdl: dl2 });
+          rect(cxr, fh * 0.45, cs, fh * 0.38, { fill: T.depth[0], tdl: dl2 });
+          continue;
+        }
+        var faint = ch2 === 'N' ? 0.55 : 1;
+        rect(x0, 0, fw, fh, { fill: T.sky, op: faint, tdl: dl2 });
+        rect(x0, fh * 0.74, fw, fh * 0.26, { fill: T.grass, op: faint, tdl: dl2 });
+        if (ch2 !== 'q') rect(cxr, fh * 0.74 - fh * 0.34, cs, fh * 0.34, { fill: T.crate, stroke: T.crateEdge, sw: 1, op: faint, tdl: dl2 });
+        if (ch2 === 'P') rect(x0, 0, fw, fh, { rx: 3, stroke: T.acc, sw: 2.2 });
+        else if (ch2 === 'N') rect(x0 - 1, -1, fw + 2, fh + 2, { rx: 3, stroke: T.acc, sw: 2, anim: 'plpulse 1.1s ease-in-out infinite' });
+        else rect(x0, 0, fw, fh, { rx: 3, stroke: T.ruleDark, sw: 1 });
+      }
+      if (p.texts) p.texts.forEach(function (tx2, k2) { if (tx2) text(k2 * (fw + sg) + fw / 2, fh + 13, tx2, { anchor: 'middle', fs: 10.5, fill: T.muted }); });
+    } else if (type === 'beam') {
+      w = p.W || 840; h = p.H || 400;
+      var col = toneCol(p.tone || 'acc'), pts = String(p.pts || '0,0 1,1');
+      poly(pts, { stroke: col, sw: 7, op: 0.12 });
+      poly(pts, { stroke: col, sw: 2, dash: '7 6', anim: 'plflow 1s linear infinite' });
+      var pp = pts.trim().split(/\s+/).map(function (q) { return q.split(',').map(Number); });
+      var a2 = pp[pp.length - 1], a1 = pp[pp.length - 2] || [0, 0];
+      var ang = Math.atan2(a2[1] - a1[1], a2[0] - a1[0]) * 180 / Math.PI;
+      path('M0 0 L-11 -6 L-11 6 Z', { tf: 'translate(' + a2[0] + ' ' + a2[1] + ') rotate(' + ang.toFixed(1) + ')', fill: col });
+      if (p.label) {
+        var lfs = p.lfs || 11.5, lw = Math.round(String(p.label).length * lfs * 0.6 + 18), lx = p.lx == null ? (pp[0][0] + a2[0]) / 2 : p.lx, ly = p.ly == null ? (pp[0][1] + a2[1]) / 2 : p.ly;
+        rect(lx - lw / 2, ly - lfs, lw, lfs * 2, { rx: lfs, fill: T.card, stroke: col, sw: 1 });
+        text(lx, ly + lfs * 0.36, p.label, { anchor: 'middle', fs: lfs, fw: 600, fill: col });
+      }
+    } else if (type === 'tv') {
+      var sw2 = p.w || 220, sh2 = p.h || 140, kind = p.show || 'paint', ccx = 8 + sw2 * (p.cx == null ? 0.35 : p.cx), csz = sh2 * 0.26, gy = 8 + sh2 * 0.74;
+      w = sw2 + 16; h = sh2 + 40;
+      rect(0, 0, w, sh2 + 16, { rx: 12, fill: '#1E232B' });
+      if (kind === 'paint' || kind === 'ghost') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.sky });
+        circ(8 + sw2 * 0.85, 8 + sh2 * 0.2, sh2 * 0.08, { fill: T.sun });
+        rect(8, gy, sw2, sh2 * 0.26, { fill: T.grass }); rect(8, gy, sw2, 4, { fill: T.grassTop });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.wall, stroke: T.wallEdge, sw: 1 });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { rx: 2, fill: T.crate, stroke: T.crateEdge, sw: 1.5, op: kind === 'ghost' ? 0.28 : 1 });
+      } else if (kind === 'depth') {
+        for (var dq = 0; dq < 5; dq++) rect(8, 8 + dq * sh2 / 5, sw2, sh2 / 5 + 0.5, { fill: T.depth[1 + dq] });
+        if (p.wall) rect(8 + sw2 * 0.72, gy - sh2 * 0.5, sw2 * 0.06, sh2 * 0.5, { fill: T.depth[1] });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { fill: T.depth[0] });
+      } else if (kind === 'wire') {
+        rect(8, 8, sw2, sh2, { rx: 4, fill: T.card });
+        path('M8 ' + gy + ' H' + (8 + sw2), { stroke: T.acc, sw: 1.5, dash: '6 5' });
+        if (p.crate !== false) rect(ccx, gy - csz, csz, csz, { stroke: T.acc, sw: 1.5, dash: '5 4' });
+      } else { rect(8, 8, sw2, sh2, { rx: 4, fill: '#2A303A' }); }
+      if (p.q) text(8 + sw2 / 2, 8 + sh2 / 2 + 16, '?', { anchor: 'middle', fs: 44, fw: 700, fill: T.bad });
+      rect(w / 2 - 6, sh2 + 16, 12, 14, { fill: '#1E232B' }); rect(w / 2 - 34, sh2 + 28, 68, 6, { rx: 3, fill: '#1E232B' });
+      if (p.label) text(w / 2, sh2 + 58, p.label, { anchor: 'middle', fs: p.lfs || 14, fill: T.label, fw: 500 });
+    } else if (type === 'ramp') {
+      w = p.w || 110; h = p.h || 60;
+      path(p.flip ? 'M0 0 L0 ' + h + ' L' + w + ' ' + h + ' Z' : 'M0 ' + h + ' L' + w + ' ' + h + ' L' + w + ' 0 Z', look === 'wire' ? { stroke: T.acc, sw: 1.6, dash: '5 4' } : { fill: '#E9D7B9', stroke: '#A88B5E', sw: 1.6 });
+    } else if (type === 'scale') {
+      var SW = p.w || 380, th2 = (p.tilt || 0) * 14 * Math.PI / 180, LL = SW / 2 - 40, pc = SW / 2;
+      var ends = [[pc - LL * Math.cos(th2), 46 - LL * Math.sin(th2)], [pc + LL * Math.cos(th2), 46 + LL * Math.sin(th2)]];
+      w = SW; h = 250;
+      rect(pc - 5, 46, 10, 170, { fill: T.ink }); rect(pc - 70, 214, 140, 12, { rx: 4, fill: T.ink });
+      path('M' + ends[0][0].toFixed(1) + ' ' + ends[0][1].toFixed(1) + ' L' + ends[1][0].toFixed(1) + ' ' + ends[1][1].toFixed(1), { stroke: T.ink, sw: 6 });
+      circ(pc, 46, 9, { fill: T.acc });
+      [[p.lt, p.ls, p.lc], [p.rt, p.rs, p.rc]].forEach(function (L2, q) {
+        var ex2 = ends[q][0], ey2 = ends[q][1];
+        path('M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 - 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' L' + (ex2 + 52).toFixed(1) + ' ' + (ey2 + 72).toFixed(1), { stroke: T.muted, sw: 1.5 });
+        path('M' + (ex2 - 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Q' + ex2.toFixed(1) + ' ' + (ey2 + 108).toFixed(1) + ' ' + (ex2 + 64).toFixed(1) + ' ' + (ey2 + 72).toFixed(1) + ' Z', { fill: L2[2] ? toneBg(L2[2]) : T.card, stroke: L2[2] ? toneCol(L2[2]) : T.ink, sw: 2 });
+        if (L2[0]) text(ex2, ey2 + 62, L2[0], { anchor: 'middle', fs: 16, fw: 600, fill: L2[2] ? toneCol(L2[2]) : T.ink });
+        if (L2[1]) text(ex2, ey2 + 130, L2[1], { anchor: 'middle', fs: 13, fill: T.muted });
+      });
+    } else if (type === 'db') {
+      w = p.w || 92; h = p.h || 110; var ry = 14;
+      path('M0 ' + ry + ' V' + (h - ry) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h - ry) + ' V' + ry, { fill: p.on ? T.accSoft : T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 ' + w + ' ' + ry + ' A' + (w / 2) + ' ' + ry + ' 0 1 0 0 ' + ry, { fill: T.card, stroke: p.on ? T.acc : T.ink, sw: 2 });
+      path('M0 ' + (h * 0.42) + ' A' + (w / 2) + ' ' + ry + ' 0 0 0 ' + w + ' ' + (h * 0.42), { stroke: p.on ? T.acc : T.ink, sw: 1.5 });
+      if (p.label) text(w / 2, h + 24, p.label, { anchor: 'middle', fs: p.lfs || 14, fw: 500, fill: T.label });
+    } else if (type === 'node') {
+      var r2 = p.r || 26; w = h = r2 * 2;
+      if (p.on) circ(r2, r2, r2 + 7, { stroke: T.acc, sw: 2, anim: 'plpulse 1.3s ease-in-out infinite' });
+      circ(r2, r2, r2, { fill: p.on ? T.acc : T.card, stroke: p.on || p.done ? T.acc : T.ruleDark, sw: 2 });
+      text(r2, r2 + 6, p.text || '', { anchor: 'middle', fs: p.fs || 18, fw: 600, fill: p.on ? '#FFFFFF' : (p.done ? T.acc : T.muted) });
+    } else if (type === 'tokens') {
+      var words = p.words || [], tw = p.tw || 86, th = p.th || 40, tg = p.gap == null ? 8 : p.gap, onl = p.on || [], upto = p.upto == null ? 999 : p.upto;
+      w = Math.max(1, words.length * (tw + tg) - tg); h = th + (p.subs ? 20 : 0);
+      words.forEach(function (wd, i) {
+        var on = onl.indexOf(i) >= 0, sh = i < upto, x0 = i * (tw + tg), dl = +(i * 0.05).toFixed(2);
+        rect(x0, 0, tw, th, { rx: 8, fill: on ? T.acc : T.card, stroke: on ? T.acc : T.ink, sw: 1.6, op: sh ? 1 : 0.12, tdl: dl });
+        text(x0 + tw / 2, th / 2 + (p.fs || 16) * 0.36, wd, { anchor: 'middle', fs: p.fs || 16, fw: 500, fill: on ? '#FFFFFF' : T.ink, op: sh ? 1 : 0.12, tdl: dl });
+        if (p.subs && p.subs[i]) text(x0 + tw / 2, th + 15, p.subs[i], { anchor: 'middle', fs: 11, fill: T.muted, op: sh ? 1 : 0.12, font: T.mono });
+      });
+    } else if (type === 'arcs') {
+      var n2 = p.n || 6, tw2 = p.tw || 86, tg2 = p.gap == null ? 8 : p.gap, fr = p.from || 0, ws = p.weights || [], AH = p.h || 120;
+      var cc = function (i) { return i * (tw2 + tg2) + tw2 / 2; };
+      w = Math.max(1, n2 * (tw2 + tg2) - tg2); h = 1;
+      for (var j2 = 0; j2 < n2; j2++) {
+        var wv = ws[j2] == null ? 0.2 : ws[j2];
+        if (j2 === fr) { circ(cc(j2), -6, 3 + wv * 6, { fill: T.acc, op: 0.3 + 0.7 * wv }); continue; }
+        var pk = -(AH * (0.35 + 0.65 * Math.abs(fr - j2) / n2));
+        path('M' + cc(fr) + ' -2 Q' + ((cc(fr) + cc(j2)) / 2).toFixed(1) + ' ' + pk.toFixed(1) + ' ' + cc(j2) + ' -2', { stroke: T.acc, sw: +(1 + 7 * wv).toFixed(1), op: +(0.18 + 0.82 * wv).toFixed(2) });
+        if (p.showw) text(cc(j2), -14, wv.toFixed(2), { anchor: 'middle', fs: 13, fw: 600, fill: T.acc, font: T.mono });
+      }
+    } else if (type === 'heat') {
+      var R2 = p.rows || [], C2 = p.cols || [], V2 = p.w || [], cs2 = p.cs || 34, lw2 = R2.length && p.labels !== false ? (p.lw || 74) : 0, tp = C2.length && p.labels !== false ? (p.top || 26) : 0;
+      var nr = V2.length, nc = nr ? V2[0].length : 0;
+      w = lw2 + nc * cs2; h = tp + nr * cs2;
+      if (lw2) R2.forEach(function (rl, i) { text(lw2 - 8, tp + i * cs2 + cs2 / 2 + 4, rl, { anchor: 'end', fs: p.lfs || 12, fill: p.hlr === i ? T.acc : T.label, fw: p.hlr === i ? 600 : 400 }); });
+      if (tp) C2.forEach(function (cl, j) { text(lw2 + j * cs2 + cs2 / 2, tp - 9, cl, { anchor: 'middle', fs: p.lfs || 12, fill: T.label }); });
+      for (var i3 = 0; i3 < nr; i3++) for (var j3 = 0; j3 < nc; j3++) {
+        var vv = V2[i3][j3], blocked = p.mask && j3 > i3, dl3 = +((i3 * nc + j3) * 0.006).toFixed(3);
+        rect(lw2 + j3 * cs2 + 1, tp + i3 * cs2 + 1, cs2 - 2, cs2 - 2, { rx: 3, fill: blocked ? T.rule : (p.tone === 'ink' ? T.ink : T.acc), op: blocked ? 0.55 : +(0.06 + 0.94 * vv).toFixed(2), tdl: dl3 });
+        if (p.showv && !blocked) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, (p.fmt === 'int' ? Math.round(vv * 10) : vv.toFixed(2)).toString().replace(/^0\./, '.'), { anchor: 'middle', fs: p.vfs || 11, fill: vv > 0.5 ? '#FFFFFF' : T.ink, font: T.mono });
+        if (blocked && p.showx) text(lw2 + j3 * cs2 + cs2 / 2, tp + i3 * cs2 + cs2 / 2 + 4, '×', { anchor: 'middle', fs: 13, fill: T.muted });
+      }
+      if (p.hlr != null && p.hlr >= 0) rect(lw2 - 2, tp + p.hlr * cs2 - 1, nc * cs2 + 4, cs2 + 2, { rx: 5, stroke: T.ink, sw: 2 });
+    } else if (type === 'plot') {
+      w = p.w || 500; h = p.h || 200;
+      path('M0 ' + (p.axisY == null ? h : p.axisY) + ' H' + w + ' M0 0 V' + h, { stroke: T.ruleDark, sw: 1.2 });
+      (p.series || []).forEach(function (sr) { poly(sr.pts, { stroke: sr.tone === 'acc' ? T.acc : (sr.tone === 'muted' ? T.muted : T.ink), sw: sr.sw || 2.4, dash: sr.dash ? '6 5' : 'none', op: sr.op == null ? 1 : sr.op }); });
+    } else { w = 10; h = 10; }
+    return { w: w, h: h, prims: P };
+  }
+
+
+  /* ---------------- rendering ---------------- */
+  renderVals() {
+    var self = this, S = this.state;
+    var themes = [
+      { name: 'Cloud', bg: '#F2F4F7', card: '#FFFFFF', ink: '#12161C', muted: '#5E6773', label: '#3E4652', rule: '#DFE3E9', sh: 'rgba(20, 35, 60, 0.22)', shSoft: 'rgba(20, 35, 60, 0.07)' },
+      { name: 'Sky', bg: '#E9F0FA', card: '#FFFFFF', ink: '#0F1A2B', muted: '#56657A', label: '#33445C', rule: '#D6E0EE', sh: 'rgba(30, 70, 140, 0.22)', shSoft: 'rgba(30, 70, 140, 0.07)' },
+      { name: 'Mint', bg: '#E8F4EF', card: '#FFFFFF', ink: '#0F1F19', muted: '#52685F', label: '#32483F', rule: '#D2E4DB', sh: 'rgba(20, 90, 60, 0.2)', shSoft: 'rgba(20, 90, 60, 0.07)' },
+      { name: 'Lilac', bg: '#EFEDFA', card: '#FFFFFF', ink: '#17142A', muted: '#615C7A', label: '#433E5E', rule: '#DFDAF1', sh: 'rgba(70, 50, 150, 0.2)', shSoft: 'rgba(70, 50, 150, 0.07)' },
+      { name: 'Stone', bg: '#EBECEE', card: '#FBFBFC', ink: '#141518', muted: '#5D6068', label: '#3B3E45', rule: '#DADCE0', sh: 'rgba(20, 22, 30, 0.22)', shSoft: 'rgba(20, 22, 30, 0.07)' }
+    ];
+    var chosen = S.theme ?? (this.props.paper ?? 'Cloud');
+    var t = themes.find(function (x) { return x.name === chosen; }) || themes[0];
+    var accent = this.props.accent ?? '#2F5BEA';
+    var hex = accent.replace('#', '');
+    var cr = parseInt(hex.substring(0, 2), 16), cg = parseInt(hex.substring(2, 4), 16), cb = parseInt(hex.substring(4, 6), 16);
+    var rgba = function (a) { return 'rgba(' + cr + ', ' + cg + ', ' + cb + ', ' + a + ')'; };
+    var OK = '#1F9D63', BAD = '#D64545';
+    var tone = function (tn, dflt) { return tn === 'acc' ? accent : (tn === 'ok' ? OK : (tn === 'bad' ? BAD : (tn === 'muted' ? t.muted : (tn === 'label' ? t.label : (dflt || t.ink))))); };
+    var toneBg = function (tn) { return tn === 'ok' ? '#E3F4EB' : (tn === 'bad' ? '#FBE6E6' : (tn === 'acc' ? rgba(0.1) : t.bg)); };
+    var SANS = "'IBM Plex Sans', sans-serif", SERIF = "'Newsreader', serif", MONO = "'IBM Plex Mono', monospace";
+    var segs = function (txt, base) {
+      var out = [], parts = String(txt == null ? '' : txt).split('*');
+      parts.forEach(function (p, k) { if (p) out.push({ t: p, c: k % 2 ? accent : (base || 'inherit'), fw: k % 2 ? 600 : 'inherit' }); });
+      if (!out.length) out.push({ t: '', c: 'inherit', fw: 'inherit' });
+      return out;
+    };
+    var TK = { acc: accent, accSoft: rgba(0.12), ink: t.ink, muted: t.muted, label: t.label, rule: t.rule, ruleDark: t.muted + '66', card: t.card, bg: t.bg,
+      ok: OK, bad: BAD, sky: '#D3E6F8', grass: '#BFE3C6', grassTop: '#8CC796', crate: '#DDAE73', crateEdge: '#9A6B36', wall: '#C3C9D3', wallEdge: '#8C94A3', sun: '#F5C451',
+      depth: ['#273041', '#3B475C', '#56647B', '#7684A0', '#9AA7C0', '#C3CCDD'], paintCell: '#A9CDEB', body: SANS, mono: MONO };
+
+    var R = this.report(), F = this.film(), LIST = F.list;
+    var si = Math.max(0, Math.min(LIST.length - 1, S.scene)), cur = LIST[si], playing = !!S.playing;
+    var ch = R.chapters[cur.ch], chs = this.chScenes(ch, cur.ch);
+
+    var DY = 70; // captions sit at the top; the picture zone is y 210-650 (scripts author it as 140-580)
+    var actorView = function (a, st, z, ox, oy) {
+      var html = ['text', 'stat', 'table', 'bars', 'list'].indexOf(st.type) >= 0;
+      var vid = a.id, vtype = st.type;
+      var v = { isSvg: false, isText: false, isStat: false, isTable: false, isBars: false, isList: false, x: 0, y: 0, s: 1, op: st.op == null ? 1 : st.op, dl: st.dl || 0, w: 10, h: 10, anim: 'none', prims: [], labels: [] };
+      if (!html) {
+        var kk = self.sceneKit(st.type, Object.assign({ W: 1280, H: 720 }, st), TK);
+        var isBeam = st.type === 'beam';
+        v.isSvg = true; v.w = kk.w; v.h = kk.h;
+        v.prims = kk.prims.filter(function (q) { return !q.isText; });
+        v.labels = kk.prims.filter(function (q) { return q.isText && q.txt !== ''; }).map(function (q) {
+          return { x: q.x, y: +(q.y - q.fs * 0.76).toFixed(1), tx: q.anchor === 'middle' ? -50 : (q.anchor === 'end' ? -100 : 0), txt: q.txt, fs: q.fs, fw: q.fw, font: q.font, fill: q.fill, op: q.op, tdl: q.tdl };
+        });
+        v.x = +(ox + (isBeam ? 0 : (st.x || 0)) * z).toFixed(1); v.y = +(DY + oy + (isBeam ? 0 : (st.y || 0)) * z).toFixed(1); v.s = +((st.s || 1) * z).toFixed(3);
+        v.anim = st.type === 'robot' && st.bob !== false ? 'bob 3.2s ease-in-out infinite' : 'none';
+        v.id = vid; v.type = vtype;
+        return v;
+      }
+      v.x = st.x || 0; v.y = DY + (st.y || 0); v.s = st.s || 1; v.w = st.w || 400;
+      var upto = st.upto == null ? 999 : st.upto;
+      if (st.type === 'text') {
+        v.isText = true; v.fs = st.fs || 22; v.fw = st.fw || (st.font === 'serif' ? 500 : 400); v.font = st.font === 'serif' ? SERIF : (st.font === 'mono' ? MONO : SANS);
+        v.fst = st.italic ? 'italic' : 'normal'; v.lh = st.lh || 1.35; v.color = tone(st.tone); v.align = st.align || 'left';
+        v.bg = st.box && st.box !== 'ours' ? toneBg(st.box) : 'transparent'; v.pad = st.box ? (st.pad || '14px 18px') : '0'; v.rad = st.box ? '14px' : '0';
+        v.bd = st.box === 'ours' ? '1px dashed ' + accent : (st.box ? '1px solid ' + (st.box === 'plain' ? t.rule : tone(st.box)) : 'none');
+        v.segs = segs(st.text);
+      } else if (st.type === 'stat') {
+        v.isStat = true; v.v = st.v; v.l = st.l; v.fs = st.fs || 52; v.c = tone(st.tone || 'acc'); v.bg = st.on ? rgba(0.08) : t.card; v.bd = st.on ? accent : t.rule;
+      } else if (st.type === 'table') {
+        v.isTable = true; v.fs = st.fs || 18; v.hfs = st.hfs || 15; v.rpad = st.rpad || 11;
+        v.cols = st.cols || st.head.map(function () { return '1fr'; }).join(' ');
+        var al = st.align || [];
+        v.head = st.head.map(function (h2, k) { return { t: h2, al: al[k] || 'left' }; });
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto, hl = r.hl || st.hl === k;
+          return { bg: hl && shown ? rgba(0.08) : 'transparent', op: shown ? 1 : (st.ghost ? 0.12 : 0),
+            cells: r.c.map(function (c, j) {
+              var tn = (r.tones || [])[j];
+              return { t: c, al: al[j] || 'left', fw: j === 0 || (r.bold || []).indexOf(j) >= 0 ? 600 : 400, c: tn ? tone(tn) : (j === 0 ? t.ink : t.label), font: (st.mono || []).indexOf(j) >= 0 ? MONO : 'inherit' };
+            }) };
+        });
+      } else if (st.type === 'bars') {
+        v.isBars = true; v.title = st.title || ''; v.sub = st.sub || ''; v.tfs = st.tfs || 18; v.fs = st.fs || 16; v.lw = st.lw || 150; v.vw = st.vw || 90; v.bh = st.bh || 22; v.gap = st.gap == null ? 8 : st.gap;
+        var mx = st.max || Math.max.apply(null, st.rows.map(function (r) { return r.v; }));
+        v.rows = st.rows.map(function (r, k) {
+          var shown = k < upto;
+          return { n: r.n, l: r.l || String(r.v), w: shown ? Math.max(r.v > 0 ? 1.5 : 0, Math.min(100, r.v / mx * 100)).toFixed(1) : '0', c: r.hl ? accent : (r.tone ? tone(r.tone) : '#9AA3AF'), op: shown ? 1 : 0.25, dl: (k * 0.12).toFixed(2), fw: r.hl ? 600 : 400, vc: r.hl ? accent : t.label };
+        });
+      } else if (st.type === 'list') {
+        v.isList = true; v.fs = st.fs || 20; v.sfs = st.sfs || 16; v.tfw = st.tfw || 500; v.gap = st.gap == null ? 16 : st.gap; v.mk = st.mk || 30; v.mt = st.mt == null ? -1 : st.mt; v.mfs = st.mfs || 15;
+        v.hasTitle = !!st.title; v.title = st.title || ''; v.tfs = st.tfs || 18; v.tc = tone(st.ttone || 'label');
+        v.items = st.items.map(function (it, k) {
+          var shown = k < upto, mk = it.m || st.mark || 'num', m, mbg, mc, mbd = 'none';
+          if (mk === 'check') { m = '✓'; mbg = '#E3F4EB'; mc = OK; }
+          else if (mk === 'cross') { m = '✕'; mbg = '#FBE6E6'; mc = BAD; }
+          else if (mk === 'dot') { m = ''; mbg = 'transparent'; mc = accent; mbd = '6px solid ' + accent; }
+          else { m = String(it.no || k + 1); var on2 = it.hl || st.hl === k; mbg = on2 ? accent : rgba(0.1); mc = on2 ? '#FFFFFF' : accent; }
+          return { m: m, mbg: mbg, mc: mc, mbd: mbd, t: it.t, s: it.s || '', hasS: !!it.s, op: shown ? 1 : (st.ghost ? 0.15 : 0), dx: shown ? 0 : -12, dl: (st.stagger ? k * 0.12 : 0).toFixed(2) };
+        });
+      }
+      v.id = vid; v.type = vtype;
+      return v;
+    };
+
+    var curSc = cur.sc;
+    var scenes = chs.map(function (s, k) {
+      var nb = s.beats.length, kb = k < curSc ? nb - 1 : (k > curSc ? 0 : cur.beat);
+      var stt = {};
+      s.actors.forEach(function (a) { stt[a.id] = Object.assign({}, a); });
+      for (var qb = 0; qb <= kb; qb++) { var set = s.beats[qb].set || {}; for (var aid in set) { if (stt[aid]) Object.assign(stt[aid], set[aid]); } }
+      var z = s.zoom || 1, ox = s.ox || 0, oy = s.oy || 0;
+      var on = k === curSc;
+      var hasCaps = s.beats.some(function (b) { return b.cap; });
+      return {
+        op: on ? 1 : 0, pe: on ? 'auto' : 'none', band: hasCaps ? 1 : 0, capTop: s.title ? 104 : 40,
+        tag: s.card ? '' : (ch.n ? ch.n + ' · ' : '') + ch.name, title: s.title || '',
+        dots: nb > 1 ? s.beats.map(function (b, k2) { return { no: k2 + 1, w: k2 === kb ? 22 : 8, bg: k2 <= kb ? accent : t.rule, pick: function () { self._go(F.chStart[cur.ch] + self._offset(cur.ch, k) + k2); } }; }) : [],
+        actors: on || Math.abs(k - curSc) <= 1 ? s.actors.map(function (a) { return actorView(a, stt[a.id], z, ox, oy); }) : [],
+        caps: s.beats.map(function (b, k2) {
+          var src = b.src, ours = b.kind === 'ours';
+          return { segs: segs(b.cap), op: k2 === kb ? 1 : 0, dy: k2 === kb ? 0 : (k2 < kb ? -8 : 8), chip: src || (ours ? 'Our note' : ''),
+            cop: src || ours ? 1 : 0, cbd: ours ? '1px dashed ' + accent : '1px solid ' + t.rule, cfg: ours ? accent : t.label };
+        })
+      };
+    });
+
+    var fmtT = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); };
+    var frac = playing ? 0 : (S.frac || 0);
+    var pos = cur.start + cur.dur * frac, total = F.total;
+    var speeds = [0.75, 1, 1.25, 1.5, 2, 3, 4];
+    var pl = {
+      icon: playing ? '❚❚' : '▶', playLabel: playing ? 'Pause' : 'Play',
+      toggle: function () { self._toggle(); }, prev: function () { self._go(si - 1); }, next: function () { self._go(si + 1); },
+      label: cur.label + (cur.nb > 1 ? ' · ' + (cur.beat + 1) + '/' + cur.nb : ''),
+      time: fmtT(pos / S.speed) + ' / ' + fmtT(total / S.speed),
+      w: playing ? ((cur.start + cur.dur) / total * 100).toFixed(2) : (pos / total * 100).toFixed(2),
+      tr: playing ? (cur.dur / S.speed).toFixed(2) : '0',
+      segs: R.chapters.map(function (c, ci) {
+        var a = LIST[F.chStart[ci]].start, b = ci + 1 < R.chapters.length ? LIST[F.chStart[ci + 1]].start : total;
+        return { name: (c.n ? c.n + ' ' : '') + c.name, w: (b - a).toFixed(1), pick: function () { self._go(F.chStart[ci]); } };
+      }),
+      speedLabel: S.speed + '×', menuOpen: !!S.menu, menu: function () { self.setState({ menu: !S.menu }); },
+      speeds: speeds.map(function (v) { var on = S.speed === v; return { l: v + '×', fg: on ? accent : t.ink, bg: on ? rgba(0.1) : 'transparent', fw: on ? 600 : 400, pick: function () { self._setSpeed(v); } }; })
+    };
+    var chips = R.chapters.map(function (c, ci) {
+      var on = ci === cur.ch;
+      return { n: c.n || '·', name: c.short || c.name, bd: on ? accent : t.rule, bg: on ? accent : t.card, fg: on ? '#FFFFFF' : t.ink, fw: on ? 600 : 400, pick: function () { self._go(F.chStart[ci]); } };
+    });
+    var sc = S.scale || 1;
+    return { t: t, accent: accent, accSoft: rgba(0.1), pid: this.pid(), meta: R.meta, chips: chips, scenes: scenes, pl: pl,
+      scale: sc.toFixed(4), stW: Math.round(1280 * sc), stH: Math.round(720 * sc) };
+  }
+  _offset(ci, k) {
+    var s = this.chScenes(this.report().chapters[ci], ci), n = 0;
+    for (var i = 0; i < k; i++) n += s[i].beats.length;
+    return n;
+  }
+}
+
+mountFilm(Component, "film-tpl", "film", {});
+</script>
+</body>
+</html>
